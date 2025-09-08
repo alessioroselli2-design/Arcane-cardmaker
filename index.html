@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Card Maker – Patch2</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<style>
+  :root{--bg:#0f1115;--panel:#171a21;--stroke:#2a2f3a;--text:#eaeefb}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{padding:14px 16px;border-bottom:1px solid var(--stroke)}
+  .wrap{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:14px;padding:14px}
+  aside{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:12px}
+  label{display:block;font-size:12px;color:#9aa4b2;margin:8px 0 4px}
+  input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
+  input[type=color]{padding:6px;height:40px}
+  textarea{min-height:120px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn{padding:10px 12px;background:#12151b;color:var(--text);border:1px solid var(--stroke);border-radius:10px;cursor:pointer;font-weight:600;margin-top:10px}
+  .btn:active{transform:translateY(1px)}
+  .preview{background:#0b0f16;border:1px solid var(--stroke);border-radius:12px;display:grid;place-items:center;padding:14px;min-height:620px}
+  canvas{width:420px;height:588px;border-radius:14px;background:#0d0f14}
+  small.muted{color:#9aa4b2;display:block;margin-top:6px;line-height:1.3}
+  /* Welcome */
+  .welcome{position:fixed;inset:0;z-index:1000;background:#d9cfb2;display:flex;align-items:center;justify-content:center;padding:18px}
+  .welcome-card{background:#171a21;color:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .welcome-card h1{margin:0 0 8px;font-family:"Cinzel",serif}
+  .welcome-card p{margin:6px 0 0}
+  .welcome-actions{display:flex;align-items:center;gap:12px;margin-top:14px}
+  .hide{display:none}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+</style>
+
+<script>
+function enterApp(){
+  const w=document.getElementById('welcome');
+  const cb=document.getElementById('dontShow');
+  if(cb?.checked){ localStorage.setItem('cm_hide_welcome','true'); }
+  w.classList.add('hide');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  if(localStorage.getItem('cm_hide_welcome')==='true'){
+    document.getElementById('welcome').classList.add('hide');
+  }
+});
+</script>
+</head>
+<body>
+<!-- Splash/Welcome -->
+<div id="welcome" class="welcome">
+  <div id="welcomeCard" class="welcome-card">
+    <h1>Benvenuto in Card Maker</h1>
+    <p>Crea e personalizza le tue carte in stile Magic con simboli, cornici e testi su misura.</p>
+    <p>Carica un’immagine, scegli i colori e stampa in PDF 3×3 fronte/retro.</p>
+    <div class="welcome-actions">
+      <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
+      <button class="btn" onclick="enterApp()">Entra nell’app</button>
+    </div>
+    <small class="muted">Se il bottone non risponde, tocca una volta la scheda e ritenta.</small>
+  </div>
+</div>
+
+<header><strong>Card Maker – Patch2</strong></header>
+
+<div class="wrap">
+  <aside>
+    <div class="row">
+      <div>
+        <label for="title">Titolo</label>
+        <input id="title" placeholder="Nome incantesimo">
+      </div>
+      <div>
+        <label for="titleColor">Colore titolo</label>
+        <input id="titleColor" type="color" value="#ffffff">
+      </div>
+    </div>
+
+    <label for="artFront">Immagine fronte</label>
+    <input id="artFront" type="file" accept="image/*">
+
+    <label for="rulesText">Descrizione (riquadro basso)</label>
+    <textarea id="rulesText" placeholder="Testo/incantesimo. **Parole chiave** in grassetto."></textarea>
+
+    <div class="row">
+      <button class="btn" id="downloadPngBtn">Scarica PNG (vista)</button>
+      <button class="btn" id="exportPdfSingle">PDF singola (vista)</button>
+    </div>
+    <small class="muted">Per A4 3×3 fronte/retro si userà la funzione di stampa del browser (Imposta dimensione pagina A4 e margini minimi).</small>
+  </aside>
+
+  <section class="preview">
+    <canvas id="card" width="750" height="1050" aria-label="Anteprima carta"></canvas>
+  </section>
+</div>
+
+<script>
+/* ---------- STATO & DISEGNO ---------- */
+const state={title:'',titleColor:'#ffffff',rulesText:'',imgFront:null};
+const canvas=document.getElementById('card');
+const ctx=canvas.getContext('2d');
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Cornice esterna
+  ctx.fillStyle='#d8cfae';ctx.fillRect(0,0,750,1050);
+  // Pannello interno (margine)
+  ctx.fillStyle='#f7f5ef';ctx.fillRect(20,20,710,1010);
+
+  // Titolo
+  ctx.fillStyle=state.titleColor;
+  ctx.font='48px "Cinzel", serif';
+  ctx.textBaseline='top';
+  const titleX=50, titleY=40;
+  ctx.fillText(state.title, titleX, titleY, 650);
+
+  // Riquadro immagine centrale
+  const imgX=50, imgY=140, imgW=650, imgH=420;
+  ctx.fillStyle='#ddd';
+  roundRect(ctx,imgX,imgY,imgW,imgH,16,true,false);
+  if(state.imgFront) coverImage(state.imgFront,imgX,imgY,imgW,imgH);
+
+  // Riquadro descrizione
+  const boxX=50, boxY=600, boxW=650, boxH=360;
+  ctx.fillStyle='rgba(250,235,170,0.9)';
+  roundRect(ctx,boxX,boxY,boxW,boxH,18,true,false);
+
+  // Testo descrizione
+  ctx.fillStyle='#111';
+  ctx.font='20px "Spectral", serif';
+  wrapText(state.rulesText, boxX+16, boxY+16, boxW-32, 26);
+}
+
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  if(r>20)r=20;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+  if(fill) ctx.fill();
+}
+
+function coverImage(img,dx,dy,dw,dh){
+  const ir=img.width/img.height, dr=dw/dh;
+  let sx,sy,sw,sh;
+  if(ir>dr){ // ritaglia lati
+    sh=img.height; sw=sh*dr; sx=(img.width-sw)/2; sy=0;
+  }else{     // ritaglia alto/basso
+    sw=img.width; sh=sw/dr; sx=0; sy=(img.height-sh)/2;
+  }
+  ctx.save(); ctx.beginPath(); roundRect(ctx,dx,dy,dw,dh,16,false,true); ctx.clip();
+  ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
+  ctx.restore();
+}
+
+function wrapText(text,x,y,maxWidth,lineHeight){
+  const words=text.split(/\s+/); let line='', yy=y;
+  for(let n=0;n<words.length;n++){
+    const test=line+words[n]+' ';
+    if(ctx.measureText(test).width>maxWidth && n>0){ ctx.fillText(line,x,yy); line=words[n]+' '; yy+=lineHeight; }
+    else line=test;
+  }
+  ctx.fillText(line,x,yy);
+}
+
+/* ---------- BIND UI ---------- */
+document.getElementById('title').oninput=e=>{state.title=e.target.value;draw();}
+document.getElementById('titleColor').oninput=e=>{state.titleColor=e.target.value;draw();}
+document.getElementById('rulesText').oninput=e=>{state.rulesText=e.target.value;draw();}
+document.getElementById('artFront').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const img=new Image(); img.onload=()=>{state.imgFront=img;draw();};
+  img.src=URL.createObjectURL(f);
+});
+
+/* ---------- ESPORTA ---------- */
+document.getElementById('downloadPngBtn').onclick=()=>{
+  const a=document.createElement('a');
+  a.download='carta.png';
+  a.href=canvas.toDataURL('image/png');
+  a.click();
+};
+document.getElementById('exportPdfSingle').onclick=()=>{
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:[69,94]}); // ~ poker size
+  const img=canvas.toDataURL('image/png');
+  doc.addImage(img,'PNG',0,0,69,94);
+  doc.save('carta.pdf');
+};
+
+draw();
+</script>
+
+<script>
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+</script>
+</body>
+</html>
