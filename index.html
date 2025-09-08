@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Card Maker – finale</title>
+<title>Card Maker – database simboli + fix</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&family=EB+Garamond:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -18,6 +18,7 @@
   .wrap{display:grid;grid-template-columns:minmax(310px,380px) 1fr;gap:14px;padding:14px}
   aside{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
   label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+  input,textarea,select,button{font-family:inherit}
   input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
   input[type=color]{padding:6px;height:40px}
   textarea{min-height:120px;resize:vertical}
@@ -46,11 +47,10 @@ function enterApp(){
 document.addEventListener('DOMContentLoaded',()=>{
   const params=new URLSearchParams(location.search);
   const force=params.get('welcome')==='1';
-  if(!force && localStorage.getItem('cm_hide_welcome')==='true'){
-    document.getElementById('welcome').classList.add('hide');
-  }else{
-    if(force) localStorage.removeItem('cm_hide_welcome');
-  }
+  const flag=localStorage.getItem('cm_hide_welcome');
+  // Se non c'è ancora un flag, mostra la splash la prima volta
+  if(force){ localStorage.removeItem('cm_hide_welcome'); document.getElementById('welcome').classList.remove('hide'); return; }
+  if(flag==='true'){ document.getElementById('welcome').classList.add('hide'); }
 });
 </script>
 </head>
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div id="welcome" class="welcome">
   <div class="welcome-card">
     <h2 style="margin:0 0 6px">Benvenuto in Card Maker</h2>
-    <p>Crea carte in stile Magic: titolo, mana, simbolo classe (immagine), bordi, retro pieno e PDF 3×3.</p>
+    <p>Crea carte in stile Magic: titolo, mana, simbolo classe (database o immagine), bordi, retro pieno e PDF 3×3.</p>
     <div class="welcome-actions">
       <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
       <button class="btn" onclick="enterApp()">Entra nell’app</button>
@@ -67,11 +67,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   </div>
 </div>
 
-<header><strong>Card Maker – finale</strong></header>
+<header><strong>Card Maker – database simboli</strong></header>
 
 <div class="wrap">
   <aside>
-    <!-- Titolo / Mana / Simbolo classe -->
+    <!-- Titolo / Mana -->
     <div class="row">
       <div>
         <label>Titolo</label>
@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>
     </div>
 
+    <!-- Font titolo -->
     <div class="row">
       <div>
         <label>Font titolo</label>
@@ -106,15 +107,43 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>
     </div>
 
-    <!-- Simbolo classe solo immagine -->
-    <div class="row">
-      <div>
-        <label>Simbolo classe (PNG/SVG, opzionale)</label>
-        <input id="classImg" type="file" accept="image/*">
+    <!-- SIMBOLO CLASSE -->
+    <div class="group">
+      <div class="row">
+        <div>
+          <label>Sorgente simbolo classe</label>
+          <select id="classSource">
+            <option value="none">Nessuno</option>
+            <option value="db">Database</option>
+            <option value="upload">Carica immagine</option>
+          </select>
+        </div>
+        <div>
+          <label>Dimensione simbolo</label>
+          <input id="classSize" type="range" min="24" max="120" value="48">
+        </div>
       </div>
-      <div>
-        <label>Dimensione simbolo classe</label>
-        <input id="classSize" type="range" min="24" max="120" value="48">
+
+      <div class="row" id="dbRow" style="display:none">
+        <div>
+          <label>Classe (dal database)</label>
+          <select id="clazz">
+            <option value="guerriero">Guerriero</option>
+            <option value="druido">Druido</option>
+            <option value="monaco">Monaco</option>
+            <option value="mago">Mago</option>
+            <option value="ladro">Ladro</option>
+          </select>
+        </div>
+        <div>
+          <label>—</label>
+          <button class="btn" id="btnShowWelcome" type="button">Mostra schermata di benvenuto</button>
+        </div>
+      </div>
+
+      <div id="uploadRow" style="display:none">
+        <label>Carica simbolo (PNG/SVG, sfondo trasparente consigliato)</label>
+        <input id="classImg" type="file" accept="image/*">
       </div>
     </div>
 
@@ -202,10 +231,35 @@ const state={
   descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
   panelColor:'#cdbb7d', panelAlpha:0.85,
   frameColor:'#d8cfae', innerColor:'#f7f5ef',
-  classSize:48, imgClass:null,
+  classSize:48, imgClass:null, classSource:'none', clazz:'guerriero',
   imgFront:null, imgBack:null,
   customTitleFontName:null, customDescFontName:null
 };
+
+/* --------- Icone database (SVG inline -> Image) --------- */
+const CLASS_ICONS_SVG = {
+  guerriero: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <g fill='#fff'><rect x='46' y='15' width='8' height='55' rx='3'/><polygon points='50,10 60,25 40,25' /></g>
+    <rect x='36' y='70' width='28' height='16' rx='8' fill='#fff'/>
+  </svg>`,
+  druido: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M50 12 C30 35,25 55,50 88 C75 55,70 35,50 12 Z' fill='#fff'/>
+    <path d='M50 35 C44 45,44 58,50 70 C56 58,56 45,50 35 Z' fill='#0f1115'/>
+  </svg>`,
+  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='32' fill='#fff'/><path d='M50 22 A28 28 0 1 1 22 50' stroke='#0f1115' stroke-width='10' fill='none'/>
+  </svg>`,
+  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <polygon points='50,10 58,38 88,38 62,56 70,86 50,68 30,86 38,56 12,38 42,38' fill='#fff'/>
+  </svg>`,
+  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M20 45 Q50 20,80 45 Q70 65,50 65 Q30 65,20 45 Z' fill='#fff'/><circle cx='38' cy='52' r='6' fill='#0f1115'/><circle cx='62' cy='52' r='6' fill='#0f1115'/>
+  </svg>`
+};
+function svgToImage(svgStr, cb){
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+  const img=new Image(); img.onload=()=>cb(img); img.src=url;
+}
 
 /* --------- Utility --------- */
 function loadImage(file, cb){ if(!file) return cb(null); const img=new Image(); img.onload=()=>cb(img); img.src=URL.createObjectURL(file); }
@@ -263,23 +317,23 @@ function drawFront(){
   else fctx.fillStyle=state.titleColor;
   fctx.fillText(state.title||'', 44, 71, 520);
 
-  // Simbolo classe (se presente) in alto a destra
-  let sXRight = W-44, symbolWidth = 0;
+  // Simbolo classe (se presente) all'estrema destra
+  let rightEdge = W-44; // bordo interno destro della barra
+  let symbolWidth = 0;
   if(state.imgClass){
     const s = state.classSize;
     const sy = 71 - s/2;
-    cover(fctx, state.imgClass, sXRight - s, sy, s, s, 8);
-    symbolWidth = s + 8; // 8px di gap dal mana
+    cover(fctx, state.imgClass, rightEdge - s, sy, s, s, 8);
+    symbolWidth = s + 10; // gap tra simbolo e mana
   }
 
-  // Mana (opzionale) — se c'è il simbolo, si sposta verso il centro
+  // Mana (opzionale) — se c'è simbolo, si sposta verso il centro (a sinistra del simbolo)
   const mana=(state.mana||'').trim();
   if(mana){
     fctx.fillStyle='#222';
     fctx.font='600 22px Inter,sans-serif';
     fctx.textAlign='right';
-    const manaRightEdge = sXRight - symbolWidth;   // se c'è simbolo, si sposta a sinistra
-    const manaX = manaRightEdge;                   // allineato a destra sul nuovo bordo
+    const manaX = rightEdge - symbolWidth; // sposta per fare spazio al simbolo
     fctx.fillText(mana, manaX, 71);
     fctx.textAlign='left';
   }
@@ -297,9 +351,8 @@ function drawFront(){
 function drawBackCanvas(){
   const c=document.createElement('canvas'); c.width=750; c.height=1050; const ctx=c.getContext('2d');
   rr(ctx,0,0,750,1050,36); ctx.fillStyle=state.frameColor; ctx.fill();          // stessa cornice del fronte
-  rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();  // riempimento interno
-  // immagine a piena cornice interna
-  if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);
+  rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();  // interno
+  if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);           // immagine a piena cornice interna
   return c;
 }
 
@@ -307,6 +360,7 @@ function drawBackCanvas(){
 const $=id=>document.getElementById(id);
 $('title').oninput=e=>{state.title=e.target.value;drawFront();}
 $('mana').oninput=e=>{state.mana=e.target.value;drawFront();}
+
 $('titleFont').onchange=e=>{state.customTitleFontName=null;state.titleFont=e.target.value;drawFront();}
 $('titleSize').oninput=e=>{state.titleSize=+e.target.value;drawFront();}
 $('titleColor').oninput=e=>{state.titleColor=e.target.value;drawFront();}
@@ -315,6 +369,7 @@ document.querySelectorAll('.preset').forEach(a=>a.addEventListener('click',e=>{e
 $('descFont').onchange=e=>{state.customDescFontName=null;state.descFont=e.target.value;drawFront();}
 $('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}
 $('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();}
+$('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();} // FIX: binding descrizione
 
 $('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}
 $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
@@ -322,12 +377,40 @@ $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
 $('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();}
 $('innerColor').oninput=e=>{state.innerColor=e.target.value;drawFront();}
 
+/* Sorgente simbolo: none / db / upload */
+$('classSource').onchange=e=>{
+  state.classSource=e.target.value;
+  document.getElementById('dbRow').style.display = (state.classSource==='db')?'grid':'none';
+  document.getElementById('uploadRow').style.display = (state.classSource==='upload')?'block':'none';
+  if(state.classSource!=='upload'){ state.imgClass=null; } // se esco da upload, azzero l'immagine caricata
+  if(state.classSource==='none'){ state.imgClass=null; }
+  if(state.classSource==='db'){ loadDbIcon($('clazz').value); }
+  drawFront();
+};
+$('clazz').onchange=e=>{ if(state.classSource==='db'){ loadDbIcon(e.target.value); } };
 $('classSize').oninput=e=>{state.classSize=+e.target.value;drawFront();}
-$('classImg').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgClass=img;drawFront();});});
 
+function loadDbIcon(key){
+  const svg = CLASS_ICONS_SVG[key];
+  if(!svg){ state.imgClass=null; drawFront(); return; }
+  svgToImage(svg, img=>{ state.imgClass=img; drawFront(); });
+}
+
+$('classImg').addEventListener('change',e=>{
+  if(state.classSource!=='upload'){ return; }
+  loadImage(e.target.files?.[0], img=>{ state.imgClass=img; drawFront(); });
+});
+
+$('btnShowWelcome').onclick=()=>{
+  localStorage.removeItem('cm_hide_welcome');
+  document.getElementById('welcome').classList.remove('hide');
+};
+
+/* Immagini fronte/retro */
 $('artFront').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgFront=img;drawFront();});});
 $('artBack').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgBack=img;});});
 
+/* Font caricabili */
 $('titleFontFile').addEventListener('change',async e=>{
   const f=e.target.files?.[0]; if(!f) return;
   const fam='UserTitleFont'; await loadCustomFont(f,fam); state.customTitleFontName=fam; drawFront();
