@@ -3,31 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Card Maker – Patch2</title>
+<title>Card Maker – Retro + Classi</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <style>
-  :root{--bg:#0f1115;--panel:#171a21;--stroke:#2a2f3a;--text:#eaeefb}
+  :root{--bg:#0f1115;--panel:#171a21;--stroke:#2a2f3a;--text:#eaeefb;--muted:#9aa4b2}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   header{padding:14px 16px;border-bottom:1px solid var(--stroke)}
-  .wrap{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:14px;padding:14px}
-  aside{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:12px}
-  label{display:block;font-size:12px;color:#9aa4b2;margin:8px 0 4px}
+  .wrap{display:grid;grid-template-columns:minmax(310px,380px) 1fr;gap:14px;padding:14px}
+  aside{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
   input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
   input[type=color]{padding:6px;height:40px}
   textarea{min-height:120px;resize:vertical}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .btn{padding:10px 12px;background:#12151b;color:var(--text);border:1px solid var(--stroke);border-radius:10px;cursor:pointer;font-weight:600;margin-top:10px}
-  .btn:active{transform:translateY(1px)}
+  .btn{padding:10px 12px;background:#12151b;color:var(--text);border:1px solid var(--stroke);border-radius:10px;cursor:pointer;font-weight:600}
+  .btnbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .preview{background:#0b0f16;border:1px solid var(--stroke);border-radius:12px;display:grid;place-items:center;padding:14px;min-height:620px}
   canvas{width:420px;height:588px;border-radius:14px;background:#0d0f14}
-  small.muted{color:#9aa4b2;display:block;margin-top:6px;line-height:1.3}
+  small.muted{color:var(--muted);display:block;margin-top:6px;line-height:1.3}
+  .group{border-top:1px solid var(--stroke);margin-top:12px;padding-top:8px}
   /* Welcome */
   .welcome{position:fixed;inset:0;z-index:1000;background:#d9cfb2;display:flex;align-items:center;justify-content:center;padding:18px}
   .welcome-card{background:#171a21;color:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.35)}
@@ -35,7 +35,7 @@
   .welcome-card p{margin:6px 0 0}
   .welcome-actions{display:flex;align-items:center;gap:12px;margin-top:14px}
   .hide{display:none}
-  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  @media (max-width:980px){.wrap{grid-template-columns:1fr}}
 </style>
 
 <script>
@@ -53,158 +53,351 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 </head>
 <body>
-<!-- Splash/Welcome -->
+<!-- Welcome -->
 <div id="welcome" class="welcome">
-  <div id="welcomeCard" class="welcome-card">
+  <div class="welcome-card">
     <h1>Benvenuto in Card Maker</h1>
-    <p>Crea e personalizza le tue carte in stile Magic con simboli, cornici e testi su misura.</p>
-    <p>Carica un’immagine, scegli i colori e stampa in PDF 3×3 fronte/retro.</p>
+    <p>Crea carte in stile Magic: titolo, mana, classe, bordo, retro senza margini e stampa 3×3.</p>
     <div class="welcome-actions">
       <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
       <button class="btn" onclick="enterApp()">Entra nell’app</button>
     </div>
-    <small class="muted">Se il bottone non risponde, tocca una volta la scheda e ritenta.</small>
   </div>
 </div>
 
-<header><strong>Card Maker – Patch2</strong></header>
+<header><strong>Card Maker – completo</strong></header>
 
 <div class="wrap">
   <aside>
+    <!-- Titolo / Mana -->
     <div class="row">
       <div>
-        <label for="title">Titolo</label>
+        <label>Titolo</label>
         <input id="title" placeholder="Nome incantesimo">
       </div>
       <div>
-        <label for="titleColor">Colore titolo</label>
-        <input id="titleColor" type="color" value="#ffffff">
+        <label>Mostra mana (opzionale)</label>
+        <input id="mana" placeholder="{G}{G} o vuoto">
       </div>
     </div>
 
-    <label for="artFront">Immagine fronte</label>
-    <input id="artFront" type="file" accept="image/*">
-
-    <label for="rulesText">Descrizione (riquadro basso)</label>
-    <textarea id="rulesText" placeholder="Testo/incantesimo. **Parole chiave** in grassetto."></textarea>
-
+    <!-- Font, dimensioni e colori -->
     <div class="row">
-      <button class="btn" id="downloadPngBtn">Scarica PNG (vista)</button>
-      <button class="btn" id="exportPdfSingle">PDF singola (vista)</button>
+      <div>
+        <label>Font titolo</label>
+        <select id="titleFont">
+          <option value='"Cinzel",serif'>Cinzel</option>
+          <option value='"Spectral",serif'>Spectral</option>
+          <option value='Inter,sans-serif'>Inter</option>
+        </select>
+      </div>
+      <div>
+        <label>Dimensione titolo</label>
+        <input id="titleSize" type="range" min="26" max="56" value="44">
+      </div>
     </div>
-    <small class="muted">Per A4 3×3 fronte/retro si userà la funzione di stampa del browser (Imposta dimensione pagina A4 e margini minimi).</small>
+    <div class="row">
+      <div>
+        <label>Colore titolo</label>
+        <input id="titleColor" type="color" value="#ffffff">
+        <small class="muted">Preset: <a href="#" data-col="gold" class="preset">Oro</a> · <a href="#" data-col="silver" class="preset">Argento</a></small>
+      </div>
+      <div>
+        <label>Colore descrizione</label>
+        <input id="descColor" type="color" value="#111111">
+      </div>
+    </div>
+
+    <!-- Separatori/riquadri -->
+    <div class="row">
+      <div>
+        <label>Colore linee/riquadri</label>
+        <input id="panelColor" type="color" value="#cdbb7d">
+      </div>
+      <div>
+        <label>Opacità riquadri</label>
+        <input id="panelAlpha" type="range" min="0" max="100" value="85">
+      </div>
+    </div>
+
+    <!-- Classe -->
+    <div class="group">
+      <div class="row">
+        <div>
+          <label>Classe (placeholder)</label>
+          <select id="clazz">
+            <option value="druido">Druido 🌿</option>
+            <option value="guerriero">Guerriero ⚔️</option>
+            <option value="monaco">Monaco 🌀</option>
+            <option value="mago">Mago ✨</option>
+            <option value="ladro">Ladro 🗝️</option>
+          </select>
+        </div>
+        <div>
+          <label>Dimensione simbolo classe</label>
+          <input id="classSize" type="range" min="24" max="80" value="40">
+        </div>
+      </div>
+      <label>Oppure carica un simbolo (PNG/SVG trasparente)</label>
+      <input id="classImg" type="file" accept="image/*">
+    </div>
+
+    <!-- Immagini -->
+    <div class="group">
+      <label>Immagine fronte</label>
+      <input id="artFront" type="file" accept="image/*">
+      <label>Immagine retro (riempie tutta la cornice)</label>
+      <input id="artBack" type="file" accept="image/*">
+    </div>
+
+    <!-- Descrizione -->
+    <div class="group">
+      <label>Descrizione (riquadro basso)</label>
+      <textarea id="rulesText" placeholder="Testo/incantesimo. **Parole chiave** in grassetto."></textarea>
+      <div class="row">
+        <div>
+          <label>Font descrizione</label>
+          <select id="descFont">
+            <option value='"Spectral",serif'>Spectral</option>
+            <option value='"Cinzel",serif'>Cinzel</option>
+            <option value='Inter,sans-serif'>Inter</option>
+          </select>
+        </div>
+        <div>
+          <label>Dimensione descrizione</label>
+          <input id="descSize" type="range" min="14" max="26" value="18">
+        </div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="group btnbar">
+      <button class="btn" id="pngFront">PNG (fronte)</button>
+      <button class="btn" id="pngBack">PNG (retro)</button>
+      <button class="btn" id="pdfSingleFront">PDF singola (fronte)</button>
+      <button class="btn" id="pdfSingleBack">PDF singola (retro)</button>
+      <button class="btn" id="pdfA4Front">PDF A4 3×3 (fronti)</button>
+      <button class="btn" id="pdfA4Back">PDF A4 3×3 (retro)</button>
+      <button class="btn" id="pdfA4Both">PDF A4 3×3 (fronte+retro)</button>
+    </div>
+    <small class="muted">Per la stampa 3×3: A4, orientamento verticale, margini minimi. Le carte sono ~63×88 mm.</small>
   </aside>
 
   <section class="preview">
-    <canvas id="card" width="750" height="1050" aria-label="Anteprima carta"></canvas>
+    <canvas id="cardFront" width="750" height="1050" aria-label="Fronte"></canvas>
   </section>
 </div>
 
 <script>
-/* ---------- STATO & DISEGNO ---------- */
-const state={title:'',titleColor:'#ffffff',rulesText:'',imgFront:null};
-const canvas=document.getElementById('card');
-const ctx=canvas.getContext('2d');
+/* ---------------- Stato ---------------- */
+const state={
+  title:'', mana:'', titleFont:'"Cinzel",serif', titleSize:44, titleColor:'#ffffff',
+  descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
+  panelColor:'#cdbb7d', panelAlpha:0.85, clazz:'druido', classSize:40,
+  imgFront:null, imgBack:null, imgClass:null
+};
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // Cornice esterna
-  ctx.fillStyle='#d8cfae';ctx.fillRect(0,0,750,1050);
-  // Pannello interno (margine)
-  ctx.fillStyle='#f7f5ef';ctx.fillRect(20,20,710,1010);
-
-  // Titolo
-  ctx.fillStyle=state.titleColor;
-  ctx.font='48px "Cinzel", serif';
-  ctx.textBaseline='top';
-  const titleX=50, titleY=40;
-  ctx.fillText(state.title, titleX, titleY, 650);
-
-  // Riquadro immagine centrale
-  const imgX=50, imgY=140, imgW=650, imgH=420;
-  ctx.fillStyle='#ddd';
-  roundRect(ctx,imgX,imgY,imgW,imgH,16,true,false);
-  if(state.imgFront) coverImage(state.imgFront,imgX,imgY,imgW,imgH);
-
-  // Riquadro descrizione
-  const boxX=50, boxY=600, boxW=650, boxH=360;
-  ctx.fillStyle='rgba(250,235,170,0.9)';
-  roundRect(ctx,boxX,boxY,boxW,boxH,18,true,false);
-
-  // Testo descrizione
-  ctx.fillStyle='#111';
-  ctx.font='20px "Spectral", serif';
-  wrapText(state.rulesText, boxX+16, boxY+16, boxW-32, 26);
+/* ---------------- Util ---------------- */
+function loadImage(file, cb){
+  if(!file) return cb(null);
+  const img=new Image(); img.onload=()=>cb(img); img.src=URL.createObjectURL(file);
 }
-
-function roundRect(ctx,x,y,w,h,r,fill,stroke){
-  if(r>20)r=20;
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
-  if(fill) ctx.fill();
-}
-
-function coverImage(img,dx,dy,dw,dh){
-  const ir=img.width/img.height, dr=dw/dh;
-  let sx,sy,sw,sh;
-  if(ir>dr){ // ritaglia lati
-    sh=img.height; sw=sh*dr; sx=(img.width-sw)/2; sy=0;
-  }else{     // ritaglia alto/basso
-    sw=img.width; sh=sw/dr; sx=0; sy=(img.height-sh)/2;
-  }
-  ctx.save(); ctx.beginPath(); roundRect(ctx,dx,dy,dw,dh,16,false,true); ctx.clip();
+function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function cover(ctx,img,dx,dy,dw,dh,r=0){
+  const ir=img.width/img.height, dr=dw/dh; let sx,sy,sw,sh;
+  if(ir>dr){ sh=img.height; sw=sh*dr; sx=(img.width-sw)/2; sy=0; }
+  else{ sw=img.width; sh=sw/dr; sx=0; sy=(img.height-sh)/2; }
+  if(r>0){ ctx.save(); rr(ctx,dx,dy,dw,dh,r); ctx.clip(); }
   ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
-  ctx.restore();
+  if(r>0) ctx.restore();
+}
+function gold(ctx){ // semplice resa “oro”
+  const g=ctx.createLinearGradient(0,0,0,30);
+  g.addColorStop(0,'#fff7b3'); g.addColorStop(.5,'#d3b25b'); g.addColorStop(1,'#7a6223');
+  return g;
+}
+function silver(ctx){
+  const g=ctx.createLinearGradient(0,0,0,30);
+  g.addColorStop(0,'#ffffff'); g.addColorStop(.5,'#cfd6e6'); g.addColorStop(1,'#7f8aa3');
+  return g;
 }
 
-function wrapText(text,x,y,maxWidth,lineHeight){
-  const words=text.split(/\s+/); let line='', yy=y;
-  for(let n=0;n<words.length;n++){
-    const test=line+words[n]+' ';
-    if(ctx.measureText(test).width>maxWidth && n>0){ ctx.fillText(line,x,yy); line=words[n]+' '; yy+=lineHeight; }
+/* ---------------- Disegno fronte ---------------- */
+const front=document.getElementById('cardFront');
+const fctx=front.getContext('2d');
+
+function drawFront(){
+  const W=750,H=1050; fctx.clearRect(0,0,W,H);
+
+  // Bordo e cornice interna
+  fctx.fillStyle='#d8cfae'; rr(fctx,0,0,W,H,36); fctx.fill();
+  fctx.fillStyle='#f7f5ef'; rr(fctx,16,16,W-32,H-32,24); fctx.fill();
+
+  // Pannelli (colorabili)
+  fctx.globalAlpha=state.panelAlpha;
+  fctx.fillStyle=state.panelColor;
+  rr(fctx,28,28,W-56,86,16); fctx.fill(); // barra titolo
+  rr(fctx,28,610,W-56,412,18); fctx.fill(); // box descrizione
+  fctx.globalAlpha=1;
+
+  // Immagine centrale
+  const ax=44, ay=132, aw=W-88, ah=460;
+  if(state.imgFront) cover(fctx,state.imgFront,ax,ay,aw,ah,18);
+  else { fctx.fillStyle='#cfcfcf'; rr(fctx,ax,ay,aw,ah,18); fctx.fill(); }
+
+  // Titolo + mana
+  fctx.textBaseline='middle';
+  fctx.font = `700 ${state.titleSize}px ${state.titleFont}`;
+  // Colore titolo (normale / oro / argento)
+  let tcol = state.titleColor.toLowerCase();
+  if(tcol==='gold') fctx.fillStyle=gold(fctx);
+  else if(tcol==='silver') fctx.fillStyle=silver(fctx);
+  else fctx.fillStyle=state.titleColor;
+  fctx.fillText(state.title||'', 44, 71, 560);
+
+  fctx.fillStyle='#222'; fctx.font='600 22px Inter,sans-serif';
+  const mana = (state.mana||'').trim(); if(mana){ fctx.textAlign='right'; fctx.fillText(mana, W-44, 71); fctx.textAlign='left'; }
+
+  // Simbolo classe in alto a destra del riquadro immagine
+  const cx = W-44 - state.classSize/2, cy = ay + state.classSize/2 + 6;
+  if(state.imgClass){
+    const s = state.classSize;
+    cover(fctx,state.imgClass,cx-s,ay, s, s, 8);
+  }else{
+    // placeholder tondo con iniziale
+    const s=state.classSize; fctx.fillStyle='rgba(0,0,0,.25)';
+    fctx.beginPath(); fctx.arc(cx, ay+s/2, s/2, 0, Math.PI*2); fctx.fill();
+    fctx.fillStyle='#fff'; fctx.font='600 18px Inter,sans-serif'; fctx.textAlign='center'; fctx.textBaseline='middle';
+    const map={druido:'D',guerriero:'G',monaco:'M',mago:'Mg',ladro:'L'};
+    fctx.fillText(map[state.clazz]||'C', cx, ay+s/2);
+    fctx.textAlign='left';
+  }
+
+  // Descrizione
+  const bx=40, by=618, bw=W-80, bh=396;
+  fctx.save(); rr(fctx,bx,by,bw,bh,18); fctx.clip();
+  fctx.fillStyle=state.descColor; fctx.font=`400 ${state.descSize}px ${state.descFont}`;
+  drawWrappedText(fctx, state.descText||'', bx+18, by+18, bw-36, state.descSize*1.45);
+  fctx.restore();
+}
+function drawWrappedText(ctx, text, x, y, maxW, lh){
+  const words=(text||'').split(/\s+/); let line='', yy=y;
+  for(let i=0;i<words.length;i++){
+    const test=line+words[i]+' ';
+    if(ctx.measureText(test).width>maxW && i>0){ ctx.fillText(line,x,yy); line=words[i]+' '; yy+=lh; }
     else line=test;
   }
   ctx.fillText(line,x,yy);
 }
 
-/* ---------- BIND UI ---------- */
-document.getElementById('title').oninput=e=>{state.title=e.target.value;draw();}
-document.getElementById('titleColor').oninput=e=>{state.titleColor=e.target.value;draw();}
-document.getElementById('rulesText').oninput=e=>{state.rulesText=e.target.value;draw();}
-document.getElementById('artFront').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const img=new Image(); img.onload=()=>{state.imgFront=img;draw();};
-  img.src=URL.createObjectURL(f);
+/* ---------------- Disegno retro ---------------- */
+function drawBackCanvas(){
+  // ritorna un canvas con il retro (senza margini bianchi)
+  const c=document.createElement('canvas'); c.width=750; c.height=1050;
+  const ctx=c.getContext('2d');
+  // bordo esterno
+  rr(ctx,0,0,750,1050,36); ctx.fillStyle='#d8cfae'; ctx.fill();
+  // l'immagine riempie tutta la cornice interna senza margini
+  if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);
+  else { ctx.fillStyle='#333'; rr(ctx,16,16,750-32,1050-32,24); ctx.fill(); }
+  return c;
+}
+
+/* ---------------- Binding UI ---------------- */
+const $=id=>document.getElementById(id);
+$('title').oninput=e=>{state.title=e.target.value;drawFront();}
+$('mana').oninput=e=>{state.mana=e.target.value;drawFront();}
+$('titleFont').onchange=e=>{state.titleFont=e.target.value;drawFront();}
+$('titleSize').oninput=e=>{state.titleSize=+e.target.value;drawFront();}
+$('titleColor').oninput=e=>{state.titleColor=e.target.value;drawFront();}
+document.querySelectorAll('.preset').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault(); state.titleColor=a.dataset.col; drawFront();});
+});
+$('descFont').onchange=e=>{state.descFont=e.target.value;drawFront();}
+$('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}
+$('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();}
+$('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}
+$('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
+$('clazz').onchange=e=>{state.clazz=e.target.value; drawFront();}
+$('classSize').oninput=e=>{state.classSize=+e.target.value; drawFront();}
+
+$('classImg').addEventListener('change',e=>{
+  loadImage(e.target.files?.[0], img=>{ state.imgClass=img; drawFront(); });
+});
+$('artFront').addEventListener('change',e=>{
+  loadImage(e.target.files?.[0], img=>{ state.imgFront=img; drawFront(); });
+});
+$('artBack').addEventListener('change',e=>{
+  loadImage(e.target.files?.[0], img=>{ state.imgBack=img; /* non in anteprima */ });
 });
 
-/* ---------- ESPORTA ---------- */
-document.getElementById('downloadPngBtn').onclick=()=>{
-  const a=document.createElement('a');
-  a.download='carta.png';
-  a.href=canvas.toDataURL('image/png');
-  a.click();
-};
-document.getElementById('exportPdfSingle').onclick=()=>{
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:'mm',format:[69,94]}); // ~ poker size
-  const img=canvas.toDataURL('image/png');
-  doc.addImage(img,'PNG',0,0,69,94);
-  doc.save('carta.pdf');
-};
+/* ---------------- Export ---------------- */
+function downloadDataUrl(filename, dataUrl){
+  const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click();
+}
+$('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
+$('pngBack').onclick=()=>{ const back=drawBackCanvas(); downloadDataUrl('carta-back.png', back.toDataURL('image/png')); };
 
-draw();
+$('pdfSingleFront').onclick=()=>exportSingle(front,'carta-front.pdf');
+$('pdfSingleBack').onclick=()=>{ const back=drawBackCanvas(); exportSingle(back,'carta-back.pdf'); };
+
+function exportSingle(canvasEl, name){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:[69,94]}); // 63x88 + bleed leggero
+  const img=canvasEl.toDataURL('image/png');
+  doc.addImage(img,'PNG',0,0,69,94);
+  doc.save(name);
+}
+
+$('pdfA4Front').onclick=()=>exportA4Grid(front,'carte_3x3_fronti.pdf');
+$('pdfA4Back').onclick=()=>{ const back=drawBackCanvas(); exportA4Grid(back,'carte_3x3_retro.pdf'); };
+$('pdfA4Both').onclick=()=>exportA4Both();
+
+function exportA4Grid(canvasEl, name){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  const W=210,H=297, cw=63, ch=88, marginX=7, marginY=7, gapX=(W - 3*cw - 2*marginX)/2, gapY=(H - 3*ch - 2*marginY)/2;
+  const img=canvasEl.toDataURL('image/png');
+  for(let r=0;r<3;r++){
+    for(let c=0;c<3;c++){
+      const x = marginX + c*(cw + gapX);
+      const y = marginY + r*(ch + gapY);
+      doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
+    }
+  }
+  doc.save(name);
+}
+function exportA4Both(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  const W=210,H=297, cw=63, ch=88, marginX=7, marginY=7, gapX=(W - 3*cw - 2*marginX)/2, gapY=(H - 3*ch - 2*marginY)/2;
+
+  // Fronte (pagina 1)
+  drawFront();
+  let img=front.toDataURL('image/png');
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const x = marginX + c*(cw + gapX);
+    const y = marginY + r*(ch + gapY);
+    doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
+  }
+
+  // Retro (pagina 2)
+  doc.addPage('a4','portrait');
+  const back=drawBackCanvas(); img=back.toDataURL('image/png');
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const x = marginX + c*(cw + gapX);
+    const y = marginY + r*(ch + gapY);
+    doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
+  }
+  doc.save('carte_3x3_fronte+retro.pdf');
+}
+
+/* init */
+drawFront();
 </script>
 
 <script>
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
 </body>
 </html>
