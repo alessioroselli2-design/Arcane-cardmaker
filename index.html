@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Card Maker – Retro + Classi</title>
+<title>Card Maker – finale</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&family=EB+Garamond:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -31,8 +31,6 @@
   /* Welcome */
   .welcome{position:fixed;inset:0;z-index:1000;background:#d9cfb2;display:flex;align-items:center;justify-content:center;padding:18px}
   .welcome-card{background:#171a21;color:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .welcome-card h1{margin:0 0 8px;font-family:"Cinzel",serif}
-  .welcome-card p{margin:6px 0 0}
   .welcome-actions{display:flex;align-items:center;gap:12px;margin-top:14px}
   .hide{display:none}
   @media (max-width:980px){.wrap{grid-template-columns:1fr}}
@@ -46,8 +44,12 @@ function enterApp(){
   w.classList.add('hide');
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  if(localStorage.getItem('cm_hide_welcome')==='true'){
+  const params=new URLSearchParams(location.search);
+  const force=params.get('welcome')==='1';
+  if(!force && localStorage.getItem('cm_hide_welcome')==='true'){
     document.getElementById('welcome').classList.add('hide');
+  }else{
+    if(force) localStorage.removeItem('cm_hide_welcome');
   }
 });
 </script>
@@ -56,8 +58,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 <!-- Welcome -->
 <div id="welcome" class="welcome">
   <div class="welcome-card">
-    <h1>Benvenuto in Card Maker</h1>
-    <p>Crea carte in stile Magic: titolo, mana, classe, bordo, retro senza margini e stampa 3×3.</p>
+    <h2 style="margin:0 0 6px">Benvenuto in Card Maker</h2>
+    <p>Crea carte in stile Magic: titolo, mana, simbolo classe (immagine), bordi, retro pieno e PDF 3×3.</p>
     <div class="welcome-actions">
       <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
       <button class="btn" onclick="enterApp()">Entra nell’app</button>
@@ -65,23 +67,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   </div>
 </div>
 
-<header><strong>Card Maker – completo</strong></header>
+<header><strong>Card Maker – finale</strong></header>
 
 <div class="wrap">
   <aside>
-    <!-- Titolo / Mana -->
+    <!-- Titolo / Mana / Simbolo classe -->
     <div class="row">
       <div>
         <label>Titolo</label>
         <input id="title" placeholder="Nome incantesimo">
       </div>
       <div>
-        <label>Mostra mana (opzionale)</label>
-        <input id="mana" placeholder="{G}{G} o vuoto">
+        <label>Mana (opzionale)</label>
+        <input id="mana" placeholder="{G}{G}">
       </div>
     </div>
 
-    <!-- Font, dimensioni e colori -->
     <div class="row">
       <div>
         <label>Font titolo</label>
@@ -89,26 +90,35 @@ document.addEventListener('DOMContentLoaded',()=>{
           <option value='"Cinzel",serif'>Cinzel</option>
           <option value='"Spectral",serif'>Spectral</option>
           <option value='Inter,sans-serif'>Inter</option>
+          <option value='"EB Garamond",serif'>EB Garamond</option>
+          <option value='"Merriweather",serif'>Merriweather</option>
+          <option value='"Playfair Display",serif'>Playfair Display</option>
         </select>
+        <label style="margin-top:6px">Carica font titolo (TTF/OTF)</label>
+        <input id="titleFontFile" type="file" accept=".ttf,.otf">
       </div>
       <div>
         <label>Dimensione titolo</label>
         <input id="titleSize" type="range" min="26" max="56" value="44">
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label>Colore titolo</label>
+        <label style="margin-top:6px">Colore titolo</label>
         <input id="titleColor" type="color" value="#ffffff">
         <small class="muted">Preset: <a href="#" data-col="gold" class="preset">Oro</a> · <a href="#" data-col="silver" class="preset">Argento</a></small>
       </div>
+    </div>
+
+    <!-- Simbolo classe solo immagine -->
+    <div class="row">
       <div>
-        <label>Colore descrizione</label>
-        <input id="descColor" type="color" value="#111111">
+        <label>Simbolo classe (PNG/SVG, opzionale)</label>
+        <input id="classImg" type="file" accept="image/*">
+      </div>
+      <div>
+        <label>Dimensione simbolo classe</label>
+        <input id="classSize" type="range" min="24" max="120" value="48">
       </div>
     </div>
 
-    <!-- Separatori/riquadri -->
+    <!-- Colori riquadri e cornice -->
     <div class="row">
       <div>
         <label>Colore linee/riquadri</label>
@@ -120,40 +130,29 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>
     </div>
 
-    <!-- Classe -->
-    <div class="group">
-      <div class="row">
-        <div>
-          <label>Classe (placeholder)</label>
-          <select id="clazz">
-            <option value="druido">Druido 🌿</option>
-            <option value="guerriero">Guerriero ⚔️</option>
-            <option value="monaco">Monaco 🌀</option>
-            <option value="mago">Mago ✨</option>
-            <option value="ladro">Ladro 🗝️</option>
-          </select>
-        </div>
-        <div>
-          <label>Dimensione simbolo classe</label>
-          <input id="classSize" type="range" min="24" max="80" value="40">
-        </div>
+    <div class="row">
+      <div>
+        <label>Colore cornice esterna (fronte+retro)</label>
+        <input id="frameColor" type="color" value="#d8cfae">
       </div>
-      <label>Oppure carica un simbolo (PNG/SVG trasparente)</label>
-      <input id="classImg" type="file" accept="image/*">
+      <div>
+        <label>Colore interno carta</label>
+        <input id="innerColor" type="color" value="#f7f5ef">
+      </div>
     </div>
 
     <!-- Immagini -->
     <div class="group">
       <label>Immagine fronte</label>
       <input id="artFront" type="file" accept="image/*">
-      <label>Immagine retro (riempie tutta la cornice)</label>
+      <label>Immagine retro (riempie tutta la cornice interna)</label>
       <input id="artBack" type="file" accept="image/*">
     </div>
 
     <!-- Descrizione -->
     <div class="group">
       <label>Descrizione (riquadro basso)</label>
-      <textarea id="rulesText" placeholder="Testo/incantesimo. **Parole chiave** in grassetto."></textarea>
+      <textarea id="rulesText" placeholder="Testo/incantesimo…"></textarea>
       <div class="row">
         <div>
           <label>Font descrizione</label>
@@ -161,11 +160,18 @@ document.addEventListener('DOMContentLoaded',()=>{
             <option value='"Spectral",serif'>Spectral</option>
             <option value='"Cinzel",serif'>Cinzel</option>
             <option value='Inter,sans-serif'>Inter</option>
+            <option value='"EB Garamond",serif'>EB Garamond</option>
+            <option value='"Merriweather",serif'>Merriweather</option>
+            <option value='"Playfair Display",serif'>Playfair Display</option>
           </select>
+          <label style="margin-top:6px">Carica font descrizione (TTF/OTF)</label>
+          <input id="descFontFile" type="file" accept=".ttf,.otf">
         </div>
         <div>
           <label>Dimensione descrizione</label>
           <input id="descSize" type="range" min="14" max="26" value="18">
+          <label style="margin-top:6px">Colore descrizione</label>
+          <input id="descColor" type="color" value="#111111">
         </div>
       </div>
     </div>
@@ -180,7 +186,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       <button class="btn" id="pdfA4Back">PDF A4 3×3 (retro)</button>
       <button class="btn" id="pdfA4Both">PDF A4 3×3 (fronte+retro)</button>
     </div>
-    <small class="muted">Per la stampa 3×3: A4, orientamento verticale, margini minimi. Le carte sono ~63×88 mm.</small>
+    <small class="muted">Stampa: A4 verticale, margini minimi, scala 100% (no “adatta”). Carte ~63×88 mm.</small>
   </aside>
 
   <section class="preview">
@@ -189,19 +195,20 @@ document.addEventListener('DOMContentLoaded',()=>{
 </div>
 
 <script>
-/* ---------------- Stato ---------------- */
+/* --------- Stato --------- */
 const state={
-  title:'', mana:'', titleFont:'"Cinzel",serif', titleSize:44, titleColor:'#ffffff',
+  title:'', mana:'',
+  titleFont:'"Cinzel",serif', titleSize:44, titleColor:'#ffffff',
   descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
-  panelColor:'#cdbb7d', panelAlpha:0.85, clazz:'druido', classSize:40,
-  imgFront:null, imgBack:null, imgClass:null
+  panelColor:'#cdbb7d', panelAlpha:0.85,
+  frameColor:'#d8cfae', innerColor:'#f7f5ef',
+  classSize:48, imgClass:null,
+  imgFront:null, imgBack:null,
+  customTitleFontName:null, customDescFontName:null
 };
 
-/* ---------------- Util ---------------- */
-function loadImage(file, cb){
-  if(!file) return cb(null);
-  const img=new Image(); img.onload=()=>cb(img); img.src=URL.createObjectURL(file);
-}
+/* --------- Utility --------- */
+function loadImage(file, cb){ if(!file) return cb(null); const img=new Image(); img.onload=()=>cb(img); img.src=URL.createObjectURL(file); }
 function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function cover(ctx,img,dx,dy,dw,dh,r=0){
   const ir=img.width/img.height, dr=dw/dh; let sx,sy,sw,sh;
@@ -211,29 +218,30 @@ function cover(ctx,img,dx,dy,dw,dh,r=0){
   ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
   if(r>0) ctx.restore();
 }
-function gold(ctx){ // semplice resa “oro”
-  const g=ctx.createLinearGradient(0,0,0,30);
-  g.addColorStop(0,'#fff7b3'); g.addColorStop(.5,'#d3b25b'); g.addColorStop(1,'#7a6223');
-  return g;
-}
-function silver(ctx){
-  const g=ctx.createLinearGradient(0,0,0,30);
-  g.addColorStop(0,'#ffffff'); g.addColorStop(.5,'#cfd6e6'); g.addColorStop(1,'#7f8aa3');
-  return g;
+function gold(ctx){const g=ctx.createLinearGradient(0,0,0,30);g.addColorStop(0,'#fff7b3');g.addColorStop(.5,'#d3b25b');g.addColorStop(1,'#7a6223');return g;}
+function silver(ctx){const g=ctx.createLinearGradient(0,0,0,30);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#cfd6e6');g.addColorStop(1,'#7f8aa3');return g;}
+function drawTextWrap(ctx,text,x,y,maxW,lh){const w=(text||'').split(/\s+/);let line='',yy=y;for(let i=0;i<w.length;i++){const t=line+w[i]+' ';if(ctx.measureText(t).width>maxW&&i>0){ctx.fillText(line,x,yy);line=w[i]+' ';yy+=lh}else line=t}ctx.fillText(line,x,yy);}
+
+/* --------- Font caricabili --------- */
+async function loadCustomFont(file, familyName){
+  const blobUrl = URL.createObjectURL(file);
+  const face = new FontFace(familyName, `url(${blobUrl})`);
+  await face.load();
+  document.fonts.add(face);
+  return familyName;
 }
 
-/* ---------------- Disegno fronte ---------------- */
-const front=document.getElementById('cardFront');
-const fctx=front.getContext('2d');
+/* --------- Disegno fronte --------- */
+const front=document.getElementById('cardFront'); const fctx=front.getContext('2d');
 
 function drawFront(){
   const W=750,H=1050; fctx.clearRect(0,0,W,H);
 
-  // Bordo e cornice interna
-  fctx.fillStyle='#d8cfae'; rr(fctx,0,0,W,H,36); fctx.fill();
-  fctx.fillStyle='#f7f5ef'; rr(fctx,16,16,W-32,H-32,24); fctx.fill();
+  // Cornice + interno con colori selezionati
+  fctx.fillStyle=state.frameColor; rr(fctx,0,0,W,H,36); fctx.fill();
+  fctx.fillStyle=state.innerColor; rr(fctx,16,16,W-32,H-32,24); fctx.fill();
 
-  // Pannelli (colorabili)
+  // Pannelli colorabili
   fctx.globalAlpha=state.panelAlpha;
   fctx.fillStyle=state.panelColor;
   rr(fctx,28,28,W-56,86,16); fctx.fill(); // barra titolo
@@ -245,96 +253,92 @@ function drawFront(){
   if(state.imgFront) cover(fctx,state.imgFront,ax,ay,aw,ah,18);
   else { fctx.fillStyle='#cfcfcf'; rr(fctx,ax,ay,aw,ah,18); fctx.fill(); }
 
-  // Titolo + mana
+  // Titolo (a sinistra)
+  const titleFamily = state.customTitleFontName ? `"${state.customTitleFontName}"` : state.titleFont;
   fctx.textBaseline='middle';
-  fctx.font = `700 ${state.titleSize}px ${state.titleFont}`;
-  // Colore titolo (normale / oro / argento)
-  let tcol = state.titleColor.toLowerCase();
+  fctx.font = `700 ${state.titleSize}px ${titleFamily}`;
+  let tcol = (state.titleColor||'').toLowerCase();
   if(tcol==='gold') fctx.fillStyle=gold(fctx);
   else if(tcol==='silver') fctx.fillStyle=silver(fctx);
   else fctx.fillStyle=state.titleColor;
-  fctx.fillText(state.title||'', 44, 71, 560);
+  fctx.fillText(state.title||'', 44, 71, 520);
 
-  fctx.fillStyle='#222'; fctx.font='600 22px Inter,sans-serif';
-  const mana = (state.mana||'').trim(); if(mana){ fctx.textAlign='right'; fctx.fillText(mana, W-44, 71); fctx.textAlign='left'; }
-
-  // Simbolo classe in alto a destra del riquadro immagine
-  const cx = W-44 - state.classSize/2, cy = ay + state.classSize/2 + 6;
+  // Simbolo classe (se presente) in alto a destra
+  let sXRight = W-44, symbolWidth = 0;
   if(state.imgClass){
     const s = state.classSize;
-    cover(fctx,state.imgClass,cx-s,ay, s, s, 8);
-  }else{
-    // placeholder tondo con iniziale
-    const s=state.classSize; fctx.fillStyle='rgba(0,0,0,.25)';
-    fctx.beginPath(); fctx.arc(cx, ay+s/2, s/2, 0, Math.PI*2); fctx.fill();
-    fctx.fillStyle='#fff'; fctx.font='600 18px Inter,sans-serif'; fctx.textAlign='center'; fctx.textBaseline='middle';
-    const map={druido:'D',guerriero:'G',monaco:'M',mago:'Mg',ladro:'L'};
-    fctx.fillText(map[state.clazz]||'C', cx, ay+s/2);
+    const sy = 71 - s/2;
+    cover(fctx, state.imgClass, sXRight - s, sy, s, s, 8);
+    symbolWidth = s + 8; // 8px di gap dal mana
+  }
+
+  // Mana (opzionale) — se c'è il simbolo, si sposta verso il centro
+  const mana=(state.mana||'').trim();
+  if(mana){
+    fctx.fillStyle='#222';
+    fctx.font='600 22px Inter,sans-serif';
+    fctx.textAlign='right';
+    const manaRightEdge = sXRight - symbolWidth;   // se c'è simbolo, si sposta a sinistra
+    const manaX = manaRightEdge;                   // allineato a destra sul nuovo bordo
+    fctx.fillText(mana, manaX, 71);
     fctx.textAlign='left';
   }
 
-  // Descrizione
+  // Descrizione (riquadro basso)
+  const descFamily = state.customDescFontName ? `"${state.customDescFontName}"` : state.descFont;
   const bx=40, by=618, bw=W-80, bh=396;
   fctx.save(); rr(fctx,bx,by,bw,bh,18); fctx.clip();
-  fctx.fillStyle=state.descColor; fctx.font=`400 ${state.descSize}px ${state.descFont}`;
-  drawWrappedText(fctx, state.descText||'', bx+18, by+18, bw-36, state.descSize*1.45);
+  fctx.fillStyle=state.descColor; fctx.font=`400 ${state.descSize}px ${descFamily}`;
+  drawTextWrap(fctx, state.descText||'', bx+18, by+18, bw-36, state.descSize*1.45);
   fctx.restore();
 }
-function drawWrappedText(ctx, text, x, y, maxW, lh){
-  const words=(text||'').split(/\s+/); let line='', yy=y;
-  for(let i=0;i<words.length;i++){
-    const test=line+words[i]+' ';
-    if(ctx.measureText(test).width>maxW && i>0){ ctx.fillText(line,x,yy); line=words[i]+' '; yy+=lh; }
-    else line=test;
-  }
-  ctx.fillText(line,x,yy);
-}
 
-/* ---------------- Disegno retro ---------------- */
+/* --------- Retro --------- */
 function drawBackCanvas(){
-  // ritorna un canvas con il retro (senza margini bianchi)
-  const c=document.createElement('canvas'); c.width=750; c.height=1050;
-  const ctx=c.getContext('2d');
-  // bordo esterno
-  rr(ctx,0,0,750,1050,36); ctx.fillStyle='#d8cfae'; ctx.fill();
-  // l'immagine riempie tutta la cornice interna senza margini
+  const c=document.createElement('canvas'); c.width=750; c.height=1050; const ctx=c.getContext('2d');
+  rr(ctx,0,0,750,1050,36); ctx.fillStyle=state.frameColor; ctx.fill();          // stessa cornice del fronte
+  rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();  // riempimento interno
+  // immagine a piena cornice interna
   if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);
-  else { ctx.fillStyle='#333'; rr(ctx,16,16,750-32,1050-32,24); ctx.fill(); }
   return c;
 }
 
-/* ---------------- Binding UI ---------------- */
+/* --------- Bind UI --------- */
 const $=id=>document.getElementById(id);
 $('title').oninput=e=>{state.title=e.target.value;drawFront();}
 $('mana').oninput=e=>{state.mana=e.target.value;drawFront();}
-$('titleFont').onchange=e=>{state.titleFont=e.target.value;drawFront();}
+$('titleFont').onchange=e=>{state.customTitleFontName=null;state.titleFont=e.target.value;drawFront();}
 $('titleSize').oninput=e=>{state.titleSize=+e.target.value;drawFront();}
 $('titleColor').oninput=e=>{state.titleColor=e.target.value;drawFront();}
-document.querySelectorAll('.preset').forEach(a=>{
-  a.addEventListener('click',e=>{e.preventDefault(); state.titleColor=a.dataset.col; drawFront();});
-});
-$('descFont').onchange=e=>{state.descFont=e.target.value;drawFront();}
+document.querySelectorAll('.preset').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();state.titleColor=a.dataset.col;drawFront()}));
+
+$('descFont').onchange=e=>{state.customDescFontName=null;state.descFont=e.target.value;drawFront();}
 $('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}
 $('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();}
+
 $('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}
 $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
-$('clazz').onchange=e=>{state.clazz=e.target.value; drawFront();}
-$('classSize').oninput=e=>{state.classSize=+e.target.value; drawFront();}
 
-$('classImg').addEventListener('change',e=>{
-  loadImage(e.target.files?.[0], img=>{ state.imgClass=img; drawFront(); });
+$('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();}
+$('innerColor').oninput=e=>{state.innerColor=e.target.value;drawFront();}
+
+$('classSize').oninput=e=>{state.classSize=+e.target.value;drawFront();}
+$('classImg').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgClass=img;drawFront();});});
+
+$('artFront').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgFront=img;drawFront();});});
+$('artBack').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgBack=img;});});
+
+$('titleFontFile').addEventListener('change',async e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const fam='UserTitleFont'; await loadCustomFont(f,fam); state.customTitleFontName=fam; drawFront();
 });
-$('artFront').addEventListener('change',e=>{
-  loadImage(e.target.files?.[0], img=>{ state.imgFront=img; drawFront(); });
-});
-$('artBack').addEventListener('change',e=>{
-  loadImage(e.target.files?.[0], img=>{ state.imgBack=img; /* non in anteprima */ });
+$('descFontFile').addEventListener('change',async e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const fam='UserDescFont'; await loadCustomFont(f,fam); state.customDescFontName=fam; drawFront();
 });
 
-/* ---------------- Export ---------------- */
-function downloadDataUrl(filename, dataUrl){
-  const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click();
-}
+/* --------- Export --------- */
+function downloadDataUrl(filename, dataUrl){ const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click(); }
 $('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
 $('pngBack').onclick=()=>{ const back=drawBackCanvas(); downloadDataUrl('carta-back.png', back.toDataURL('image/png')); };
 
@@ -342,11 +346,8 @@ $('pdfSingleFront').onclick=()=>exportSingle(front,'carta-front.pdf');
 $('pdfSingleBack').onclick=()=>{ const back=drawBackCanvas(); exportSingle(back,'carta-back.pdf'); };
 
 function exportSingle(canvasEl, name){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:'mm',format:[69,94]}); // 63x88 + bleed leggero
-  const img=canvasEl.toDataURL('image/png');
-  doc.addImage(img,'PNG',0,0,69,94);
-  doc.save(name);
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:[69,94]});
+  const img=canvasEl.toDataURL('image/png'); doc.addImage(img,'PNG',0,0,69,94); doc.save(name);
 }
 
 $('pdfA4Front').onclick=()=>exportA4Grid(front,'carte_3x3_fronti.pdf');
@@ -354,39 +355,29 @@ $('pdfA4Back').onclick=()=>{ const back=drawBackCanvas(); exportA4Grid(back,'car
 $('pdfA4Both').onclick=()=>exportA4Both();
 
 function exportA4Grid(canvasEl, name){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
-  const W=210,H=297, cw=63, ch=88, marginX=7, marginY=7, gapX=(W - 3*cw - 2*marginX)/2, gapY=(H - 3*ch - 2*marginY)/2;
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  const W=210,H=297,cw=63,ch=88,marginX=7,marginY=7,gapX=(W-3*cw-2*marginX)/2,gapY=(H-3*ch-2*marginY)/2;
   const img=canvasEl.toDataURL('image/png');
-  for(let r=0;r<3;r++){
-    for(let c=0;c<3;c++){
-      const x = marginX + c*(cw + gapX);
-      const y = marginY + r*(ch + gapY);
-      doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
-    }
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const x=marginX + c*(cw+gapX), y=marginY + r*(ch+gapY);
+    doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
   }
   doc.save(name);
 }
 function exportA4Both(){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
-  const W=210,H=297, cw=63, ch=88, marginX=7, marginY=7, gapX=(W - 3*cw - 2*marginX)/2, gapY=(H - 3*ch - 2*marginY)/2;
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  const W=210,H=297,cw=63,ch=88,marginX=7,marginY=7,gapX=(W-3*cw-2*marginX)/2,gapY=(H-3*ch-2*marginY)/2;
 
-  // Fronte (pagina 1)
   drawFront();
   let img=front.toDataURL('image/png');
-  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
-    const x = marginX + c*(cw + gapX);
-    const y = marginY + r*(ch + gapY);
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const x=marginX + c*(cw+gapX), y=marginY + r*(ch+gapY);
     doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
   }
-
-  // Retro (pagina 2)
   doc.addPage('a4','portrait');
   const back=drawBackCanvas(); img=back.toDataURL('image/png');
-  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
-    const x = marginX + c*(cw + gapX);
-    const y = marginY + r*(ch + gapY);
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const x=marginX + c*(cw+gapX), y=marginY + r*(ch+gapY);
     doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
   }
   doc.save('carte_3x3_fronte+retro.pdf');
