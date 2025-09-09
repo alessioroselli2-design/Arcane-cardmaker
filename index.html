@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Arcane CardMaker — v9 (DB + Fantasy + Drag)</title>
+<title>Arcane CardMaker — v11 (Fantasy+ • Salva • Foil • Link)</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&family=EB+Garamond:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   </div>
 </div>
 
-<header><strong>Arcane CardMaker — v9</strong></header>
+<header><strong>Arcane CardMaker — v11</strong></header>
 
 <div class="wrap">
   <aside>
@@ -100,9 +100,14 @@ document.addEventListener('DOMContentLoaded',()=>{
       <div>
         <label>Dimensione titolo</label>
         <input id="titleSize" type="range" min="26" max="56" value="44">
-        <label style="margin-top:6px">Colore titolo</label>
+        <label style="margin-top:6px">Colore/effetto titolo</label>
+        <select id="titleEffect">
+          <option value="color">Colore semplice</option>
+          <option value="gold">Oro (foil)</option>
+          <option value="silver">Argento (foil)</option>
+          <option value="rainbow">Arcobaleno</option>
+        </select>
         <input id="titleColor" type="color" value="#ffffff">
-        <small class="muted">Preset: <a href="#" data-col="gold" class="preset">Oro</a> · <a href="#" data-col="silver" class="preset">Argento</a></small>
       </div>
     </div>
 
@@ -119,7 +124,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         </div>
         <div>
           <label>Dimensione simbolo</label>
-          <input id="classSize" type="range" min="24" max="140" value="56">
+          <input id="classSize" type="range" min="24" max="160" value="60">
         </div>
       </div>
 
@@ -156,7 +161,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         <label>Carica simbolo (PNG/SVG)</label>
         <input id="classImg" type="file" accept="image/*">
       </div>
-      <small class="muted">Trascina il simbolo direttamente sull’anteprima per spostarlo (drag & drop).</small>
+      <small class="muted">👉 Trascina il simbolo sull’anteprima per spostarlo (drag & drop).</small>
     </div>
 
     <!-- Colori riquadri e cornice -->
@@ -173,12 +178,20 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="row">
       <div>
-        <label>Colore cornice esterna (fronte+retro)</label>
-        <input id="frameColor" type="color" value="#d8cfae">
+        <label>Effetto cornice</label>
+        <select id="frameEffect">
+          <option value="flat">Colore piatto</option>
+          <option value="gold">Oro (foil)</option>
+          <option value="silver">Argento (foil)</option>
+          <option value="rainbow">Arcobaleno</option>
+        </select>
       </div>
       <div>
-        <label>Colore interno carta</label>
-        <input id="innerColor" type="color" value="#f7f5ef">
+        <label>Colore cornice (se piatto) & interno carta</label>
+        <div class="row" style="grid-template-columns:1fr 1fr;gap:8px">
+          <input id="frameColor" type="color" value="#d8cfae">
+          <input id="innerColor" type="color" value="#f7f5ef">
+        </div>
       </div>
     </div>
 
@@ -217,6 +230,25 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>
     </div>
 
+    <!-- Salvataggio & Condivisione -->
+    <div class="group">
+      <div class="row">
+        <div>
+          <label>Nome carta (per salvataggio)</label>
+          <input id="cardName" placeholder="Es. Lame del Bosco">
+        </div>
+        <div class="btnbar">
+          <button class="btn" id="saveCard">Salva</button>
+          <button class="btn" id="loadCard">Carica…</button>
+          <button class="btn" id="exportJson">Esporta JSON</button>
+          <label class="btn" for="importJsonInput" style="display:inline-block;cursor:pointer">Importa JSON</label>
+          <input id="importJsonInput" type="file" accept="application/json" style="display:none">
+          <button class="btn" id="shareLink">Copia link condivisibile</button>
+        </div>
+      </div>
+      <small class="muted">Nota: immagini (arte/simbolo caricati) NON sono incluse nel link/JSON.</small>
+    </div>
+
     <!-- Export -->
     <div class="group btnbar">
       <button class="btn" id="pngFront">PNG (fronte)</button>
@@ -239,31 +271,86 @@ document.addEventListener('DOMContentLoaded',()=>{
 /* --------- Stato --------- */
 const state={
   title:'', mana:'',
-  titleFont:'"Cinzel",serif', titleSize:44, titleColor:'#ffffff',
+  titleFont:'"Cinzel",serif', titleSize:44, titleEffect:'color', titleColor:'#ffffff',
   descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
   panelColor:'#cdbb7d', panelAlpha:0.85,
-  frameColor:'#d8cfae', innerColor:'#f7f5ef',
-  classSize:56, classSource:'db', clazz:'guerriero',
-  imgClass:null, classX:null, classY:null, // posizione drag
+  frameEffect:'flat', frameColor:'#d8cfae', innerColor:'#f7f5ef',
+  classSize:60, classSource:'db', clazz:'guerriero',
+  imgClass:null, classX:null, classY:null,
   imgFront:null, imgBack:null,
   customTitleFontName:null, customDescFontName:null
 };
 
-/* --------- Icone database (SVG “fantasy”) --------- */
+/* --------- Icone database (Fantasy+) --------- */
 const ICONS = {
-  guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff'/><stop offset='1' stop-color='#c7c7c7'/></linearGradient></defs><path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='url(#g)' stroke='#222' stroke-width='2'/><rect x='42' y='60' width='16' height='22' rx='4' fill='#fff' stroke='#222' stroke-width='2'/></svg>`,
-  druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='#e9ffe0' stroke='#225522' stroke-width='2'/><path d='M50 36 C44 48,44 60,50 72 C56 60,56 48,50 36 Z' fill='#225522'/></svg>`,
-  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='#fff' stroke='#333' stroke-width='2'/><path d='M50 20 A30 30 0 1 1 20 50' stroke='#333' stroke-width='10' fill='none' stroke-linecap='round'/></svg>`,
-  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,8 60,38 92,38 65,58 74,90 50,72 26,90 35,58 8,38 40,38' fill='#f0f0ff' stroke='#333' stroke-width='2'/></svg>`,
-  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 48 Q50 20,80 48 Q70 66,50 66 Q30 66,20 48 Z' fill='#fff' stroke='#222' stroke-width='2'/><circle cx='38' cy='54' r='6' fill='#222'/><circle cx='62' cy='54' r='6' fill='#222'/></svg>`,
-  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M25 20 l20 15 -20 15 z' fill='#eee' stroke='#222' stroke-width='2'/><path d='M75 20 l-20 15 20 15 z' fill='#eee' stroke='#222' stroke-width='2'/><rect x='47' y='18' width='6' height='64' fill='#c8a27a' stroke='#222' stroke-width='2'/></svg>`,
-  paladino:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 L80 25 V55 C80 70,65 82,50 90 C35 82,20 70,20 55 V25 Z' fill='#fff' stroke='#333' stroke-width='2'/><path d='M50 22 V70' stroke='#333' stroke-width='6'/><path d='M35 45 H65' stroke='#333' stroke-width='6'/></svg>`,
-  chierico:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='34' r='14' fill='#fff' stroke='#333' stroke-width='2'/><rect x='44' y='46' width='12' height='34' fill='#fff' stroke='#333' stroke-width='2'/><rect x='34' y='56' width='32' height='12' fill='#fff' stroke='#333' stroke-width='2'/></svg>`,
-  bardo:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M28 20 C70 20,72 60,42 84' stroke='#fff' stroke-width='4' fill='none'/><circle cx='42' cy='84' r='6' fill='#fff'/><line x1='50' y1='26' x2='50' y2='78' stroke='#fff' stroke-width='2'/><line x1='58' y1='26' x2='58' y2='74' stroke='#fff' stroke-width='2'/></svg>`,
-  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 80 L50 15 L80 80 Z' fill='#e8ffe8' stroke='#2e5a2e' stroke-width='2'/><path d='M50 24 L60 55 L40 55 Z' fill='#2e5a2e'/></svg>`,
-  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='18' fill='#fff'/><circle cx='50' cy='50' r='30' fill='none' stroke='#fff' stroke-width='4' stroke-dasharray='6 6'/></svg>`,
-  warlock:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,12 82,50 50,88 18,50' fill='#fff' stroke='#333' stroke-width='2'/><circle cx='50' cy='50' r='10' fill='#0f1115' /></svg>`,
-  artificiere:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='34' cy='50' r='12' fill='#fff' stroke='#333' stroke-width='2'/><circle cx='66' cy='50' r='12' fill='#fff' stroke='#333' stroke-width='2'/><rect x='46' y='46' width='8' height='8' fill='#fff' stroke='#333' stroke-width='2'/></svg>`
+  guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff7d1'/><stop offset='1' stop-color='#d4b06a'/></linearGradient></defs>
+    <path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='url(#g1)' stroke='#2a1d0a' stroke-width='2'/>
+    <rect x='42' y='60' width='16' height='22' rx='4' fill='#f4f1e6' stroke='#2a1d0a' stroke-width='2'/>
+  </svg>`,
+  druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><radialGradient id='g2' cx='50%' cy='35%' r='70%'><stop offset='0' stop-color='#eaffd8'/><stop offset='1' stop-color='#3a6b2f'/></radialGradient></defs>
+    <path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='url(#g2)' stroke='#1c3d19' stroke-width='2'/>
+    <path d='M50 36 C44 48,44 60,50 72 C56 60,56 48,50 36 Z' fill='#112615'/>
+  </svg>`,
+  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g3' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#bfbfbf'/></linearGradient></defs>
+    <circle cx='50' cy='50' r='34' fill='url(#g3)' stroke='#222' stroke-width='2'/>
+    <path d='M50 20 A30 30 0 1 1 20 50' stroke='#222' stroke-width='10' fill='none' stroke-linecap='round'/>
+  </svg>`,
+  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e8e7ff'/><stop offset='1' stop-color='#8e8bd8'/></linearGradient></defs>
+    <polygon points='50,8 60,38 92,38 65,58 74,90 50,72 26,90 35,58 8,38 40,38' fill='url(#g4)' stroke='#333' stroke-width='2'/>
+  </svg>`,
+  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g5' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#c7c7c7'/></linearGradient></defs>
+    <path d='M20 48 Q50 20,80 48 Q70 66,50 66 Q30 66,20 48 Z' fill='url(#g5)' stroke='#222' stroke-width='2'/>
+    <circle cx='38' cy='54' r='6' fill='#222'/><circle cx='62' cy='54' r='6' fill='#222'/>
+  </svg>`,
+  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g6' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe6d6'/><stop offset='1' stop-color='#c77a47'/></linearGradient></defs>
+    <path d='M25 20 l20 15 -20 15 z' fill='url(#g6)' stroke='#3b1f11' stroke-width='2'/>
+    <path d='M75 20 l-20 15 20 15 z' fill='url(#g6)' stroke='#3b1f11' stroke-width='2'/>
+    <rect x='47' y='18' width='6' height='64' fill='#cc9a6b' stroke='#3b1f11' stroke-width='2'/>
+  </svg>`,
+  paladino:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g7' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff7d1'/><stop offset='1' stop-color='#caa85f'/></linearGradient></defs>
+    <path d='M50 10 L80 25 V55 C80 70,65 82,50 90 C35 82,20 70,20 55 V25 Z' fill='url(#g7)' stroke='#3b2a12' stroke-width='2'/>
+    <path d='M50 22 V70' stroke='#3b2a12' stroke-width='6'/><path d='M35 45 H65' stroke='#3b2a12' stroke-width='6'/>
+  </svg>`,
+  chierico:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g8' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#d9e5ff'/></linearGradient></defs>
+    <circle cx='50' cy='34' r='14' fill='url(#g8)' stroke='#333' stroke-width='2'/>
+    <rect x='44' y='46' width='12' height='34' fill='#ffffff' stroke='#333' stroke-width='2'/>
+    <rect x='34' y='56' width='32' height='12' fill='#ffffff' stroke='#333' stroke-width='2'/>
+  </svg>`,
+  bardo:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g9' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffe2f2'/><stop offset='1' stop-color='#d38ac6'/></linearGradient></defs>
+    <path d='M28 20 C70 20,72 60,42 84' stroke='#fff' stroke-width='4' fill='none'/>
+    <circle cx='42' cy='84' r='6' fill='url(#g9)'/>
+    <line x1='50' y1='26' x2='50' y2='78' stroke='#fff' stroke-width='2'/><line x1='58' y1='26' x2='58' y2='74' stroke='#fff' stroke-width='2'/>
+  </svg>`,
+  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g10' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e8ffe8'/><stop offset='1' stop-color='#62a062'/></linearGradient></defs>
+    <path d='M20 80 L50 15 L80 80 Z' fill='url(#g10)' stroke='#2e5a2e' stroke-width='2'/>
+    <path d='M50 24 L60 55 L40 55 Z' fill='#2e5a2e'/>
+  </svg>`,
+  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><radialGradient id='g11' cx='50%' cy='50%' r='60%'><stop offset='0' stop-color='#fff0ff'/><stop offset='1' stop-color='#8b52a1'/></radialGradient></defs>
+    <circle cx='50' cy='50' r='18' fill='url(#g11)'/>
+    <circle cx='50' cy='50' r='30' fill='none' stroke='#fff' stroke-width='4' stroke-dasharray='6 6'/>
+  </svg>`,
+  warlock:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g12' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#e6d7ff'/><stop offset='1' stop-color='#7a5fd1'/></linearGradient></defs>
+    <polygon points='50,12 82,50 50,88 18,50' fill='url(#g12)' stroke='#333' stroke-width='2'/>
+    <circle cx='50' cy='50' r='10' fill='#0f1115' />
+  </svg>`,
+  artificiere:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='g13' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#eaffff'/><stop offset='1' stop-color='#74c7d4'/></linearGradient></defs>
+    <circle cx='34' cy='50' r='12' fill='url(#g13)' stroke='#333' stroke-width='2'/>
+    <circle cx='66' cy='50' r='12' fill='url(#g13)' stroke='#333' stroke-width='2'/>
+    <rect x='46' y='46' width='8' height='8' fill='#fff' stroke='#333' stroke-width='2'/>
+  </svg>`
 };
 function svgToImage(svgStr, cb){
   const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
@@ -281,8 +368,9 @@ function cover(ctx,img,dx,dy,dw,dh,r=0){
   ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
   if(r>0) ctx.restore();
 }
-function gold(ctx){const g=ctx.createLinearGradient(0,0,0,30);g.addColorStop(0,'#fff7b3');g.addColorStop(.5,'#d3b25b');g.addColorStop(1,'#7a6223');return g;}
-function silver(ctx){const g=ctx.createLinearGradient(0,0,0,30);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#cfd6e6');g.addColorStop(1,'#7f8aa3');return g;}
+function gradGold(ctx,h=30){const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#fff7b3');g.addColorStop(.45,'#d6b35c');g.addColorStop(.55,'#fff2a6');g.addColorStop(.85,'#8a6b23');g.addColorStop(1,'#5e4718');return g;}
+function gradSilver(ctx,h=30){const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#cfd6e6');g.addColorStop(.75,'#7f8aa3');g.addColorStop(1,'#4c5569');return g;}
+function gradRainbow(ctx,w=750){const g=ctx.createLinearGradient(0,0,w,0);['#ff0000','#ffa500','#ffff00','#00ff00','#00bfff','#0000ff','#8a2be2'].forEach((c,i)=>g.addColorStop(i/6,c));return g;}
 function drawTextWrap(ctx,text,x,y,maxW,lh){const w=(text||'').split(/\s+/);let line='',yy=y;for(let i=0;i<w.length;i++){const t=line+w[i]+' ';if(ctx.measureText(t).width>maxW&&i>0){ctx.fillText(line,x,yy);line=w[i]+' ';yy+=lh}else line=t}ctx.fillText(line,x,yy);}
 
 /* --------- Font caricabili --------- */
@@ -294,20 +382,42 @@ async function loadCustomFont(file, familyName){
   return familyName;
 }
 
-/* --------- Disegno fronte --------- */
+/* --------- Disegno --------- */
 const front=document.getElementById('cardFront'); const fctx=front.getContext('2d');
 
 function defaultSymbolPos(){
   const W=750; const s=state.classSize; const right=W-44; const y=71 - s/2;
-  state.classX = right - s; state.classY = y; // in alto a destra per default
+  state.classX = right - s; state.classY = y;
+}
+
+function paintFrame(ctx,W,H){
+  if(state.frameEffect==='flat'){
+    ctx.fillStyle=state.frameColor; rr(ctx,0,0,W,H,36); ctx.fill();
+  }else{
+    // cornice a foil
+    ctx.save();
+    rr(ctx,0,0,W,H,36); ctx.clip();
+    let g = state.frameEffect==='gold' ? gradGold(ctx,H) :
+            state.frameEffect==='silver' ? gradSilver(ctx,H) :
+            gradRainbow(ctx,W);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // scavo interno
+    ctx.globalCompositeOperation='destination-out';
+    rr(ctx,16,16,W-32,H-32,24); ctx.fill();
+    ctx.restore();
+    // riempi interno dopo
+    rr(ctx,16,16,W-32,H-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
+    return;
+  }
+  // interno piatto
+  rr(ctx,16,16,W-32,H-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
 }
 
 function drawFront(){
   const W=750,H=1050; fctx.clearRect(0,0,W,H);
 
-  // Cornice + interno con colori selezionati
-  fctx.fillStyle=state.frameColor; rr(fctx,0,0,W,H,36); fctx.fill();
-  fctx.fillStyle=state.innerColor; rr(fctx,16,16,W-32,H-32,24); fctx.fill();
+  // Cornice + interno
+  paintFrame(fctx,W,H);
 
   // Pannelli colorabili
   fctx.globalAlpha=state.panelAlpha;
@@ -321,38 +431,35 @@ function drawFront(){
   if(state.imgFront) cover(fctx,state.imgFront,ax,ay,aw,ah,18);
   else { fctx.fillStyle='#cfcfcf'; rr(fctx,ax,ay,aw,ah,18); fctx.fill(); }
 
-  // Titolo (a sinistra)
+  // Titolo (a sinistra) con effetti
   const titleFamily = state.customTitleFontName ? `"${state.customTitleFontName}"` : state.titleFont;
   fctx.textBaseline='middle';
   fctx.font = `700 ${state.titleSize}px ${titleFamily}`;
-  let tcol = (state.titleColor||'').toLowerCase();
-  if(tcol==='gold') fctx.fillStyle=gold(fctx);
-  else if(tcol==='silver') fctx.fillStyle=silver(fctx);
+  if(state.titleEffect==='gold') fctx.fillStyle=gradGold(fctx,state.titleSize);
+  else if(state.titleEffect==='silver') fctx.fillStyle=gradSilver(fctx,state.titleSize);
+  else if(state.titleEffect==='rainbow') fctx.fillStyle=gradRainbow(fctx,520);
   else fctx.fillStyle=state.titleColor;
   fctx.fillText(state.title||'', 44, 71, 520);
 
-  // Simbolo classe (se presente) — posizione da stato (drag), default in alto a destra
+  // Simbolo classe (db o upload)
   let symbolWidth = 0;
   if(state.imgClass){
     if(state.classX==null || state.classY==null) defaultSymbolPos();
     const s = state.classSize;
-    cover(fctx, state.imgClass, state.classX, state.classY, s, s, 8);
-    symbolWidth = s + 10;
+    cover(fctx, state.imgClass, state.classX, state.classY, s, s, 10);
+    symbolWidth = (state.classX!=null) ? Math.max(0, (750-44) - state.classX + 10) : s + 10;
   }
 
   // Mana (opzionale) — se c'è simbolo, si sposta verso sinistra
   const mana=(state.mana||'').trim();
   if(mana){
-    fctx.fillStyle='#222';
-    fctx.font='600 22px Inter,sans-serif';
-    fctx.textAlign='right';
-    const rightEdge=W-44;
-    const manaX = state.imgClass ? (rightEdge - symbolWidth) : rightEdge;
-    fctx.fillText(mana, manaX, 71);
-    fctx.textAlign='left';
+    fctx.fillStyle='#222'; fctx.font='600 22px Inter,sans-serif'; fctx.textAlign='right';
+    const rightEdge=750-44;
+    const manaX = state.imgClass ? Math.min(rightEdge - 8, (state.classX ?? (rightEdge-40)) - 10) : rightEdge;
+    fctx.fillText(mana, manaX, 71); fctx.textAlign='left';
   }
 
-  // Descrizione (riquadro basso)
+  // Descrizione
   const descFamily = state.customDescFontName ? `"${state.customDescFontName}"` : state.descFont;
   const bx=40, by=618, bw=W-80, bh=396;
   fctx.save(); rr(fctx,bx,by,bw,bh,18); fctx.clip();
@@ -364,8 +471,20 @@ function drawFront(){
 /* --------- Retro --------- */
 function drawBackCanvas(){
   const c=document.createElement('canvas'); c.width=750; c.height=1050; const ctx=c.getContext('2d');
-  rr(ctx,0,0,750,1050,36); ctx.fillStyle=state.frameColor; ctx.fill();
-  rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
+  // Cornice + interno come fronte
+  if(state.frameEffect==='flat'){
+    ctx.fillStyle=state.frameColor; rr(ctx,0,0,750,1050,36); ctx.fill();
+    rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
+  }else{
+    // foil
+    ctx.save(); rr(ctx,0,0,750,1050,36); ctx.clip();
+    let g = state.frameEffect==='gold' ? gradGold(ctx,1050) :
+            state.frameEffect==='silver' ? gradSilver(ctx,1050) : gradRainbow(ctx,750);
+    ctx.fillStyle=g; ctx.fillRect(0,0,750,1050);
+    ctx.globalCompositeOperation='destination-out'; rr(ctx,16,16,750-32,1050-32,24); ctx.fill();
+    ctx.restore(); rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
+  }
+  // immagine a piena cornice interna
   if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);
   return c;
 }
@@ -377,8 +496,8 @@ $('mana').oninput=e=>{state.mana=e.target.value;drawFront();}
 
 $('titleFont').onchange=e=>{state.customTitleFontName=null;state.titleFont=e.target.value;drawFront();}
 $('titleSize').oninput=e=>{state.titleSize=+e.target.value;drawFront();}
+$('titleEffect').onchange=e=>{state.titleEffect=e.target.value;drawFront();}
 $('titleColor').oninput=e=>{state.titleColor=e.target.value;drawFront();}
-document.querySelectorAll('.preset').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();state.titleColor=a.dataset.col;drawFront()}));
 
 $('descFont').onchange=e=>{state.customDescFontName=null;state.descFont=e.target.value;drawFront();}
 $('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}
@@ -388,6 +507,7 @@ $('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();}
 $('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}
 $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
 
+$('frameEffect').onchange=e=>{state.frameEffect=e.target.value;drawFront();}
 $('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();}
 $('innerColor').oninput=e=>{state.innerColor=e.target.value;drawFront();}
 
@@ -402,7 +522,7 @@ $('classSource').onchange=e=>{
   drawFront();
 };
 $('clazz').onchange=e=>{ if(state.classSource==='db'){ loadDbIcon(e.target.value); } };
-$('classSize').oninput=e=>{ state.classSize=+e.target.value; drawFront(); defaultSymbolPos(); };
+$('classSize').oninput=e=>{ state.classSize=+e.target.value; drawFront(); if(state.classX==null||state.classY==null) defaultSymbolPos(); };
 
 /* Caricamento icona DB o upload */
 function loadDbIcon(key){ const svg = ICONS[key]; if(!svg){state.imgClass=null;drawFront();return;} svgToImage(svg, img=>{ state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront(); }); }
@@ -444,7 +564,6 @@ front.addEventListener('pointermove',e=>{
   const scaleX=front.width/rect.width, scaleY=front.height/rect.height;
   let nx=(e.clientX-rect.left)*scaleX - dragOffX;
   let ny=(e.clientY-rect.top)*scaleY - dragOffY;
-  // limiti al canvas
   const s=state.classSize;
   nx=Math.max(0,Math.min(front.width - s, nx));
   ny=Math.max(0,Math.min(front.height - s, ny));
@@ -458,6 +577,86 @@ document.getElementById('btnShowWelcome').onclick=()=>{
   localStorage.removeItem('cm_hide_welcome');
   document.getElementById('welcome').classList.remove('hide');
 };
+
+/* --------- Salvataggi locali --------- */
+function currentCardState(){
+  const {
+    title,mana,titleFont,titleSize,titleEffect,titleColor,
+    descText,descFont,descSize,descColor,
+    panelColor,panelAlpha,frameEffect,frameColor,innerColor,
+    classSize,classSource,clazz,classX,classY
+  } = state;
+  return {title,mana,titleFont,titleSize,titleEffect,titleColor,descText,descFont,descSize,descColor,panelColor,panelAlpha,frameEffect,frameColor,innerColor,classSize,classSource,clazz,classX,classY};
+}
+function applyCardState(s){
+  Object.assign(state, s||{});
+  // ricarica icona se viene da DB
+  if(state.classSource==='db'){ loadDbIcon(state.clazz); } else if(state.classSource==='none'){ state.imgClass=null; }
+  drawFront();
+}
+const KEY='acm_cards_v11';
+
+function getSaved(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return [] } }
+function setSaved(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+
+document.getElementById('saveCard').onclick=()=>{
+  const name = (document.getElementById('cardName').value||'Carta senza nome').trim();
+  const arr = getSaved();
+  const data = currentCardState();
+  const idx = arr.findIndex(x=>x.name===name);
+  if(idx>=0) arr[idx].data=data; else arr.push({name, data});
+  setSaved(arr); alert('Carta salvata!');
+};
+
+document.getElementById('loadCard').onclick=()=>{
+  const arr=getSaved(); if(!arr.length){ alert('Nessuna carta salvata'); return; }
+  const names = arr.map(x=>x.name);
+  const pick = prompt('Quale carta vuoi caricare?\n' + names.map((n,i)=>`${i+1}) ${n}`).join('\n'));
+  const i = (parseInt(pick||'',10)-1);
+  if(isNaN(i)||i<0||i>=arr.length) return;
+  applyCardState(arr[i].data);
+  document.getElementById('cardName').value = arr[i].name;
+};
+
+document.getElementById('exportJson').onclick=()=>{
+  const payload = {meta:{app:'ArcaneCardMaker',v:11}, data: currentCardState()};
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(document.getElementById('cardName').value||'carta')+'.json'; a.click();
+};
+
+document.getElementById('importJsonInput').addEventListener('change', e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const payload = JSON.parse(r.result);
+      applyCardState(payload.data);
+      alert('Carta importata!');
+    }catch(err){ alert('JSON non valido'); }
+  };
+  r.readAsText(f);
+});
+
+/* --------- Condivisione link --------- */
+document.getElementById('shareLink').onclick=()=>{
+  const s=currentCardState();
+  // stringa compatta (senza immagini)
+  const compact = JSON.stringify(s);
+  const b64 = btoa(unescape(encodeURIComponent(compact)));
+  const url = location.origin + location.pathname + '?v=11#s=' + b64;
+  navigator.clipboard?.writeText(url);
+  alert('Link copiato! (nota: immagini non incluse)');
+};
+// Se arriva un link con #s=...
+(function restoreFromHash(){
+  const m=location.hash.match(/#s=([^&]+)/);
+  if(!m) return;
+  try{
+    const json = decodeURIComponent(escape(atob(m[1])));
+    const s = JSON.parse(json);
+    applyCardState(s);
+  }catch{}
+})();
 
 /* --------- Export --------- */
 function downloadDataUrl(filename, dataUrl){ const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click(); }
@@ -505,9 +704,8 @@ function exportA4Both(){
   doc.save('carte_3x3_fronte+retro.pdf');
 }
 
-/* init */
+/* init: icona DB + disegno */
 (function init(){
-  // carica icona DB iniziale
   svgToImage(ICONS[state.clazz], img=>{ state.imgClass=img; defaultSymbolPos(); drawFront(); });
 })();
 </script>
