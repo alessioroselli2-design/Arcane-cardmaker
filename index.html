@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Card Maker – database simboli + fix</title>
+<title>Arcane CardMaker — v9 (DB + Fantasy + Drag)</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&family=EB+Garamond:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -16,7 +16,7 @@
   body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   header{padding:14px 16px;border-bottom:1px solid var(--stroke)}
   .wrap{display:grid;grid-template-columns:minmax(310px,380px) 1fr;gap:14px;padding:14px}
-  aside{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
+  aside{background:#171a21;border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
   label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
   input,textarea,select,button{font-family:inherit}
   input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
@@ -45,10 +45,9 @@ function enterApp(){
   w.classList.add('hide');
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  const params=new URLSearchParams(location.search);
-  const force=params.get('welcome')==='1';
+  const p=new URLSearchParams(location.search);
+  const force=p.get('welcome')==='1';
   const flag=localStorage.getItem('cm_hide_welcome');
-  // Se non c'è ancora un flag, mostra la splash la prima volta
   if(force){ localStorage.removeItem('cm_hide_welcome'); document.getElementById('welcome').classList.remove('hide'); return; }
   if(flag==='true'){ document.getElementById('welcome').classList.add('hide'); }
 });
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div id="welcome" class="welcome">
   <div class="welcome-card">
     <h2 style="margin:0 0 6px">Benvenuto in Card Maker</h2>
-    <p>Crea carte in stile Magic: titolo, mana, simbolo classe (database o immagine), bordi, retro pieno e PDF 3×3.</p>
+    <p>Crea carte in stile Magic: titolo, mana, simbolo classe (database/immagine), retro pieno, PDF 3×3.</p>
     <div class="welcome-actions">
       <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
       <button class="btn" onclick="enterApp()">Entra nell’app</button>
@@ -67,7 +66,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   </div>
 </div>
 
-<header><strong>Card Maker – database simboli</strong></header>
+<header><strong>Arcane CardMaker — v9</strong></header>
 
 <div class="wrap">
   <aside>
@@ -114,37 +113,50 @@ document.addEventListener('DOMContentLoaded',()=>{
           <label>Sorgente simbolo classe</label>
           <select id="classSource">
             <option value="none">Nessuno</option>
-            <option value="db">Database</option>
+            <option value="db" selected>Database</option>
             <option value="upload">Carica immagine</option>
           </select>
         </div>
         <div>
           <label>Dimensione simbolo</label>
-          <input id="classSize" type="range" min="24" max="120" value="48">
+          <input id="classSize" type="range" min="24" max="140" value="56">
         </div>
       </div>
 
-      <div class="row" id="dbRow" style="display:none">
+      <div class="row" id="dbRow">
         <div>
-          <label>Classe (dal database)</label>
+          <label>Classe (database)</label>
           <select id="clazz">
-            <option value="guerriero">Guerriero</option>
-            <option value="druido">Druido</option>
-            <option value="monaco">Monaco</option>
-            <option value="mago">Mago</option>
-            <option value="ladro">Ladro</option>
+            <optgroup label="Base">
+              <option value="guerriero">Guerriero</option>
+              <option value="druido">Druido</option>
+              <option value="monaco">Monaco</option>
+              <option value="mago">Mago</option>
+              <option value="ladro">Ladro</option>
+            </optgroup>
+            <optgroup label="Espansione">
+              <option value="barbaro">Barbaro</option>
+              <option value="paladino">Paladino</option>
+              <option value="chierico">Chierico</option>
+              <option value="bardo">Bardo</option>
+              <option value="ranger">Ranger</option>
+              <option value="stregone">Stregone</option>
+              <option value="warlock">Warlock</option>
+              <option value="artificiere">Artificiere</option>
+            </optgroup>
           </select>
         </div>
         <div>
-          <label>—</label>
+          <label>Utility</label>
           <button class="btn" id="btnShowWelcome" type="button">Mostra schermata di benvenuto</button>
         </div>
       </div>
 
       <div id="uploadRow" style="display:none">
-        <label>Carica simbolo (PNG/SVG, sfondo trasparente consigliato)</label>
+        <label>Carica simbolo (PNG/SVG)</label>
         <input id="classImg" type="file" accept="image/*">
       </div>
+      <small class="muted">Trascina il simbolo direttamente sull’anteprima per spostarlo (drag & drop).</small>
     </div>
 
     <!-- Colori riquadri e cornice -->
@@ -231,30 +243,27 @@ const state={
   descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
   panelColor:'#cdbb7d', panelAlpha:0.85,
   frameColor:'#d8cfae', innerColor:'#f7f5ef',
-  classSize:48, imgClass:null, classSource:'none', clazz:'guerriero',
+  classSize:56, classSource:'db', clazz:'guerriero',
+  imgClass:null, classX:null, classY:null, // posizione drag
   imgFront:null, imgBack:null,
   customTitleFontName:null, customDescFontName:null
 };
 
-/* --------- Icone database (SVG inline -> Image) --------- */
-const CLASS_ICONS_SVG = {
-  guerriero: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <g fill='#fff'><rect x='46' y='15' width='8' height='55' rx='3'/><polygon points='50,10 60,25 40,25' /></g>
-    <rect x='36' y='70' width='28' height='16' rx='8' fill='#fff'/>
-  </svg>`,
-  druido: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <path d='M50 12 C30 35,25 55,50 88 C75 55,70 35,50 12 Z' fill='#fff'/>
-    <path d='M50 35 C44 45,44 58,50 70 C56 58,56 45,50 35 Z' fill='#0f1115'/>
-  </svg>`,
-  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <circle cx='50' cy='50' r='32' fill='#fff'/><path d='M50 22 A28 28 0 1 1 22 50' stroke='#0f1115' stroke-width='10' fill='none'/>
-  </svg>`,
-  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <polygon points='50,10 58,38 88,38 62,56 70,86 50,68 30,86 38,56 12,38 42,38' fill='#fff'/>
-  </svg>`,
-  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <path d='M20 45 Q50 20,80 45 Q70 65,50 65 Q30 65,20 45 Z' fill='#fff'/><circle cx='38' cy='52' r='6' fill='#0f1115'/><circle cx='62' cy='52' r='6' fill='#0f1115'/>
-  </svg>`
+/* --------- Icone database (SVG “fantasy”) --------- */
+const ICONS = {
+  guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff'/><stop offset='1' stop-color='#c7c7c7'/></linearGradient></defs><path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='url(#g)' stroke='#222' stroke-width='2'/><rect x='42' y='60' width='16' height='22' rx='4' fill='#fff' stroke='#222' stroke-width='2'/></svg>`,
+  druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='#e9ffe0' stroke='#225522' stroke-width='2'/><path d='M50 36 C44 48,44 60,50 72 C56 60,56 48,50 36 Z' fill='#225522'/></svg>`,
+  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='#fff' stroke='#333' stroke-width='2'/><path d='M50 20 A30 30 0 1 1 20 50' stroke='#333' stroke-width='10' fill='none' stroke-linecap='round'/></svg>`,
+  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,8 60,38 92,38 65,58 74,90 50,72 26,90 35,58 8,38 40,38' fill='#f0f0ff' stroke='#333' stroke-width='2'/></svg>`,
+  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 48 Q50 20,80 48 Q70 66,50 66 Q30 66,20 48 Z' fill='#fff' stroke='#222' stroke-width='2'/><circle cx='38' cy='54' r='6' fill='#222'/><circle cx='62' cy='54' r='6' fill='#222'/></svg>`,
+  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M25 20 l20 15 -20 15 z' fill='#eee' stroke='#222' stroke-width='2'/><path d='M75 20 l-20 15 20 15 z' fill='#eee' stroke='#222' stroke-width='2'/><rect x='47' y='18' width='6' height='64' fill='#c8a27a' stroke='#222' stroke-width='2'/></svg>`,
+  paladino:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 L80 25 V55 C80 70,65 82,50 90 C35 82,20 70,20 55 V25 Z' fill='#fff' stroke='#333' stroke-width='2'/><path d='M50 22 V70' stroke='#333' stroke-width='6'/><path d='M35 45 H65' stroke='#333' stroke-width='6'/></svg>`,
+  chierico:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='34' r='14' fill='#fff' stroke='#333' stroke-width='2'/><rect x='44' y='46' width='12' height='34' fill='#fff' stroke='#333' stroke-width='2'/><rect x='34' y='56' width='32' height='12' fill='#fff' stroke='#333' stroke-width='2'/></svg>`,
+  bardo:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M28 20 C70 20,72 60,42 84' stroke='#fff' stroke-width='4' fill='none'/><circle cx='42' cy='84' r='6' fill='#fff'/><line x1='50' y1='26' x2='50' y2='78' stroke='#fff' stroke-width='2'/><line x1='58' y1='26' x2='58' y2='74' stroke='#fff' stroke-width='2'/></svg>`,
+  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 80 L50 15 L80 80 Z' fill='#e8ffe8' stroke='#2e5a2e' stroke-width='2'/><path d='M50 24 L60 55 L40 55 Z' fill='#2e5a2e'/></svg>`,
+  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='18' fill='#fff'/><circle cx='50' cy='50' r='30' fill='none' stroke='#fff' stroke-width='4' stroke-dasharray='6 6'/></svg>`,
+  warlock:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,12 82,50 50,88 18,50' fill='#fff' stroke='#333' stroke-width='2'/><circle cx='50' cy='50' r='10' fill='#0f1115' /></svg>`,
+  artificiere:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='34' cy='50' r='12' fill='#fff' stroke='#333' stroke-width='2'/><circle cx='66' cy='50' r='12' fill='#fff' stroke='#333' stroke-width='2'/><rect x='46' y='46' width='8' height='8' fill='#fff' stroke='#333' stroke-width='2'/></svg>`
 };
 function svgToImage(svgStr, cb){
   const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
@@ -288,6 +297,11 @@ async function loadCustomFont(file, familyName){
 /* --------- Disegno fronte --------- */
 const front=document.getElementById('cardFront'); const fctx=front.getContext('2d');
 
+function defaultSymbolPos(){
+  const W=750; const s=state.classSize; const right=W-44; const y=71 - s/2;
+  state.classX = right - s; state.classY = y; // in alto a destra per default
+}
+
 function drawFront(){
   const W=750,H=1050; fctx.clearRect(0,0,W,H);
 
@@ -317,23 +331,23 @@ function drawFront(){
   else fctx.fillStyle=state.titleColor;
   fctx.fillText(state.title||'', 44, 71, 520);
 
-  // Simbolo classe (se presente) all'estrema destra
-  let rightEdge = W-44; // bordo interno destro della barra
+  // Simbolo classe (se presente) — posizione da stato (drag), default in alto a destra
   let symbolWidth = 0;
   if(state.imgClass){
+    if(state.classX==null || state.classY==null) defaultSymbolPos();
     const s = state.classSize;
-    const sy = 71 - s/2;
-    cover(fctx, state.imgClass, rightEdge - s, sy, s, s, 8);
-    symbolWidth = s + 10; // gap tra simbolo e mana
+    cover(fctx, state.imgClass, state.classX, state.classY, s, s, 8);
+    symbolWidth = s + 10;
   }
 
-  // Mana (opzionale) — se c'è simbolo, si sposta verso il centro (a sinistra del simbolo)
+  // Mana (opzionale) — se c'è simbolo, si sposta verso sinistra
   const mana=(state.mana||'').trim();
   if(mana){
     fctx.fillStyle='#222';
     fctx.font='600 22px Inter,sans-serif';
     fctx.textAlign='right';
-    const manaX = rightEdge - symbolWidth; // sposta per fare spazio al simbolo
+    const rightEdge=W-44;
+    const manaX = state.imgClass ? (rightEdge - symbolWidth) : rightEdge;
     fctx.fillText(mana, manaX, 71);
     fctx.textAlign='left';
   }
@@ -350,9 +364,9 @@ function drawFront(){
 /* --------- Retro --------- */
 function drawBackCanvas(){
   const c=document.createElement('canvas'); c.width=750; c.height=1050; const ctx=c.getContext('2d');
-  rr(ctx,0,0,750,1050,36); ctx.fillStyle=state.frameColor; ctx.fill();          // stessa cornice del fronte
-  rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();  // interno
-  if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);           // immagine a piena cornice interna
+  rr(ctx,0,0,750,1050,36); ctx.fillStyle=state.frameColor; ctx.fill();
+  rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
+  if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);
   return c;
 }
 
@@ -369,7 +383,7 @@ document.querySelectorAll('.preset').forEach(a=>a.addEventListener('click',e=>{e
 $('descFont').onchange=e=>{state.customDescFontName=null;state.descFont=e.target.value;drawFront();}
 $('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}
 $('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();}
-$('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();} // FIX: binding descrizione
+$('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();}
 
 $('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}
 $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
@@ -377,34 +391,25 @@ $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
 $('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();}
 $('innerColor').oninput=e=>{state.innerColor=e.target.value;drawFront();}
 
-/* Sorgente simbolo: none / db / upload */
+/* Sorgente simbolo */
 $('classSource').onchange=e=>{
   state.classSource=e.target.value;
   document.getElementById('dbRow').style.display = (state.classSource==='db')?'grid':'none';
   document.getElementById('uploadRow').style.display = (state.classSource==='upload')?'block':'none';
-  if(state.classSource!=='upload'){ state.imgClass=null; } // se esco da upload, azzero l'immagine caricata
   if(state.classSource==='none'){ state.imgClass=null; }
   if(state.classSource==='db'){ loadDbIcon($('clazz').value); }
+  if(state.classSource!=='upload'){ $('classImg').value=''; }
   drawFront();
 };
 $('clazz').onchange=e=>{ if(state.classSource==='db'){ loadDbIcon(e.target.value); } };
-$('classSize').oninput=e=>{state.classSize=+e.target.value;drawFront();}
+$('classSize').oninput=e=>{ state.classSize=+e.target.value; drawFront(); defaultSymbolPos(); };
 
-function loadDbIcon(key){
-  const svg = CLASS_ICONS_SVG[key];
-  if(!svg){ state.imgClass=null; drawFront(); return; }
-  svgToImage(svg, img=>{ state.imgClass=img; drawFront(); });
-}
-
+/* Caricamento icona DB o upload */
+function loadDbIcon(key){ const svg = ICONS[key]; if(!svg){state.imgClass=null;drawFront();return;} svgToImage(svg, img=>{ state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront(); }); }
 $('classImg').addEventListener('change',e=>{
-  if(state.classSource!=='upload'){ return; }
-  loadImage(e.target.files?.[0], img=>{ state.imgClass=img; drawFront(); });
+  if(state.classSource!=='upload') return;
+  loadImage(e.target.files?.[0], img=>{ state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront(); });
 });
-
-$('btnShowWelcome').onclick=()=>{
-  localStorage.removeItem('cm_hide_welcome');
-  document.getElementById('welcome').classList.remove('hide');
-};
 
 /* Immagini fronte/retro */
 $('artFront').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgFront=img;drawFront();});});
@@ -420,22 +425,56 @@ $('descFontFile').addEventListener('change',async e=>{
   const fam='UserDescFont'; await loadCustomFont(f,fam); state.customDescFontName=fam; drawFront();
 });
 
+/* Drag & Drop simbolo */
+let dragging=false, dragOffX=0, dragOffY=0;
+front.addEventListener('pointerdown',e=>{
+  if(!state.imgClass) return;
+  const rect=front.getBoundingClientRect();
+  const scaleX=front.width/rect.width, scaleY=front.height/rect.height;
+  const x=(e.clientX-rect.left)*scaleX, y=(e.clientY-rect.top)*scaleY;
+  const s=state.classSize;
+  if(x>=state.classX && x<=state.classX+s && y>=state.classY && y<=state.classY+s){
+    dragging=true; dragOffX=x-state.classX; dragOffY=y-state.classY;
+    front.setPointerCapture(e.pointerId);
+  }
+});
+front.addEventListener('pointermove',e=>{
+  if(!dragging) return;
+  const rect=front.getBoundingClientRect();
+  const scaleX=front.width/rect.width, scaleY=front.height/rect.height;
+  let nx=(e.clientX-rect.left)*scaleX - dragOffX;
+  let ny=(e.clientY-rect.top)*scaleY - dragOffY;
+  // limiti al canvas
+  const s=state.classSize;
+  nx=Math.max(0,Math.min(front.width - s, nx));
+  ny=Math.max(0,Math.min(front.height - s, ny));
+  state.classX=nx; state.classY=ny; drawFront();
+});
+front.addEventListener('pointerup',e=>{ if(dragging){ dragging=false; front.releasePointerCapture(e.pointerId);} });
+front.addEventListener('pointercancel',()=>dragging=false);
+
+/* Welcome button */
+document.getElementById('btnShowWelcome').onclick=()=>{
+  localStorage.removeItem('cm_hide_welcome');
+  document.getElementById('welcome').classList.remove('hide');
+};
+
 /* --------- Export --------- */
 function downloadDataUrl(filename, dataUrl){ const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click(); }
-$('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
-$('pngBack').onclick=()=>{ const back=drawBackCanvas(); downloadDataUrl('carta-back.png', back.toDataURL('image/png')); };
+document.getElementById('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
+document.getElementById('pngBack').onclick=()=>{ const back=drawBackCanvas(); downloadDataUrl('carta-back.png', back.toDataURL('image/png')); };
 
-$('pdfSingleFront').onclick=()=>exportSingle(front,'carta-front.pdf');
-$('pdfSingleBack').onclick=()=>{ const back=drawBackCanvas(); exportSingle(back,'carta-back.pdf'); };
+document.getElementById('pdfSingleFront').onclick=()=>exportSingle(front,'carta-front.pdf');
+document.getElementById('pdfSingleBack').onclick=()=>{ const back=drawBackCanvas(); exportSingle(back,'carta-back.pdf'); };
 
 function exportSingle(canvasEl, name){
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:[69,94]});
   const img=canvasEl.toDataURL('image/png'); doc.addImage(img,'PNG',0,0,69,94); doc.save(name);
 }
 
-$('pdfA4Front').onclick=()=>exportA4Grid(front,'carte_3x3_fronti.pdf');
-$('pdfA4Back').onclick=()=>{ const back=drawBackCanvas(); exportA4Grid(back,'carte_3x3_retro.pdf'); };
-$('pdfA4Both').onclick=()=>exportA4Both();
+document.getElementById('pdfA4Front').onclick=()=>exportA4Grid(front,'carte_3x3_fronti.pdf');
+document.getElementById('pdfA4Back').onclick=()=>{ const back=drawBackCanvas(); exportA4Grid(back,'carte_3x3_retro.pdf'); };
+document.getElementById('pdfA4Both').onclick=()=>exportA4Both();
 
 function exportA4Grid(canvasEl, name){
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
@@ -467,7 +506,10 @@ function exportA4Both(){
 }
 
 /* init */
-drawFront();
+(function init(){
+  // carica icona DB iniziale
+  svgToImage(ICONS[state.clazz], img=>{ state.imgClass=img; defaultSymbolPos(); drawFront(); });
+})();
 </script>
 
 <script>
