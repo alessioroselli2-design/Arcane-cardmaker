@@ -3,191 +3,129 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Arcane CardMaker — v11 (Fantasy+ • Salva • Foil • Link)</title>
+<title>Arcane CardMaker — v12</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&family=EB+Garamond:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <style>
-  :root{--bg:#0f1115;--panel:#171a21;--stroke:#2a2f3a;--text:#eaeefb;--muted:#9aa4b2}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  header{padding:14px 16px;border-bottom:1px solid var(--stroke)}
-  .wrap{display:grid;grid-template-columns:minmax(310px,380px) 1fr;gap:14px;padding:14px}
-  aside{background:#171a21;border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
-  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
-  input,textarea,select,button{font-family:inherit}
-  input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
-  input[type=color]{padding:6px;height:40px}
-  textarea{min-height:120px;resize:vertical}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .btn{padding:10px 12px;background:#12151b;color:var(--text);border:1px solid var(--stroke);border-radius:10px;cursor:pointer;font-weight:600}
-  .btnbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-  .preview{background:#0b0f16;border:1px solid var(--stroke);border-radius:12px;display:grid;place-items:center;padding:14px;min-height:620px}
-  canvas{width:420px;height:588px;border-radius:14px;background:#0d0f14}
-  small.muted{color:var(--muted);display:block;margin-top:6px;line-height:1.3}
-  .group{border-top:1px solid var(--stroke);margin-top:12px;padding-top:8px}
-  /* Welcome */
-  .welcome{position:fixed;inset:0;z-index:1000;background:#d9cfb2;display:flex;align-items:center;justify-content:center;padding:18px}
-  .welcome-card{background:#171a21;color:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .welcome-actions{display:flex;align-items:center;gap:12px;margin-top:14px}
-  .hide{display:none}
-  @media (max-width:980px){.wrap{grid-template-columns:1fr}}
+:root{--bg:#0f1115;--panel:#171a21;--stroke:#2a2f3a;--text:#eaeefb;--muted:#9aa4b2}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:14px 16px;border-bottom:1px solid var(--stroke)}
+.wrap{display:grid;grid-template-columns:minmax(310px,380px) 1fr;gap:14px;padding:14px}
+aside{background:#171a21;border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+input,textarea,select,button{font-family:inherit} input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
+input[type=color]{padding:6px;height:40px} textarea{min-height:110px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:10px 12px;background:#12151b;color:var(--text);border:1px solid var(--stroke);border-radius:10px;cursor:pointer;font-weight:600}
+.btnbar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.preview{background:#0b0f16;border:1px solid var(--stroke);border-radius:12px;display:grid;place-items:center;padding:14px;min-height:620px}
+canvas{width:420px;height:588px;border-radius:14px;background:#0d0f14}
+small.muted{color:var(--muted);display:block;margin-top:6px;line-height:1.3}
+.group{border-top:1px solid var(--stroke);margin-top:12px;padding-top:8px}
+h4{margin:8px 0 4px;font-size:13px;color:#cfd6e6}
+.library{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
+.cardRow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--stroke);border-radius:10px;background:#11141a}
+.cardRow img{width:60px;height:84px;border-radius:6px;border:1px solid #333;object-fit:cover}
+.cardRow .meta{flex:1 1 auto}
+.tag{font-size:11px;color:#9aa4b2}
+@media (max-width:980px){.wrap{grid-template-columns:1fr}}
 </style>
-
-<script>
-function enterApp(){
-  const w=document.getElementById('welcome');
-  const cb=document.getElementById('dontShow');
-  if(cb?.checked){ localStorage.setItem('cm_hide_welcome','true'); }
-  w.classList.add('hide');
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  const p=new URLSearchParams(location.search);
-  const force=p.get('welcome')==='1';
-  const flag=localStorage.getItem('cm_hide_welcome');
-  if(force){ localStorage.removeItem('cm_hide_welcome'); document.getElementById('welcome').classList.remove('hide'); return; }
-  if(flag==='true'){ document.getElementById('welcome').classList.add('hide'); }
-});
-</script>
 </head>
 <body>
-<!-- Welcome -->
-<div id="welcome" class="welcome">
-  <div class="welcome-card">
-    <h2 style="margin:0 0 6px">Benvenuto in Card Maker</h2>
-    <p>Crea carte in stile Magic: titolo, mana, simbolo classe (database/immagine), retro pieno, PDF 3×3.</p>
-    <div class="welcome-actions">
-      <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
-      <button class="btn" onclick="enterApp()">Entra nell’app</button>
-    </div>
-  </div>
-</div>
-
-<header><strong>Arcane CardMaker — v11</strong></header>
+<header><strong>Arcane CardMaker — v12</strong></header>
 
 <div class="wrap">
   <aside>
     <!-- Titolo / Mana -->
     <div class="row">
-      <div>
-        <label>Titolo</label>
-        <input id="title" placeholder="Nome incantesimo">
-      </div>
-      <div>
-        <label>Mana (opzionale)</label>
-        <input id="mana" placeholder="{G}{G}">
-      </div>
+      <div><label>Titolo</label><input id="title" placeholder="Nome incantesimo"></div>
+      <div><label>Mana (opzionale)</label><input id="mana" placeholder="{G}{G}"></div>
     </div>
 
-    <!-- Font titolo -->
+    <!-- Font titolo + Effetti -->
     <div class="row">
       <div>
         <label>Font titolo</label>
         <select id="titleFont">
-          <option value='"Cinzel",serif'>Cinzel</option>
-          <option value='"Spectral",serif'>Spectral</option>
-          <option value='Inter,sans-serif'>Inter</option>
-          <option value='"EB Garamond",serif'>EB Garamond</option>
-          <option value='"Merriweather",serif'>Merriweather</option>
-          <option value='"Playfair Display",serif'>Playfair Display</option>
+          <option value='"Cinzel",serif'>Cinzel</option><option value='"Spectral",serif'>Spectral</option>
+          <option value='Inter,sans-serif'>Inter</option><option value='"EB Garamond",serif'>EB Garamond</option>
+          <option value='"Merriweather",serif'>Merriweather</option><option value='"Playfair Display",serif'>Playfair Display</option>
         </select>
         <label style="margin-top:6px">Carica font titolo (TTF/OTF)</label>
         <input id="titleFontFile" type="file" accept=".ttf,.otf">
       </div>
       <div>
-        <label>Dimensione titolo</label>
-        <input id="titleSize" type="range" min="26" max="56" value="44">
-        <label style="margin-top:6px">Colore/effetto titolo</label>
+        <label>Dimensione titolo</label><input id="titleSize" type="range" min="26" max="56" value="44">
+        <label style="margin-top:6px">Effetto titolo</label>
         <select id="titleEffect">
-          <option value="color">Colore semplice</option>
-          <option value="gold">Oro (foil)</option>
-          <option value="silver">Argento (foil)</option>
-          <option value="rainbow">Arcobaleno</option>
+          <option value="color">Colore semplice</option><option value="gold">Oro (foil)</option>
+          <option value="silver">Argento (foil)</option><option value="rainbow">Arcobaleno</option>
         </select>
         <input id="titleColor" type="color" value="#ffffff">
+        <div class="row" style="margin-top:6px">
+          <div><label>Shadow titolo</label><input id="titleShadow" type="checkbox"></div>
+          <div><label>Glow simbolo</label><input id="symbolGlow" type="checkbox"></div>
+        </div>
       </div>
     </div>
 
-    <!-- SIMBOLO CLASSE -->
+    <!-- Simbolo classe -->
     <div class="group">
       <div class="row">
         <div>
-          <label>Sorgente simbolo classe</label>
+          <label>Sorgente simbolo</label>
           <select id="classSource">
-            <option value="none">Nessuno</option>
-            <option value="db" selected>Database</option>
-            <option value="upload">Carica immagine</option>
+            <option value="none">Nessuno</option><option value="db" selected>Database</option><option value="upload">Carica immagine</option>
           </select>
         </div>
         <div>
-          <label>Dimensione simbolo</label>
-          <input id="classSize" type="range" min="24" max="160" value="60">
+          <label>Dimensione simbolo</label><input id="classSize" type="range" min="24" max="160" value="60">
         </div>
       </div>
-
       <div class="row" id="dbRow">
         <div>
-          <label>Classe (database)</label>
+          <label>Classe</label>
           <select id="clazz">
             <optgroup label="Base">
-              <option value="guerriero">Guerriero</option>
-              <option value="druido">Druido</option>
-              <option value="monaco">Monaco</option>
-              <option value="mago">Mago</option>
-              <option value="ladro">Ladro</option>
+              <option value="guerriero">Guerriero</option><option value="druido">Druido</option><option value="monaco">Monaco</option>
+              <option value="mago">Mago</option><option value="ladro">Ladro</option>
             </optgroup>
             <optgroup label="Espansione">
-              <option value="barbaro">Barbaro</option>
-              <option value="paladino">Paladino</option>
-              <option value="chierico">Chierico</option>
-              <option value="bardo">Bardo</option>
-              <option value="ranger">Ranger</option>
-              <option value="stregone">Stregone</option>
-              <option value="warlock">Warlock</option>
-              <option value="artificiere">Artificiere</option>
+              <option value="barbaro">Barbaro</option><option value="paladino">Paladino</option><option value="chierico">Chierico</option>
+              <option value="bardo">Bardo</option><option value="ranger">Ranger</option><option value="stregone">Stregone</option>
+              <option value="warlock">Warlock</option><option value="artificiere">Artificiere</option>
             </optgroup>
           </select>
         </div>
         <div>
-          <label>Utility</label>
-          <button class="btn" id="btnShowWelcome" type="button">Mostra schermata di benvenuto</button>
+          <label>Rarità</label>
+          <select id="rarity"><option value="none">Nessuna</option><option value="common">Comune</option><option value="rare">Rara</option><option value="mythic">Mitica</option></select>
         </div>
       </div>
-
       <div id="uploadRow" style="display:none">
-        <label>Carica simbolo (PNG/SVG)</label>
-        <input id="classImg" type="file" accept="image/*">
+        <label>Carica simbolo (PNG/SVG)</label><input id="classImg" type="file" accept="image/*">
       </div>
-      <small class="muted">👉 Trascina il simbolo sull’anteprima per spostarlo (drag & drop).</small>
+      <small class="muted">Trascina il simbolo sull’anteprima per spostarlo (drag & drop).</small>
     </div>
 
-    <!-- Colori riquadri e cornice -->
+    <!-- Riquadri + Cornice -->
     <div class="row">
-      <div>
-        <label>Colore linee/riquadri</label>
-        <input id="panelColor" type="color" value="#cdbb7d">
-      </div>
-      <div>
-        <label>Opacità riquadri</label>
-        <input id="panelAlpha" type="range" min="0" max="100" value="85">
-      </div>
+      <div><label>Colore linee/riquadri</label><input id="panelColor" type="color" value="#cdbb7d"></div>
+      <div><label>Opacità riquadri</label><input id="panelAlpha" type="range" min="0" max="100" value="85"></div>
     </div>
 
     <div class="row">
       <div>
-        <label>Effetto cornice</label>
-        <select id="frameEffect">
-          <option value="flat">Colore piatto</option>
-          <option value="gold">Oro (foil)</option>
-          <option value="silver">Argento (foil)</option>
-          <option value="rainbow">Arcobaleno</option>
+        <label>Stile cornice</label>
+        <select id="frameStyle">
+          <option value="flat">Colore piatto</option><option value="foil-gold">Foil oro</option><option value="foil-silver">Foil argento</option><option value="foil-rainbow">Foil arcobaleno</option>
+          <option value="wood">Legno</option><option value="stone">Pietra</option><option value="arcane">Arcano</option><option value="nature">Natura</option>
         </select>
       </div>
       <div>
-        <label>Colore cornice (se piatto) & interno carta</label>
+        <label>Colore cornice (se piatto) & interno</label>
         <div class="row" style="grid-template-columns:1fr 1fr;gap:8px">
           <input id="frameColor" type="color" value="#d8cfae">
           <input id="innerColor" type="color" value="#f7f5ef">
@@ -197,59 +135,65 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <!-- Immagini -->
     <div class="group">
-      <label>Immagine fronte</label>
-      <input id="artFront" type="file" accept="image/*">
-      <label>Immagine retro (riempie tutta la cornice interna)</label>
-      <input id="artBack" type="file" accept="image/*">
+      <label>Immagine fronte</label><input id="artFront" type="file" accept="image/*">
+      <label>Texture retro</label>
+      <select id="backTexture">
+        <option value="none">Nessuna (solo immagine)</option><option value="parchment">Pergamena</option><option value="linen">Lino</option><option value="stars">Stelle</option>
+      </select>
+      <label>Immagine retro (riempie la cornice interna)</label><input id="artBack" type="file" accept="image/*">
     </div>
 
     <!-- Descrizione -->
     <div class="group">
-      <label>Descrizione (riquadro basso)</label>
-      <textarea id="rulesText" placeholder="Testo/incantesimo…"></textarea>
+      <label>Descrizione (riquadro basso)</label><textarea id="rulesText" placeholder="Testo/incantesimo…"></textarea>
       <div class="row">
         <div>
           <label>Font descrizione</label>
           <select id="descFont">
-            <option value='"Spectral",serif'>Spectral</option>
-            <option value='"Cinzel",serif'>Cinzel</option>
-            <option value='Inter,sans-serif'>Inter</option>
-            <option value='"EB Garamond",serif'>EB Garamond</option>
-            <option value='"Merriweather",serif'>Merriweather</option>
-            <option value='"Playfair Display",serif'>Playfair Display</option>
+            <option value='"Spectral",serif'>Spectral</option><option value='"Cinzel",serif'>Cinzel</option><option value='Inter,sans-serif'>Inter</option>
+            <option value='"EB Garamond",serif'>EB Garamond</option><option value='"Merriweather",serif'>Merriweather</option><option value='"Playfair Display",serif'>Playfair Display</option>
           </select>
-          <label style="margin-top:6px">Carica font descrizione (TTF/OTF)</label>
-          <input id="descFontFile" type="file" accept=".ttf,.otf">
+          <label style="margin-top:6px">Carica font descrizione (TTF/OTF)</label><input id="descFontFile" type="file" accept=".ttf,.otf">
         </div>
         <div>
-          <label>Dimensione descrizione</label>
-          <input id="descSize" type="range" min="14" max="26" value="18">
-          <label style="margin-top:6px">Colore descrizione</label>
-          <input id="descColor" type="color" value="#111111">
+          <label>Dimensione descrizione</label><input id="descSize" type="range" min="14" max="26" value="18">
+          <label style="margin-top:6px">Colore descrizione</label><input id="descColor" type="color" value="#111111">
         </div>
       </div>
     </div>
 
-    <!-- Salvataggio & Condivisione -->
+    <!-- Salvataggi, libreria, condivisione -->
     <div class="group">
+      <h4>Salva & Libreria</h4>
       <div class="row">
-        <div>
-          <label>Nome carta (per salvataggio)</label>
-          <input id="cardName" placeholder="Es. Lame del Bosco">
-        </div>
-        <div class="btnbar">
+        <div><label>Nome carta</label><input id="cardName" placeholder="Es. Lame del Bosco"></div>
+        <div class="btnbar" style="align-items:end">
           <button class="btn" id="saveCard">Salva</button>
-          <button class="btn" id="loadCard">Carica…</button>
+          <button class="btn" id="duplicateCard">Duplica</button>
           <button class="btn" id="exportJson">Esporta JSON</button>
-          <label class="btn" for="importJsonInput" style="display:inline-block;cursor:pointer">Importa JSON</label>
+          <label class="btn" for="importJsonInput" style="cursor:pointer">Importa JSON</label>
           <input id="importJsonInput" type="file" accept="application/json" style="display:none">
-          <button class="btn" id="shareLink">Copia link condivisibile</button>
         </div>
       </div>
-      <small class="muted">Nota: immagini (arte/simbolo caricati) NON sono incluse nel link/JSON.</small>
+
+      <div class="btnbar">
+        <button class="btn" id="shareLink">Copia link</button>
+        <button class="btn" id="sharePng">Condividi PNG</button>
+      </div>
+
+      <div class="btnbar">
+        <button class="btn" id="multiExport">PDF A4 3×3 da selezionate</button>
+        <div class="row" style="gap:8px;grid-template-columns:1fr 1fr">
+          <div><label>Crop marks</label><input id="cropMarks" type="checkbox" checked></div>
+          <div><label>Offset retro (mm X,Y)</label><div class="row" style="gap:6px"><input id="offX" type="number" step="0.1" value="0"><input id="offY" type="number" step="0.1" value="0"></div></div>
+        </div>
+      </div>
+
+      <div class="library" id="library"></div>
+      <small class="muted">Suggerimento: tocca un elemento della libreria per selezionarlo/deselezionarlo per il multi-export.</small>
     </div>
 
-    <!-- Export -->
+    <!-- Export singolo -->
     <div class="group btnbar">
       <button class="btn" id="pngFront">PNG (fronte)</button>
       <button class="btn" id="pngBack">PNG (retro)</button>
@@ -268,198 +212,149 @@ document.addEventListener('DOMContentLoaded',()=>{
 </div>
 
 <script>
-/* --------- Stato --------- */
+/* ===== Stato ===== */
 const state={
   title:'', mana:'',
-  titleFont:'"Cinzel",serif', titleSize:44, titleEffect:'color', titleColor:'#ffffff',
+  titleFont:'"Cinzel",serif', titleSize:44, titleEffect:'color', titleColor:'#ffffff', titleShadow:false,
   descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
   panelColor:'#cdbb7d', panelAlpha:0.85,
-  frameEffect:'flat', frameColor:'#d8cfae', innerColor:'#f7f5ef',
+  frameStyle:'flat', frameColor:'#d8cfae', innerColor:'#f7f5ef',
   classSize:60, classSource:'db', clazz:'guerriero',
-  imgClass:null, classX:null, classY:null,
-  imgFront:null, imgBack:null,
+  imgClass:null, classX:null, classY:null, symbolGlow:false,
+  imgFront:null, imgBack:null, backTexture:'none',
+  rarity:'none',
   customTitleFontName:null, customDescFontName:null
 };
+const STORAGE_KEY='acm_v12_cards';
 
-/* --------- Icone database (Fantasy+) --------- */
+/* ===== Icone (Fantasy+) ===== */
 const ICONS = {
-  guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff7d1'/><stop offset='1' stop-color='#d4b06a'/></linearGradient></defs>
-    <path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='url(#g1)' stroke='#2a1d0a' stroke-width='2'/>
-    <rect x='42' y='60' width='16' height='22' rx='4' fill='#f4f1e6' stroke='#2a1d0a' stroke-width='2'/>
-  </svg>`,
-  druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><radialGradient id='g2' cx='50%' cy='35%' r='70%'><stop offset='0' stop-color='#eaffd8'/><stop offset='1' stop-color='#3a6b2f'/></radialGradient></defs>
-    <path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='url(#g2)' stroke='#1c3d19' stroke-width='2'/>
-    <path d='M50 36 C44 48,44 60,50 72 C56 60,56 48,50 36 Z' fill='#112615'/>
-  </svg>`,
-  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g3' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#bfbfbf'/></linearGradient></defs>
-    <circle cx='50' cy='50' r='34' fill='url(#g3)' stroke='#222' stroke-width='2'/>
-    <path d='M50 20 A30 30 0 1 1 20 50' stroke='#222' stroke-width='10' fill='none' stroke-linecap='round'/>
-  </svg>`,
-  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e8e7ff'/><stop offset='1' stop-color='#8e8bd8'/></linearGradient></defs>
-    <polygon points='50,8 60,38 92,38 65,58 74,90 50,72 26,90 35,58 8,38 40,38' fill='url(#g4)' stroke='#333' stroke-width='2'/>
-  </svg>`,
-  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g5' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#c7c7c7'/></linearGradient></defs>
-    <path d='M20 48 Q50 20,80 48 Q70 66,50 66 Q30 66,20 48 Z' fill='url(#g5)' stroke='#222' stroke-width='2'/>
-    <circle cx='38' cy='54' r='6' fill='#222'/><circle cx='62' cy='54' r='6' fill='#222'/>
-  </svg>`,
-  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g6' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe6d6'/><stop offset='1' stop-color='#c77a47'/></linearGradient></defs>
-    <path d='M25 20 l20 15 -20 15 z' fill='url(#g6)' stroke='#3b1f11' stroke-width='2'/>
-    <path d='M75 20 l-20 15 20 15 z' fill='url(#g6)' stroke='#3b1f11' stroke-width='2'/>
-    <rect x='47' y='18' width='6' height='64' fill='#cc9a6b' stroke='#3b1f11' stroke-width='2'/>
-  </svg>`,
-  paladino:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g7' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff7d1'/><stop offset='1' stop-color='#caa85f'/></linearGradient></defs>
-    <path d='M50 10 L80 25 V55 C80 70,65 82,50 90 C35 82,20 70,20 55 V25 Z' fill='url(#g7)' stroke='#3b2a12' stroke-width='2'/>
-    <path d='M50 22 V70' stroke='#3b2a12' stroke-width='6'/><path d='M35 45 H65' stroke='#3b2a12' stroke-width='6'/>
-  </svg>`,
-  chierico:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g8' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#d9e5ff'/></linearGradient></defs>
-    <circle cx='50' cy='34' r='14' fill='url(#g8)' stroke='#333' stroke-width='2'/>
-    <rect x='44' y='46' width='12' height='34' fill='#ffffff' stroke='#333' stroke-width='2'/>
-    <rect x='34' y='56' width='32' height='12' fill='#ffffff' stroke='#333' stroke-width='2'/>
-  </svg>`,
-  bardo:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g9' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffe2f2'/><stop offset='1' stop-color='#d38ac6'/></linearGradient></defs>
-    <path d='M28 20 C70 20,72 60,42 84' stroke='#fff' stroke-width='4' fill='none'/>
-    <circle cx='42' cy='84' r='6' fill='url(#g9)'/>
-    <line x1='50' y1='26' x2='50' y2='78' stroke='#fff' stroke-width='2'/><line x1='58' y1='26' x2='58' y2='74' stroke='#fff' stroke-width='2'/>
-  </svg>`,
-  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g10' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e8ffe8'/><stop offset='1' stop-color='#62a062'/></linearGradient></defs>
-    <path d='M20 80 L50 15 L80 80 Z' fill='url(#g10)' stroke='#2e5a2e' stroke-width='2'/>
-    <path d='M50 24 L60 55 L40 55 Z' fill='#2e5a2e'/>
-  </svg>`,
-  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><radialGradient id='g11' cx='50%' cy='50%' r='60%'><stop offset='0' stop-color='#fff0ff'/><stop offset='1' stop-color='#8b52a1'/></radialGradient></defs>
-    <circle cx='50' cy='50' r='18' fill='url(#g11)'/>
-    <circle cx='50' cy='50' r='30' fill='none' stroke='#fff' stroke-width='4' stroke-dasharray='6 6'/>
-  </svg>`,
-  warlock:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g12' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#e6d7ff'/><stop offset='1' stop-color='#7a5fd1'/></linearGradient></defs>
-    <polygon points='50,12 82,50 50,88 18,50' fill='url(#g12)' stroke='#333' stroke-width='2'/>
-    <circle cx='50' cy='50' r='10' fill='#0f1115' />
-  </svg>`,
-  artificiere:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g13' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#eaffff'/><stop offset='1' stop-color='#74c7d4'/></linearGradient></defs>
-    <circle cx='34' cy='50' r='12' fill='url(#g13)' stroke='#333' stroke-width='2'/>
-    <circle cx='66' cy='50' r='12' fill='url(#g13)' stroke='#333' stroke-width='2'/>
-    <rect x='46' y='46' width='8' height='8' fill='#fff' stroke='#333' stroke-width='2'/>
-  </svg>`
+  guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff7d1'/><stop offset='1' stop-color='#d4b06a'/></linearGradient></defs><path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='url(#g1)' stroke='#2a1d0a' stroke-width='2'/><rect x='42' y='60' width='16' height='22' rx='4' fill='#f4f1e6' stroke='#2a1d0a' stroke-width='2'/></svg>`,
+  druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g2' cx='50%' cy='35%' r='70%'><stop offset='0' stop-color='#eaffd8'/><stop offset='1' stop-color='#3a6b2f'/></radialGradient></defs><path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='url(#g2)' stroke='#1c3d19' stroke-width='2'/><path d='M50 36 C44 48,44 60,50 72 C56 60,56 48,50 36 Z' fill='#112615'/></svg>`,
+  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g3' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#bfbfbf'/></linearGradient></defs><circle cx='50' cy='50' r='34' fill='url(#g3)' stroke='#222' stroke-width='2'/><path d='M50 20 A30 30 0 1 1 20 50' stroke='#222' stroke-width='10' fill='none' stroke-linecap='round'/></svg>`,
+  mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e8e7ff'/><stop offset='1' stop-color='#8e8bd8'/></linearGradient></defs><polygon points='50,8 60,38 92,38 65,58 74,90 50,72 26,90 35,58 8,38 40,38' fill='url(#g4)' stroke='#333' stroke-width='2'/></svg>`,
+  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g5' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#c7c7c7'/></linearGradient></defs><path d='M20 48 Q50 20,80 48 Q70 66,50 66 Q30 66,20 48 Z' fill='url(#g5)' stroke='#222' stroke-width='2'/><circle cx='38' cy='54' r='6' fill='#222'/><circle cx='62' cy='54' r='6' fill='#222'/></svg>`,
+  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g6' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe6d6'/><stop offset='1' stop-color='#c77a47'/></linearGradient></defs><path d='M25 20 l20 15 -20 15 z' fill='url(#g6)' stroke='#3b1f11' stroke-width='2'/><path d='M75 20 l-20 15 20 15 z' fill='url(#g6)' stroke='#3b1f11' stroke-width='2'/><rect x='47' y='18' width='6' height='64' fill='#cc9a6b' stroke='#3b1f11' stroke-width='2'/></svg>`,
+  paladino:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g7' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff7d1'/><stop offset='1' stop-color='#caa85f'/></linearGradient></defs><path d='M50 10 L80 25 V55 C80 70,65 82,50 90 C35 82,20 70,20 55 V25 Z' fill='url(#g7)' stroke='#3b2a12' stroke-width='2'/><path d='M50 22 V70' stroke='#3b2a12' stroke-width='6'/><path d='M35 45 H65' stroke='#3b2a12' stroke-width='6'/></svg>`,
+  chierico:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g8' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#d9e5ff'/></linearGradient></defs><circle cx='50' cy='34' r='14' fill='url(#g8)' stroke='#333' stroke-width='2'/><rect x='44' y='46' width='12' height='34' fill='#ffffff' stroke='#333' stroke-width='2'/><rect x='34' y='56' width='32' height='12' fill='#ffffff' stroke='#333' stroke-width='2'/></svg>`,
+  bardo:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g9' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ffe2f2'/><stop offset='1' stop-color='#d38ac6'/></linearGradient></defs><path d='M28 20 C70 20,72 60,42 84' stroke='#fff' stroke-width='4' fill='none'/><circle cx='42' cy='84' r='6' fill='url(#g9)'/><line x1='50' y1='26' x2='50' y2='78' stroke='#fff' stroke-width='2'/><line x1='58' y1='26' x2='58' y2='74' stroke='#fff' stroke-width='2'/></svg>`,
+  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g10' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e8ffe8'/><stop offset='1' stop-color='#62a062'/></linearGradient></defs><path d='M20 80 L50 15 L80 80 Z' fill='url(#g10)' stroke='#2e5a2e' stroke-width='2'/><path d='M50 24 L60 55 L40 55 Z' fill='#2e5a2e'/></svg>`,
+  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g11' cx='50%' cy='50%' r='60%'><stop offset='0' stop-color='#fff0ff'/><stop offset='1' stop-color='#8b52a1'/></radialGradient></defs><circle cx='50' cy='50' r='18' fill='url(#g11)'/><circle cx='50' cy='50' r='30' fill='none' stroke='#fff' stroke-width='4' stroke-dasharray='6 6'/></svg>`,
+  warlock:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g12' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#e6d7ff'/><stop offset='1' stop-color='#7a5fd1'/></linearGradient></defs><polygon points='50,12 82,50 50,88 18,50' fill='url(#g12)' stroke='#333' stroke-width='2'/><circle cx='50' cy='50' r='10' fill='#0f1115'/></svg>`,
+  artificiere:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g13' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#eaffff'/><stop offset='1' stop-color='#74c7d4'/></linearGradient></defs><circle cx='34' cy='50' r='12' fill='url(#g13)' stroke='#333' stroke-width='2'/><circle cx='66' cy='50' r='12' fill='url(#g13)' stroke='#333' stroke-width='2'/><rect x='46' y='46' width='8' height='8' fill='#fff' stroke='#333' stroke-width='2'/></svg>`
 };
-function svgToImage(svgStr, cb){
-  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-  const img=new Image(); img.onload=()=>cb(img); img.src=url;
-}
+function svgToImage(svgStr, cb){ const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr); const img=new Image(); img.onload=()=>cb(img); img.src=url; }
 
-/* --------- Utility --------- */
-function loadImage(file, cb){ if(!file) return cb(null); const img=new Image(); img.onload=()=>cb(img); img.src=URL.createObjectURL(file); }
+/* ===== Utility ===== */
 function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-function cover(ctx,img,dx,dy,dw,dh,r=0){
-  const ir=img.width/img.height, dr=dw/dh; let sx,sy,sw,sh;
-  if(ir>dr){ sh=img.height; sw=sh*dr; sx=(img.width-sw)/2; sy=0; }
-  else{ sw=img.width; sh=sw/dr; sx=0; sy=(img.height-sh)/2; }
-  if(r>0){ ctx.save(); rr(ctx,dx,dy,dw,dh,r); ctx.clip(); }
-  ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
-  if(r>0) ctx.restore();
-}
+function cover(ctx,img,dx,dy,dw,dh,r=0){const ir=img.width/img.height, dr=dw/dh; let sx,sy,sw,sh; if(ir>dr){sh=img.height;sw=sh*dr;sx=(img.width-sw)/2;sy=0;} else{sw=img.width;sh=sw/dr;sx=0;sy=(img.height-sh)/2;} if(r>0){ctx.save();rr(ctx,dx,dy,dw,dh,r);ctx.clip();} ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh); if(r>0)ctx.restore();}
+function loadImage(file, cb){ if(!file) return cb(null); const img=new Image(); img.onload=()=>cb(img); const fr=new FileReader(); fr.onload=e=>{ img.src=e.target.result }; fr.readAsDataURL(file); } // DataURL -> salva anche per storage
 function gradGold(ctx,h=30){const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#fff7b3');g.addColorStop(.45,'#d6b35c');g.addColorStop(.55,'#fff2a6');g.addColorStop(.85,'#8a6b23');g.addColorStop(1,'#5e4718');return g;}
 function gradSilver(ctx,h=30){const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#cfd6e6');g.addColorStop(.75,'#7f8aa3');g.addColorStop(1,'#4c5569');return g;}
 function gradRainbow(ctx,w=750){const g=ctx.createLinearGradient(0,0,w,0);['#ff0000','#ffa500','#ffff00','#00ff00','#00bfff','#0000ff','#8a2be2'].forEach((c,i)=>g.addColorStop(i/6,c));return g;}
 function drawTextWrap(ctx,text,x,y,maxW,lh){const w=(text||'').split(/\s+/);let line='',yy=y;for(let i=0;i<w.length;i++){const t=line+w[i]+' ';if(ctx.measureText(t).width>maxW&&i>0){ctx.fillText(line,x,yy);line=w[i]+' ';yy+=lh}else line=t}ctx.fillText(line,x,yy);}
+async function loadCustomFont(file, familyName){const blobUrl=URL.createObjectURL(file); const face=new FontFace(familyName,`url(${blobUrl})`); await face.load(); document.fonts.add(face); return familyName;}
 
-/* --------- Font caricabili --------- */
-async function loadCustomFont(file, familyName){
-  const blobUrl = URL.createObjectURL(file);
-  const face = new FontFace(familyName, `url(${blobUrl})`);
-  await face.load();
-  document.fonts.add(face);
-  return familyName;
-}
-
-/* --------- Disegno --------- */
 const front=document.getElementById('cardFront'); const fctx=front.getContext('2d');
 
-function defaultSymbolPos(){
-  const W=750; const s=state.classSize; const right=W-44; const y=71 - s/2;
-  state.classX = right - s; state.classY = y;
-}
-
+/* ===== Pattern cornici ===== */
 function paintFrame(ctx,W,H){
-  if(state.frameEffect==='flat'){
-    ctx.fillStyle=state.frameColor; rr(ctx,0,0,W,H,36); ctx.fill();
-  }else{
-    // cornice a foil
-    ctx.save();
-    rr(ctx,0,0,W,H,36); ctx.clip();
-    let g = state.frameEffect==='gold' ? gradGold(ctx,H) :
-            state.frameEffect==='silver' ? gradSilver(ctx,H) :
-            gradRainbow(ctx,W);
+  const style = state.frameStyle;
+  if(style.startsWith('foil-')){
+    ctx.save(); rr(ctx,0,0,W,H,36); ctx.clip();
+    let g = style==='foil-gold'?gradGold(ctx,H):style==='foil-silver'?gradSilver(ctx,H):gradRainbow(ctx,W);
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-    // scavo interno
-    ctx.globalCompositeOperation='destination-out';
-    rr(ctx,16,16,W-32,H-32,24); ctx.fill();
-    ctx.restore();
-    // riempi interno dopo
-    rr(ctx,16,16,W-32,H-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
-    return;
+    ctx.globalCompositeOperation='destination-out'; rr(ctx,16,16,W-32,H-32,24); ctx.fill(); ctx.restore();
+    rr(ctx,16,16,W-32,H-32,24); ctx.fillStyle=state.innerColor; ctx.fill(); return;
   }
-  // interno piatto
+  if(style==='wood' || style==='stone' || style==='arcane' || style==='nature'){
+    ctx.save(); rr(ctx,0,0,W,H,36); ctx.clip();
+    // base tinta
+    ctx.fillStyle= style==='wood' ? '#7e5a3a' : style==='stone' ? '#8b8f9a' : style==='arcane' ? '#4f4a7a' : '#3f6a42';
+    ctx.fillRect(0,0,W,H);
+    // venature/texture semplici
+    ctx.globalAlpha=.25; ctx.fillStyle='#fff';
+    for(let i=0;i<20;i++){ const y=(i+1)*H/20; ctx.fillRect(0,y, W, 1); }
+    ctx.globalAlpha=.2; ctx.fillStyle='#000';
+    for(let i=0;i<10;i++){ const x=(i+1)*W/10; ctx.fillRect(x,0, 1, H); }
+    ctx.globalAlpha=1; ctx.restore();
+    rr(ctx,16,16,W-32,H-32,24); ctx.fillStyle=state.innerColor; ctx.fill(); return;
+  }
+  // flat
+  ctx.fillStyle=state.frameColor; rr(ctx,0,0,W,H,36); ctx.fill();
   rr(ctx,16,16,W-32,H-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
 }
 
+/* ===== Retro texture ===== */
+function paintBackTexture(ctx,x,y,w,h,r){
+  if(state.backTexture==='none') return;
+  ctx.save(); rr(ctx,x,y,w,h,r); ctx.clip();
+  if(state.backTexture==='parchment'){
+    const g=ctx.createLinearGradient(x,y,x,y+h);
+    g.addColorStop(0,'#f6f0d6'); g.addColorStop(1,'#e5d9b5');
+    ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+  }else if(state.backTexture==='linen'){
+    ctx.fillStyle='#f2f2f2'; ctx.fillRect(x,y,w,h);
+    ctx.globalAlpha=.25; ctx.fillStyle='#d0d0d0';
+    for(let i=0;i<w;i+=4) ctx.fillRect(x+i,y,1,h);
+    for(let j=0;j<h;j+=4) ctx.fillRect(x,y+j,w,1);
+    ctx.globalAlpha=1;
+  }else if(state.backTexture==='stars'){
+    ctx.fillStyle='#0b0f16'; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='#fff';
+    for(let i=0;i<120;i++){ const sx=x+Math.random()*w, sy=y+Math.random()*h; ctx.fillRect(sx,sy,1,1); }
+  }
+  ctx.restore();
+}
+
+/* ===== Disegno Carta ===== */
+function defaultSymbolPos(){ const W=750; const s=state.classSize; const right=W-44; const y=71 - s/2; state.classX=right-s; state.classY=y; }
+
 function drawFront(){
   const W=750,H=1050; fctx.clearRect(0,0,W,H);
-
-  // Cornice + interno
   paintFrame(fctx,W,H);
 
-  // Pannelli colorabili
-  fctx.globalAlpha=state.panelAlpha;
-  fctx.fillStyle=state.panelColor;
-  rr(fctx,28,28,W-56,86,16); fctx.fill(); // barra titolo
-  rr(fctx,28,610,W-56,412,18); fctx.fill(); // box descrizione
-  fctx.globalAlpha=1;
+  // pannelli
+  fctx.globalAlpha=state.panelAlpha; fctx.fillStyle=state.panelColor;
+  rr(fctx,28,28,W-56,86,16); fctx.fill(); rr(fctx,28,610,W-56,412,18); fctx.fill(); fctx.globalAlpha=1;
 
-  // Immagine centrale
+  // immagine centrale
   const ax=44, ay=132, aw=W-88, ah=460;
-  if(state.imgFront) cover(fctx,state.imgFront,ax,ay,aw,ah,18);
-  else { fctx.fillStyle='#cfcfcf'; rr(fctx,ax,ay,aw,ah,18); fctx.fill(); }
+  if(state.imgFront) cover(fctx,state.imgFront,ax,ay,aw,ah,18); else { fctx.fillStyle='#cfcfcf'; rr(fctx,ax,ay,aw,ah,18); fctx.fill(); }
 
-  // Titolo (a sinistra) con effetti
+  // titolo
   const titleFamily = state.customTitleFontName ? `"${state.customTitleFontName}"` : state.titleFont;
-  fctx.textBaseline='middle';
-  fctx.font = `700 ${state.titleSize}px ${titleFamily}`;
+  fctx.textBaseline='middle'; fctx.font=`700 ${state.titleSize}px ${titleFamily}`;
   if(state.titleEffect==='gold') fctx.fillStyle=gradGold(fctx,state.titleSize);
   else if(state.titleEffect==='silver') fctx.fillStyle=gradSilver(fctx,state.titleSize);
   else if(state.titleEffect==='rainbow') fctx.fillStyle=gradRainbow(fctx,520);
   else fctx.fillStyle=state.titleColor;
-  fctx.fillText(state.title||'', 44, 71, 520);
 
-  // Simbolo classe (db o upload)
-  let symbolWidth = 0;
-  if(state.imgClass){
-    if(state.classX==null || state.classY==null) defaultSymbolPos();
-    const s = state.classSize;
-    cover(fctx, state.imgClass, state.classX, state.classY, s, s, 10);
-    symbolWidth = (state.classX!=null) ? Math.max(0, (750-44) - state.classX + 10) : s + 10;
+  if(state.titleShadow){ fctx.save(); fctx.shadowColor='rgba(0,0,0,.6)'; fctx.shadowBlur=12; fctx.fillText(state.title||'',44,71,520); fctx.restore(); }
+  else fctx.fillText(state.title||'',44,71,520);
+
+  // simbolo
+  let rightEdge=W-44; if(state.imgClass){ if(state.classX==null||state.classY==null) defaultSymbolPos(); const s=state.classSize;
+    if(state.symbolGlow){ fctx.save(); fctx.shadowColor='rgba(255,255,255,.6)'; fctx.shadowBlur=18; cover(fctx,state.imgClass,state.classX,state.classY,s,s,10); fctx.restore(); }
+    else cover(fctx,state.imgClass,state.classX,state.classY,s,s,10);
   }
 
-  // Mana (opzionale) — se c'è simbolo, si sposta verso sinistra
-  const mana=(state.mana||'').trim();
-  if(mana){
-    fctx.fillStyle='#222'; fctx.font='600 22px Inter,sans-serif'; fctx.textAlign='right';
-    const rightEdge=750-44;
-    const manaX = state.imgClass ? Math.min(rightEdge - 8, (state.classX ?? (rightEdge-40)) - 10) : rightEdge;
-    fctx.fillText(mana, manaX, 71); fctx.textAlign='left';
+  // mana
+  const mana=(state.mana||'').trim(); if(mana){ fctx.fillStyle='#222'; fctx.font='600 22px Inter,sans-serif'; fctx.textAlign='right';
+    const manaX = state.imgClass ? Math.min(rightEdge-8, (state.classX??(rightEdge-40))-10) : rightEdge; fctx.fillText(mana, manaX, 71); fctx.textAlign='left';
   }
 
-  // Descrizione
+  // rarità (angolo in basso a destra del box descrizione)
+  if(state.rarity!=='none'){
+    const bx=40, by=618, bw=W-80, bh=396; const cx=bx+bw-26, cy=by+bh-26;
+    fctx.save();
+    if(state.rarity==='common'){ fctx.fillStyle='#bbb'; fctx.beginPath(); fctx.arc(cx,cy,10,0,Math.PI*2); fctx.fill(); }
+    else if(state.rarity==='rare'){ fctx.fillStyle='#f2d24a'; fctx.beginPath(); fctx.moveTo(cx,cy-12); for(let i=1;i<5;i++){ const ang=-Math.PI/2+i*2*Math.PI/5; fctx.lineTo(cx+12*Math.cos(ang), cy+12*Math.sin(ang)); } fctx.closePath(); fctx.fill(); }
+    else if(state.rarity==='mythic'){ fctx.fillStyle='#e5583a'; fctx.beginPath(); fctx.moveTo(cx,cy-12); fctx.lineTo(cx+12,cy); fctx.lineTo(cx,cy+12); fctx.lineTo(cx-12,cy); fctx.closePath(); fctx.fill(); }
+    fctx.restore();
+  }
+
+  // descrizione
   const descFamily = state.customDescFontName ? `"${state.customDescFontName}"` : state.descFont;
   const bx=40, by=618, bw=W-80, bh=396;
   fctx.save(); rr(fctx,bx,by,bw,bh,18); fctx.clip();
@@ -468,38 +363,30 @@ function drawFront(){
   fctx.restore();
 }
 
-/* --------- Retro --------- */
 function drawBackCanvas(){
   const c=document.createElement('canvas'); c.width=750; c.height=1050; const ctx=c.getContext('2d');
-  // Cornice + interno come fronte
-  if(state.frameEffect==='flat'){
-    ctx.fillStyle=state.frameColor; rr(ctx,0,0,750,1050,36); ctx.fill();
-    rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
-  }else{
-    // foil
-    ctx.save(); rr(ctx,0,0,750,1050,36); ctx.clip();
-    let g = state.frameEffect==='gold' ? gradGold(ctx,1050) :
-            state.frameEffect==='silver' ? gradSilver(ctx,1050) : gradRainbow(ctx,750);
-    ctx.fillStyle=g; ctx.fillRect(0,0,750,1050);
-    ctx.globalCompositeOperation='destination-out'; rr(ctx,16,16,750-32,1050-32,24); ctx.fill();
-    ctx.restore(); rr(ctx,16,16,750-32,1050-32,24); ctx.fillStyle=state.innerColor; ctx.fill();
-  }
-  // immagine a piena cornice interna
+  // cornice + interno (stesso stile del fronte)
+  paintFrame(ctx,750,1050);
+  // texture sotto l'immagine
+  paintBackTexture(ctx,16,16,750-32,1050-32,24);
   if(state.imgBack) cover(ctx,state.imgBack,16,16,750-32,1050-32,24);
   return c;
 }
 
-/* --------- Bind UI --------- */
+/* ===== Bind UI ===== */
 const $=id=>document.getElementById(id);
 $('title').oninput=e=>{state.title=e.target.value;drawFront();}
 $('mana').oninput=e=>{state.mana=e.target.value;drawFront();}
-
 $('titleFont').onchange=e=>{state.customTitleFontName=null;state.titleFont=e.target.value;drawFront();}
+$('titleFontFile').addEventListener('change',async e=>{const f=e.target.files?.[0]; if(!f) return; const fam='UserTitleFont'; await loadCustomFont(f,fam); state.customTitleFontName=fam; drawFront();});
 $('titleSize').oninput=e=>{state.titleSize=+e.target.value;drawFront();}
 $('titleEffect').onchange=e=>{state.titleEffect=e.target.value;drawFront();}
 $('titleColor').oninput=e=>{state.titleColor=e.target.value;drawFront();}
+$('titleShadow').onchange=e=>{state.titleShadow=e.target.checked;drawFront();}
+$('symbolGlow').onchange=e=>{state.symbolGlow=e.target.checked;drawFront();}
 
 $('descFont').onchange=e=>{state.customDescFontName=null;state.descFont=e.target.value;drawFront();}
+$('descFontFile').addEventListener('change',async e=>{const f=e.target.files?.[0]; if(!f) return; const fam='UserDescFont'; await loadCustomFont(f,fam); state.customDescFontName=fam; drawFront();});
 $('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}
 $('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();}
 $('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();}
@@ -507,211 +394,268 @@ $('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();}
 $('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}
 $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
 
-$('frameEffect').onchange=e=>{state.frameEffect=e.target.value;drawFront();}
+$('frameStyle').onchange=e=>{state.frameStyle=e.target.value;drawFront();}
 $('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();}
 $('innerColor').oninput=e=>{state.innerColor=e.target.value;drawFront();}
+$('backTexture').onchange=e=>{state.backTexture=e.target.value;}; // retro ridisegnato al bisogno
 
-/* Sorgente simbolo */
 $('classSource').onchange=e=>{
   state.classSource=e.target.value;
-  document.getElementById('dbRow').style.display = (state.classSource==='db')?'grid':'none';
-  document.getElementById('uploadRow').style.display = (state.classSource==='upload')?'block':'none';
+  $('dbRow').style.display=(state.classSource==='db')?'grid':'none';
+  $('uploadRow').style.display=(state.classSource==='upload')?'block':'none';
   if(state.classSource==='none'){ state.imgClass=null; }
   if(state.classSource==='db'){ loadDbIcon($('clazz').value); }
   if(state.classSource!=='upload'){ $('classImg').value=''; }
   drawFront();
 };
-$('clazz').onchange=e=>{ if(state.classSource==='db'){ loadDbIcon(e.target.value); } };
-$('classSize').oninput=e=>{ state.classSize=+e.target.value; drawFront(); if(state.classX==null||state.classY==null) defaultSymbolPos(); };
+$('clazz').onchange=e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); };
+$('classSize').oninput=e=>{ state.classSize=+e.target.value; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront(); };
+$('classImg').addEventListener('change',e=>{ if(state.classSource!=='upload')return; loadImage(e.target.files?.[0],img=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}); });
+$('rarity').onchange=e=>{state.rarity=e.target.value;drawFront();};
 
-/* Caricamento icona DB o upload */
-function loadDbIcon(key){ const svg = ICONS[key]; if(!svg){state.imgClass=null;drawFront();return;} svgToImage(svg, img=>{ state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront(); }); }
-$('classImg').addEventListener('change',e=>{
-  if(state.classSource!=='upload') return;
-  loadImage(e.target.files?.[0], img=>{ state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront(); });
-});
+/* DB icon */
+function loadDbIcon(key){ const svg=ICONS[key]; if(!svg){state.imgClass=null;drawFront();return;} svgToImage(svg, img=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}); }
 
-/* Immagini fronte/retro */
-$('artFront').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgFront=img;drawFront();});});
-$('artBack').addEventListener('change',e=>{loadImage(e.target.files?.[0], img=>{state.imgBack=img;});});
-
-/* Font caricabili */
-$('titleFontFile').addEventListener('change',async e=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const fam='UserTitleFont'; await loadCustomFont(f,fam); state.customTitleFontName=fam; drawFront();
-});
-$('descFontFile').addEventListener('change',async e=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const fam='UserDescFont'; await loadCustomFont(f,fam); state.customDescFontName=fam; drawFront();
-});
-
-/* Drag & Drop simbolo */
-let dragging=false, dragOffX=0, dragOffY=0;
+/* Drag simbolo */
+let dragging=false, dOffX=0,dOffY=0;
 front.addEventListener('pointerdown',e=>{
   if(!state.imgClass) return;
-  const rect=front.getBoundingClientRect();
-  const scaleX=front.width/rect.width, scaleY=front.height/rect.height;
-  const x=(e.clientX-rect.left)*scaleX, y=(e.clientY-rect.top)*scaleY;
-  const s=state.classSize;
-  if(x>=state.classX && x<=state.classX+s && y>=state.classY && y<=state.classY+s){
-    dragging=true; dragOffX=x-state.classX; dragOffY=y-state.classY;
-    front.setPointerCapture(e.pointerId);
-  }
+  const rect=front.getBoundingClientRect(), sx=front.width/rect.width, sy=front.height/rect.height;
+  const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect.top)*sy, s=state.classSize;
+  if(x>=state.classX && x<=state.classX+s && y>=state.classY && y<=state.classY+s){ dragging=true; dOffX=x-state.classX; dOffY=y-state.classY; front.setPointerCapture(e.pointerId); }
 });
 front.addEventListener('pointermove',e=>{
   if(!dragging) return;
-  const rect=front.getBoundingClientRect();
-  const scaleX=front.width/rect.width, scaleY=front.height/rect.height;
-  let nx=(e.clientX-rect.left)*scaleX - dragOffX;
-  let ny=(e.clientY-rect.top)*scaleY - dragOffY;
-  const s=state.classSize;
-  nx=Math.max(0,Math.min(front.width - s, nx));
-  ny=Math.max(0,Math.min(front.height - s, ny));
-  state.classX=nx; state.classY=ny; drawFront();
+  const rect=front.getBoundingClientRect(), sx=front.width/rect.width, sy=front.height/rect.height;
+  let nx=(e.clientX-rect.left)*sx - dOffX, ny=(e.clientY-rect.top)*sy - dOffY, s=state.classSize;
+  nx=Math.max(0,Math.min(front.width-s,nx)); ny=Math.max(0,Math.min(front.height-s,ny)); state.classX=nx; state.classY=ny; drawFront();
 });
 front.addEventListener('pointerup',e=>{ if(dragging){ dragging=false; front.releasePointerCapture(e.pointerId);} });
 front.addEventListener('pointercancel',()=>dragging=false);
 
-/* Welcome button */
-document.getElementById('btnShowWelcome').onclick=()=>{
-  localStorage.removeItem('cm_hide_welcome');
-  document.getElementById('welcome').classList.remove('hide');
-};
-
-/* --------- Salvataggi locali --------- */
-function currentCardState(){
-  const {
-    title,mana,titleFont,titleSize,titleEffect,titleColor,
-    descText,descFont,descSize,descColor,
-    panelColor,panelAlpha,frameEffect,frameColor,innerColor,
-    classSize,classSource,clazz,classX,classY
-  } = state;
-  return {title,mana,titleFont,titleSize,titleEffect,titleColor,descText,descFont,descSize,descColor,panelColor,panelAlpha,frameEffect,frameColor,innerColor,classSize,classSource,clazz,classX,classY};
+/* ===== Salvataggi (con immagini) ===== */
+function thumbFromFront(){
+  drawFront();
+  const tmp=document.createElement('canvas'); tmp.width=150; tmp.height=210; const t=tmp.getContext('2d');
+  t.fillStyle='#0d0f14'; t.fillRect(0,0,tmp.width,tmp.height); t.drawImage(front,0,0,tmp.width,tmp.height);
+  return tmp.toDataURL('image/png');
+}
+function currentCardState(includeImages=true){
+  const s={...state}; // shallow
+  const out={
+    title:s.title,mana:s.mana,titleFont:s.titleFont,titleSize:s.titleSize,titleEffect:s.titleEffect,titleColor:s.titleColor,titleShadow:s.titleShadow,
+    descText:s.descText,descFont:s.descFont,descSize:s.descSize,descColor:s.descColor,
+    panelColor:s.panelColor,panelAlpha:s.panelAlpha,frameStyle:s.frameStyle,frameColor:s.frameColor,innerColor:s.innerColor,
+    classSize:s.classSize,classSource:s.classSource,clazz:s.clazz,classX:s.classX,classY:s.classY,symbolGlow:s.symbolGlow,
+    backTexture:s.backTexture,rarity:s.rarity
+  };
+  if(includeImages){
+    out._imgFront = state.imgFront?.src || null;
+    out._imgBack  = state.imgBack?.src  || null;
+    out._imgClass = (state.classSource==='upload') ? (state.imgClass?.src||null) : null;
+  }
+  return out;
 }
 function applyCardState(s){
-  Object.assign(state, s||{});
-  // ricarica icona se viene da DB
-  if(state.classSource==='db'){ loadDbIcon(state.clazz); } else if(state.classSource==='none'){ state.imgClass=null; }
-  drawFront();
+  const assign = (k,def)=> (s[k]!==undefined)?s[k]:def;
+  state.title=assign('title',''); state.mana=assign('mana','');
+  state.titleFont=assign('titleFont','"Cinzel",serif'); state.titleSize=assign('titleSize',44); state.titleEffect=assign('titleEffect','color'); state.titleColor=assign('titleColor','#ffffff'); state.titleShadow=!!assign('titleShadow',false);
+  state.descText=assign('descText',''); state.descFont=assign('descFont','"Spectral",serif'); state.descSize=assign('descSize',18); state.descColor=assign('descColor','#111111');
+  state.panelColor=assign('panelColor','#cdbb7d'); state.panelAlpha=assign('panelAlpha',0.85);
+  state.frameStyle=assign('frameStyle','flat'); state.frameColor=assign('frameColor','#d8cfae'); state.innerColor=assign('innerColor','#f7f5ef');
+  state.classSize=assign('classSize',60); state.classSource=assign('classSource','db'); state.clazz=assign('clazz','guerriero'); state.classX=assign('classX',null); state.classY=assign('classY',null); state.symbolGlow=!!assign('symbolGlow',false);
+  state.backTexture=assign('backTexture','none'); state.rarity=assign('rarity','none');
+
+  // immagini da dataURL
+  const loadDataUrl=(url,cb)=>{ if(!url){cb(null);return;} const img=new Image(); img.onload=()=>cb(img); img.src=url; };
+  loadDataUrl(s._imgFront, img=>{ state.imgFront=img; drawFront(); });
+  loadDataUrl(s._imgBack,  img=>{ state.imgBack=img; });
+  if(state.classSource==='db'){ loadDbIcon(state.clazz); }
+  else if(state.classSource==='upload'){ loadDataUrl(s._imgClass, img=>{ state.imgClass=img; drawFront(); }); }
+  else state.imgClass=null;
+
+  // aggiorna UI principali
+  $('title').value=state.title; $('mana').value=state.mana; $('titleSize').value=state.titleSize; $('titleEffect').value=state.titleEffect; $('titleColor').value=state.titleColor; $('titleShadow').checked=state.titleShadow;
+  $('rulesText').value=state.descText; $('descSize').value=state.descSize; $('descColor').value=state.descColor;
+  $('panelColor').value=state.panelColor; $('panelAlpha').value=state.panelAlpha*100;
+  $('frameStyle').value=state.frameStyle; $('frameColor').value=state.frameColor; $('innerColor').value=state.innerColor;
+  $('classSource').value=state.classSource; $('clazz').value=state.clazz; $('classSize').value=state.classSize; $('symbolGlow').checked=state.symbolGlow;
+  $('backTexture').value=state.backTexture; $('rarity').value=state.rarity;
+  $('dbRow').style.display=(state.classSource==='db')?'grid':'none';
+  $('uploadRow').style.display=(state.classSource==='upload')?'block':'none';
 }
-const KEY='acm_cards_v11';
 
-function getSaved(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return [] } }
-function setSaved(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+function getSaved(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch{return[]} }
+function setSaved(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+function refreshLibrary(){
+  const lib=$('library'); lib.innerHTML='';
+  const arr=getSaved();
+  arr.forEach((it,idx)=>{
+    const row=document.createElement('div'); row.className='cardRow'; row.dataset.index=idx;
+    const img=document.createElement('img'); img.src=it.thumb||''; row.appendChild(img);
+    const meta=document.createElement('div'); meta.className='meta';
+    meta.innerHTML=`<div><strong>${it.name}</strong></div><div class="tag">${new Date(it.time).toLocaleString()}</div>`;
+    row.appendChild(meta);
+    const actions=document.createElement('div'); actions.style.display='flex'; actions.style.flexDirection='column'; actions.style.gap='6px';
+    const sel=document.createElement('input'); sel.type='checkbox'; sel.title='Seleziona per export'; sel.className='selBox';
+    const btnL=document.createElement('button'); btnL.className='btn'; btnL.textContent='Carica';
+    const btnD=document.createElement('button'); btnD.className='btn'; btnD.textContent='Elimina';
+    actions.appendChild(sel); actions.appendChild(btnL); actions.appendChild(btnD); row.appendChild(actions);
 
-document.getElementById('saveCard').onclick=()=>{
-  const name = (document.getElementById('cardName').value||'Carta senza nome').trim();
-  const arr = getSaved();
-  const data = currentCardState();
-  const idx = arr.findIndex(x=>x.name===name);
-  if(idx>=0) arr[idx].data=data; else arr.push({name, data});
-  setSaved(arr); alert('Carta salvata!');
+    btnL.onclick=()=>{ applyCardState(it.data); $('cardName').value=it.name; };
+    btnD.onclick=()=>{ const arr=getSaved(); arr.splice(idx,1); setSaved(arr); refreshLibrary(); };
+    row.addEventListener('click',e=>{ if(e.target.classList.contains('selBox')||e.target.classList.contains('btn')) return; sel.checked=!sel.checked; });
+    lib.appendChild(row);
+  });
+}
+
+$('saveCard').onclick=()=>{
+  const name = ( $('cardName').value || 'Carta senza nome').trim();
+  const arr=getSaved();
+  const data=currentCardState(true);
+  const thumb=thumbFromFront();
+  const time=Date.now();
+  const i=arr.findIndex(x=>x.name===name);
+  if(i>=0) arr[i]={name,data,thumb,time}; else arr.push({name,data,thumb,time});
+  setSaved(arr); refreshLibrary(); alert('Carta salvata!');
+};
+$('duplicateCard').onclick=()=>{
+  const base = ($('cardName').value||'Carta').trim();
+  let name = base + ' (copia)';
+  const arr=getSaved(); let c=2; while(arr.find(x=>x.name===name)){ name = base + ` (copia ${c++})`; }
+  $('cardName').value=name; $('saveCard').click();
 };
 
-document.getElementById('loadCard').onclick=()=>{
-  const arr=getSaved(); if(!arr.length){ alert('Nessuna carta salvata'); return; }
-  const names = arr.map(x=>x.name);
-  const pick = prompt('Quale carta vuoi caricare?\n' + names.map((n,i)=>`${i+1}) ${n}`).join('\n'));
-  const i = (parseInt(pick||'',10)-1);
-  if(isNaN(i)||i<0||i>=arr.length) return;
-  applyCardState(arr[i].data);
-  document.getElementById('cardName').value = arr[i].name;
+$('exportJson').onclick=()=>{
+  const payload={meta:{app:'ArcaneCardMaker',v:12}, data:currentCardState(true)};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=( $('cardName').value||'carta')+'.json'; a.click();
 };
-
-document.getElementById('exportJson').onclick=()=>{
-  const payload = {meta:{app:'ArcaneCardMaker',v:11}, data: currentCardState()};
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(document.getElementById('cardName').value||'carta')+'.json'; a.click();
-};
-
-document.getElementById('importJsonInput').addEventListener('change', e=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{
-    try{
-      const payload = JSON.parse(r.result);
-      applyCardState(payload.data);
-      alert('Carta importata!');
-    }catch(err){ alert('JSON non valido'); }
-  };
+$('importJsonInput').addEventListener('change',e=>{
+  const f=e.target.files?.[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>{ try{ const p=JSON.parse(r.result); applyCardState(p.data); $('cardName').value=p.data.title||'Carta importata'; alert('Import OK'); refreshLibrary(); }catch{ alert('JSON non valido'); } };
   r.readAsText(f);
 });
 
-/* --------- Condivisione link --------- */
-document.getElementById('shareLink').onclick=()=>{
-  const s=currentCardState();
-  // stringa compatta (senza immagini)
-  const compact = JSON.stringify(s);
-  const b64 = btoa(unescape(encodeURIComponent(compact)));
-  const url = location.origin + location.pathname + '?v=11#s=' + b64;
-  navigator.clipboard?.writeText(url);
-  alert('Link copiato! (nota: immagini non incluse)');
+/* Link condivisibile */
+$('shareLink').onclick=()=>{
+  const s=currentCardState(false); // senza immagini
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(s))));
+  const url=location.origin+location.pathname+'?v=12#s='+b64;
+  navigator.clipboard?.writeText(url); alert('Link copiato! (immagini non incluse)');
 };
-// Se arriva un link con #s=...
-(function restoreFromHash(){
-  const m=location.hash.match(/#s=([^&]+)/);
-  if(!m) return;
+/* Share PNG */
+$('sharePng').onclick=async()=>{
+  drawFront(); const dataUrl=front.toDataURL('image/png');
   try{
-    const json = decodeURIComponent(escape(atob(m[1])));
-    const s = JSON.parse(json);
-    applyCardState(s);
-  }catch{}
-})();
+    if(navigator.canShare){
+      const res=await fetch(dataUrl); const blob=await res.blob();
+      const file=new File([blob],'carta.png',{type:'image/png'});
+      await navigator.share({files:[file], title: state.title||'Carta', text:'Generata con Arcane CardMaker'});
+    }else{
+      const a=document.createElement('a'); a.href=dataUrl; a.download='carta-front.png'; a.click();
+    }
+  }catch{ const a=document.createElement('a'); a.href=dataUrl; a.download='carta-front.png'; a.click(); }
+};
+/* Ripristino da hash link */
+(function restoreFromHash(){ const m=location.hash.match(/#s=([^&]+)/); if(!m) return; try{ const s=JSON.parse(decodeURIComponent(escape(atob(m[1])))); applyCardState(s);}catch{} })();
 
-/* --------- Export --------- */
-function downloadDataUrl(filename, dataUrl){ const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click(); }
-document.getElementById('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
-document.getElementById('pngBack').onclick=()=>{ const back=drawBackCanvas(); downloadDataUrl('carta-back.png', back.toDataURL('image/png')); };
+/* ===== Export singolo ===== */
+function downloadDataUrl(filename, dataUrl){const a=document.createElement('a'); a.download=filename; a.href=dataUrl; a.click();}
+$('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
+$('pngBack').onclick=()=>{ const back=drawBackCanvas(); downloadDataUrl('carta-back.png', back.toDataURL('image/png')); };
+$('pdfSingleFront').onclick=()=>exportSingle(front,'carta-front.pdf');
+$('pdfSingleBack').onclick=()=>{ const back=drawBackCanvas(); exportSingle(back,'carta-back.pdf'); };
 
-document.getElementById('pdfSingleFront').onclick=()=>exportSingle(front,'carta-front.pdf');
-document.getElementById('pdfSingleBack').onclick=()=>{ const back=drawBackCanvas(); exportSingle(back,'carta-back.pdf'); };
-
-function exportSingle(canvasEl, name){
+function exportSingle(canvasEl,name){
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:[69,94]});
   const img=canvasEl.toDataURL('image/png'); doc.addImage(img,'PNG',0,0,69,94); doc.save(name);
 }
 
-document.getElementById('pdfA4Front').onclick=()=>exportA4Grid(front,'carte_3x3_fronti.pdf');
-document.getElementById('pdfA4Back').onclick=()=>{ const back=drawBackCanvas(); exportA4Grid(back,'carte_3x3_retro.pdf'); };
-document.getElementById('pdfA4Both').onclick=()=>exportA4Both();
+/* ===== Export A4 (singole) + crop marks & offset ===== */
+$('pdfA4Front').onclick=()=>exportA4Grid([front],'fronti_3x3.pdf');
+$('pdfA4Back').onclick=()=>{ const back=drawBackCanvas(); exportA4Grid([back],'retro_3x3.pdf'); };
+$('pdfA4Both').onclick=()=>exportA4Both();
 
-function exportA4Grid(canvasEl, name){
+function addCropMarks(doc,x,y,cw,ch){
+  if(!$('cropMarks').checked) return;
+  const m=2.5; const l=5; // mm
+  // angolo alto-sx
+  doc.setDrawColor(80);
+  doc.line(x-m, y, x-m+l, y);
+  doc.line(x, y-m, x, y-m+l);
+  // alto-dx
+  doc.line(x+cw+m, y, x+cw+m-l, y);
+  doc.line(x+cw, y-m, x+cw, y-m+l);
+  // basso-sx
+  doc.line(x-m, y+ch, x-m+l, y+ch);
+  doc.line(x, y+ch+m, x, y+ch+m-l);
+  // basso-dx
+  doc.line(x+cw+m, y+ch, x+cw+m-l, y+ch);
+  doc.line(x+cw, y+ch+m, x+cw, y+ch+m-l);
+}
+
+function exportA4Grid(canvases,name){
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
-  const W=210,H=297,cw=63,ch=88,marginX=7,marginY=7,gapX=(W-3*cw-2*marginX)/2,gapY=(H-3*ch-2*marginY)/2;
-  const img=canvasEl.toDataURL('image/png');
-  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
-    const x=marginX + c*(cw+gapX), y=marginY + r*(ch+gapY);
-    doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
+  const W=210,H=297,cw=63,ch=88,marginX=7,marginY=7,gx=(W-3*cw-2*marginX)/2,gy=(H-3*ch-2*marginY)/2;
+  const pages=Math.ceil(canvases.length/9);
+  for(let p=0;p<pages;p++){
+    if(p>0) doc.addPage('a4','portrait');
+    for(let i=0;i<9;i++){
+      const idx=p*9+i; if(idx>=canvases.length) break;
+      const c=canvases[idx]; const img=c.toDataURL('image/png');
+      const r=Math.floor(i/3), col=i%3;
+      const x=marginX+col*(cw+gx), y=marginY+r*(ch+gy);
+      doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
+      addCropMarks(doc,x,y,cw,ch);
+    }
   }
   doc.save(name);
 }
 function exportA4Both(){
+  drawFront(); const backs=[drawBackCanvas()];
+  exportA4Grid([front],'tmp-fronts.pdf'); // non usato direttamente: preferiamo combinare noi
+  // Genera documento due pagine con offset retro
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
-  const W=210,H=297,cw=63,ch=88,marginX=7,marginY=7,gapX=(W-3*cw-2*marginX)/2,gapY=(H-3*ch-2*marginY)/2;
-
-  drawFront();
-  let img=front.toDataURL('image/png');
-  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
-    const x=marginX + c*(cw+gapX), y=marginY + r*(ch+gapY);
-    doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
-  }
+  const W=210,H=297,cw=63,ch=88,marginX=7,marginY=7,gx=(W-3*cw-2*marginX)/2,gy=(H-3*ch-2*marginY)/2;
+  // pagina 1 (fronti)
+  const imgF=front.toDataURL('image/png');
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){ const x=marginX+c*(cw+gx), y=marginY+r*(ch+gy); doc.addImage(imgF,'PNG',x,y,cw,ch,undefined,'FAST'); addCropMarks(doc,x,y,cw,ch); }
+  // pagina 2 (retro) con offset
   doc.addPage('a4','portrait');
-  const back=drawBackCanvas(); img=back.toDataURL('image/png');
+  const offX=parseFloat($('offX').value||'0'), offY=parseFloat($('offY').value||'0');
+  const back=drawBackCanvas(); const imgB=back.toDataURL('image/png');
   for(let r=0;r<3;r++) for(let c=0;c<3;c++){
-    const x=marginX + c*(cw+gapX), y=marginY + r*(ch+gapY);
-    doc.addImage(img,'PNG',x,y,cw,ch,undefined,'FAST');
+    const x=marginX+c*(cw+gx)+offX, y=marginY+r*(ch+gy)+offY; doc.addImage(imgB,'PNG',x,y,cw,ch,undefined,'FAST'); addCropMarks(doc,x-offX,y-offY,cw,ch);
   }
-  doc.save('carte_3x3_fronte+retro.pdf');
+  doc.save('carte_fronte+retro_v12.pdf');
 }
 
-/* init: icona DB + disegno */
-(function init(){
-  svgToImage(ICONS[state.clazz], img=>{ state.imgClass=img; defaultSymbolPos(); drawFront(); });
-})();
-</script>
+/* ===== Multi-export da libreria ===== */
+$('multiExport').onclick=()=>{
+  const lib=document.querySelectorAll('#library .cardRow');
+  const selected=[]; lib.forEach((row,i)=>{ const cb=row.querySelector('.selBox'); if(cb?.checked){ selected.push(i); } });
+  if(!selected.length){ alert('Seleziona almeno una carta nella libreria.'); return; }
+  const arr=getSaved(); const canvases=[];
+  const done=()=>{ exportA4Grid(canvases,'multi_3x3.pdf'); };
+  let pending=selected.length;
+  selected.forEach(idx=>{
+    const data=arr[idx].data; const tmp=Object.assign({},state); // backup
+    // ricrea temporaneamente la carta sul canvas
+    applyCardState(data);
+    // wait a frame then push
+    setTimeout(()=>{ drawFront(); const c=document.createElement('canvas'); c.width=750; c.height=1050; const cx=c.getContext('2d'); cx.drawImage(front,0,0); canvases.push(c); pending--; if(pending===0){ applyCardState(tmp); done(); } },50);
+  });
+};
 
-<script>
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+/* ===== Export PNG/PDF singoli (bottoni già sopra) ===== */
+
+function loadInitial(){
+  // icona DB iniziale
+  svgToImage(ICONS[state.clazz], img=>{ state.imgClass=img; defaultSymbolPos(); drawFront(); });
+  refreshLibrary();
+}
+loadInitial();
 </script>
 </body>
 </html>
