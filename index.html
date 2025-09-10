@@ -1,400 +1,316 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Arcane CardMaker — v13 (Cloud)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Arcane Cardmaker</title>
+  <meta name="theme-color" content="#111" />
+  <style>
+    :root{--bg:#0d0f12;--panel:#151821;--ink:#e9eef5;--muted:#9aa4b2;--accent:#34c759;--border:#20242f}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#0b0d11;border-bottom:1px solid var(--border)}
+    header h1{margin:0;font-size:18px}
+    .wrap{display:grid;grid-template-columns:280px 1fr;gap:14px;padding:14px}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    label{display:block;font-size:12px;color:var(--muted);margin:6px 0 4px}
+    input[type=text],input[type=email],input[type=password], textarea, select{
+      width:100%;background:#0f1218;color:var(--ink);border:1px solid #272c38;border-radius:8px;padding:8px
+    }
+    textarea{min-height:80px}
+    button{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;background:#222;color:#eee;border:1px solid #333}
+    .btn-primary{background:var(--accent);color:#000;border-color:transparent}
+    .btn-ghost{background:#1f1f1f}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+    .thumb{background:#0f1218;border:1px solid #2a3040;border-radius:10px;overflow:hidden}
+    .thumb img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#191d28}
+    .thumb .cap{padding:6px 8px;font-size:12px;color:#cdd6e3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .muted{opacity:.7;font-size:12px}
+    [data-role="only-auth"]{display:none} /* abilitati dopo login */
+    [data-role="only-guest"]{display:none}
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&family=EB+Garamond:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-<style>
-:root{--bg:#0f1115;--panel:#171a21;--stroke:#2a2f3a;--text:#eaeefb;--muted:#9aa4b2}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{padding:14px 16px;border-bottom:1px solid var(--stroke)}
-.wrap{display:grid;grid-template-columns:minmax(310px,380px) 1fr;gap:14px;padding:14px}
-aside{background:#171a21;border:1px solid var(--stroke);border-radius:12px;padding:12px;max-height:calc(100dvh - 90px);overflow:auto}
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
-input,textarea,select,button{font-family:inherit} input,textarea,select{width:100%;background:#11141a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-size:14px}
-input[type=color]{padding:6px;height:40px} textarea{min-height:110px;resize:vertical}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{padding:10px 12px;background:#12151b;color:var(--text);border:1px solid var(--stroke);border-radius:10px;cursor:pointer;font-weight:600}
-.btnbar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
-.preview{background:#0b0f16;border:1px solid var(--stroke);border-radius:12px;display:grid;place-items:center;padding:14px;min-height:620px}
-canvas{width:420px;height:588px;border-radius:14px;background:#0d0f14}
-small.muted{color:var(--muted);display:block;margin-top:6px;line-height:1.3}
-.group{border-top:1px solid var(--stroke);margin-top:12px;padding-top:8px}
-h4{margin:8px 0 4px;font-size:13px;color:#cfd6e6}
-.library{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
-.cardRow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--stroke);border-radius:10px;background:#11141a}
-.cardRow img{width:60px;height:84px;border-radius:6px;border:1px solid #333;object-fit:cover}
-.cardRow .meta{flex:1 1 auto}
-.tag{font-size:11px;color:#9aa4b2}
-@media (max-width:980px){.wrap{grid-template-columns:1fr}}
-/* Welcome */
-.welcome{position:fixed;inset:0;z-index:1000;background:#d9cfb2;display:flex;align-items:center;justify-content:center;padding:18px}
-.welcome-card{background:#171a21;color:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.welcome-actions{display:flex;align-items:center;gap:12px;margin-top:14px}
-.hide{display:none}
-</style>
+    /* Modal accesso */
+    .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999}
+    .modal-card{width:min(520px,92vw);background:#111;color:#eee;border:1px solid #333;border-radius:16px;padding:18px 16px 14px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+    .modal-card h2{margin:6px 0 10px;font-size:22px}
+    .modal-card p{opacity:.9;line-height:1.4;margin:0 0 14px}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  </style>
 </head>
 <body>
-<!-- Welcome -->
-<div id="welcome" class="welcome">
-  <div class="welcome-card">
-    <h2 style="margin:0 0 6px">Benvenuto in Card Maker</h2>
-    <p>Crea carte in stile Magic: titolo, mana, simbolo classe, retro pieno, export PNG/PDF 3×3, salvataggi cloud.</p>
-    <div class="welcome-actions">
-      <label><input type="checkbox" id="dontShow"> Non mostrare più</label>
-      <button class="btn" onclick="(function(){if(document.getElementById('dontShow').checked)localStorage.setItem('cm_hide_welcome','true');document.getElementById('welcome').classList.add('hide');})();">Entra nell’app</button>
+  <header>
+    <h1>Arcane Cardmaker</h1>
+    <div class="row">
+      <span id="who" class="muted">Ospite</span>
+      <button id="btnLogout" style="display:none">Esci</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Controlli base (usati solo se la tua app non fornisce le sue funzioni) -->
+    <div class="panel">
+      <h3>Campi base (di test)</h3>
+      <label>Titolo</label><input id="titleInput" type="text" placeholder="Titolo carta">
+      <label>Mana</label><input id="manaInput" type="text" placeholder="{G}{U} o 2G / opzionale">
+      <label>Descrizione</label><textarea id="descInput" placeholder="Testo / descrizione..."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnRenderPreview">Aggiorna anteprima</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Se la tua app fornisce <code>getCurrentCardState()</code>, <code>renderFrontToDataURL()</code> e <code>loadCardState(card)</code>, questi campi non servono.</p>
+      <hr style="border-color:#222;margin:12px 0">
+      <div class="row" style="gap:8px">
+        <button id="btnSaveCard" class="btn-primary" data-role="only-auth">💾 Salva carta</button>
+        <button id="btnOpenLibrary" data-role="only-auth">📚 Libreria</button>
+        <button id="btnReloadLibrary" data-role="only-auth">🔄 Ricarica</button>
+      </div>
+      <p class="muted" data-role="only-guest" id="guestNote">Accesso come ospite: salvataggi disattivati. Puoi comunque esportare PDF/PNG dalla tua app.</p>
+    </div>
+
+    <!-- Anteprima molto semplice (se non c'è la tua) -->
+    <div class="panel">
+      <h3>Anteprima (demo)</h3>
+      <canvas id="preview" width="630" height="880" style="width:270px;height:auto;border-radius:12px;border:1px solid #2a3040;background:#0f1218"></canvas>
+
+      <!-- Libreria -->
+      <div id="libraryPanel" class="panel" style="margin-top:12px;display:none">
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0">La mia libreria</h3>
+          <small class="muted">Tocca una carta per caricarla</small>
+        </div>
+        <div id="libraryList" class="grid" style="margin-top:10px"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<header><strong>Arcane CardMaker — v13</strong></header>
+  <!-- MODALE DI ACCESSO -->
+  <div id="authModal" class="modal-mask" style="display:none">
+    <div class="modal-card">
+      <h2>Benvenuto in Arcane Cardmaker</h2>
+      <p>Scegli come entrare:</p>
 
-<div class="wrap">
-  <aside id="controls">
-    <!-- Titolo / Mana -->
-    <div class="row">
-      <div><label>Titolo</label><input id="title" placeholder="Nome incantesimo"></div>
-      <div><label>Mana (opzionale)</label><input id="mana" placeholder="{G}{G}"></div>
-    </div>
-
-    <!-- Font titolo + Effetti -->
-    <div class="row">
-      <div>
-        <label>Font titolo</label>
-        <select id="titleFont">
-          <option value='"Cinzel",serif'>Cinzel</option><option value='"Spectral",serif'>Spectral</option>
-          <option value='Inter,sans-serif'>Inter</option><option value='"EB Garamond",serif'>EB Garamond</option>
-          <option value='"Merriweather",serif'>Merriweather</option><option value='"Playfair Display",serif'>Playfair Display</option>
-        </select>
-        <label style="margin-top:6px">Carica font titolo (TTF/OTF)</label><input id="titleFontFile" type="file" accept=".ttf,.otf">
-      </div>
-      <div>
-        <label>Dimensione titolo</label><input id="titleSize" type="range" min="26" max="56" value="44">
-        <label style="margin-top:6px">Effetto titolo</label>
-        <select id="titleEffect"><option value="color">Colore</option><option value="gold">Oro</option><option value="silver">Argento</option><option value="rainbow">Arcobaleno</option></select>
-        <input id="titleColor" type="color" value="#ffffff">
-      </div>
-    </div>
-
-    <!-- Simbolo classe -->
-    <div class="group">
-      <div class="row">
-        <div>
-          <label>Sorgente simbolo</label>
-          <select id="classSource"><option value="none">Nessuno</option><option value="db" selected>Database</option><option value="upload">Carica</option></select>
-        </div>
-        <div>
-          <label>Dimensione simbolo</label><input id="classSize" type="range" min="24" max="160" value="60">
+      <div id="emailForm" class="panel" style="background:#0e0e0f;border-color:#282828">
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <input id="email" type="email" placeholder="Email">
+          <input id="password" type="password" placeholder="Password">
+          <button id="btnLogin" class="btn-primary">Accedi</button>
+          <button id="btnSignup" class="btn-ghost">Registrati</button>
         </div>
       </div>
-      <div class="row" id="dbRow">
-        <div>
-          <label>Classe</label>
-          <select id="clazz">
-            <optgroup label="Base">
-              <option value="guerriero">Guerriero</option><option value="druido">Druido</option><option value="monaco">Monaco</option><option value="mago">Mago</option><option value="ladro">Ladro</option>
-            </optgroup>
-            <optgroup label="Espansione">
-              <option value="barbaro">Barbaro</option><option value="paladino">Paladino</option><option value="chierico">Chierico</option><option value="bardo">Bardo</option><option value="ranger">Ranger</option><option value="stregone">Stregone</option><option value="warlock">Warlock</option><option value="artificiere">Artificiere</option>
-            </optgroup>
-          </select>
-        </div>
+
+      <div class="btn-row">
+        <button id="btnGuest" class="btn-ghost">Entra come ospite</button>
       </div>
-      <div id="uploadRow" style="display:none">
-        <label>Carica simbolo (PNG/SVG)</label><input id="classImg" type="file" accept="image/*">
-      </div>
-      <small class="muted">Trascina il simbolo sull’anteprima per spostarlo.</small>
+
+      <p class="muted">Come ospite non puoi salvare nella libreria. Da utente registrato sì.</p>
     </div>
+  </div>
 
-    <!-- Riquadri + Cornice -->
-    <div class="row">
-      <div><label>Colore linee/riquadri</label><input id="panelColor" type="color" value="#cdbb7d"></div>
-      <div><label>Opacità riquadri</label><input id="panelAlpha" type="range" min="0" max="100" value="85"></div>
-    </div>
+  <!-- Firebase SDK (compat per semplicità) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <div class="row">
-      <div>
-        <label>Stile cornice</label>
-        <select id="frameStyle">
-          <option value="flat">Colore piatto</option><option value="foil-gold">Foil oro</option><option value="foil-silver">Foil argento</option><option value="foil-rainbow">Foil arcobaleno</option>
-          <option value="wood">Legno</option><option value="stone">Pietra</option><option value="arcane">Arcano</option><option value="nature">Natura</option>
-        </select>
-      </div>
-      <div>
-        <label>Colore cornice (se piatto) & interno</label>
-        <div class="row" style="grid-template-columns:1fr 1fr;gap:8px">
-          <input id="frameColor" type="color" value="#d8cfae"><input id="innerColor" type="color" value="#f7f5ef">
-        </div>
-      </div>
-    </div>
-
-    <!-- Immagini -->
-    <div class="group">
-      <label>Immagine fronte</label><input id="artFront" type="file" accept="image/*">
-      <label>Immagine retro (riempie la cornice interna)</label><input id="artBack" type="file" accept="image/*">
-    </div>
-
-    <!-- Descrizione -->
-    <div class="group">
-      <label>Descrizione (riquadro basso)</label><textarea id="rulesText" placeholder="Testo/incantesimo…"></textarea>
-      <div class="row">
-        <div>
-          <label>Font descrizione</label>
-          <select id="descFont">
-            <option value='"Spectral",serif'>Spectral</option><option value='"Cinzel",serif'>Cinzel</option><option value='Inter,sans-serif'>Inter</option><option value='"EB Garamond",serif'>EB Garamond</option><option value='"Merriweather",serif'>Merriweather</option><option value='"Playfair Display",serif'>Playfair Display</option>
-          </select>
-          <label style="margin-top:6px">Carica font descrizione (TTF/OTF)</label><input id="descFontFile" type="file" accept=".ttf,.otf">
-        </div>
-        <div>
-          <label>Dimensione descrizione</label><input id="descSize" type="range" min="14" max="26" value="18">
-          <label style="margin-top:6px">Colore descrizione</label><input id="descColor" type="color" value="#111111">
-        </div>
-      </div>
-    </div>
-
-    <!-- Salvataggi locali -->
-    <div class="group">
-      <h4>Salvataggi locali</h4>
-      <div class="row">
-        <div><label>Nome carta</label><input id="cardName" placeholder="Es. Lame del Bosco"></div>
-        <div class="btnbar" style="align-items:end">
-          <button class="btn" id="saveCard">Salva locale</button>
-          <button class="btn" id="loadCard">Carica locale…</button>
-          <button class="btn" id="exportJson">Esporta JSON</button>
-          <label class="btn" for="importJsonInput" style="cursor:pointer">Importa JSON</label>
-          <input id="importJsonInput" type="file" accept="application/json" style="display:none">
-        </div>
-      </div>
-      <div class="library" id="library"></div>
-    </div>
-
-    <!-- Account & Cloud -->
-    <div class="group" id="cloudPanel">
-      <h4>Account & Cloud</h4>
-      <div class="row" style="align-items:end">
-        <div>
-          <label>Email</label><input id="authEmail" type="email">
-          <label style="margin-top:6px">Password</label><input id="authPass" type="password" placeholder="Min. 6 caratteri">
-          <div class="btnbar">
-            <button class="btn" id="btnSignUp">Registrati</button>
-            <button class="btn" id="btnSignIn">Accedi</button>
-            <button class="btn" id="btnSignOut" style="display:none">Esci</button>
-          </div>
-          <small class="muted" id="authState">Non autenticato</small>
-        </div>
-        <div>
-          <label>Mazzo (cartella cloud, opz.)</label><input id="deckName" placeholder="Es. Incantesimi Druido">
-          <div class="btnbar">
-            <button class="btn" id="btnCloudSave">Salva su cloud</button>
-            <button class="btn" id="btnCloudPull">Ricarica libreria cloud</button>
-          </div>
-        </div>
-      </div>
-      <div class="library" id="cloudLibrary"></div>
-      <small class="muted">La libreria cloud è personale per ogni account.</small>
-    </div>
-
-    <!-- Export -->
-    <div class="group btnbar">
-      <button class="btn" id="pngFront">PNG (fronte)</button>
-      <button class="btn" id="pngBack">PNG (retro)</button>
-      <button class="btn" id="pdfSingleFront">PDF singola (fronte)</button>
-      <button class="btn" id="pdfSingleBack">PDF singola (retro)</button>
-      <button class="btn" id="pdfA4Front">PDF A4 3×3 (fronti)</button>
-      <button class="btn" id="pdfA4Back">PDF A4 3×3 (retro)</button>
-      <button class="btn" id="pdfA4Both">PDF A4 3×3 (fronte+retro)</button>
-    </div>
-    <small class="muted">Stampa: A4 verticale, margini minimi, scala 100%.</small>
-  </aside>
-
-  <section class="preview">
-    <canvas id="cardFront" width="750" height="1050" aria-label="Fronte"></canvas>
-  </section>
-</div>
-
-<script>
-/* ===== base v12 (ridotta all’essenziale per brevità) ===== */
-(function(){
-  const p=new URLSearchParams(location.search);
-  const force=p.get('welcome')==='1';
-  const flag=localStorage.getItem('cm_hide_welcome');
-  if(force){ localStorage.removeItem('cm_hide_welcome'); document.getElementById('welcome').classList.remove('hide'); }
-  if(flag==='true'){ document.getElementById('welcome').classList.add('hide'); }
-})();
-const state={ title:'',mana:'', titleFont:'"Cinzel",serif',titleSize:44,titleEffect:'color',titleColor:'#fff',
-descText:'',descFont:'"Spectral",serif',descSize:18,descColor:'#111', panelColor:'#cdbb7d',panelAlpha:.85,
-frameStyle:'flat',frameColor:'#d8cfae',innerColor:'#f7f5ef', classSize:60,classSource:'db',clazz:'guerriero',
-imgClass:null,classX:null,classY:null, imgFront:null,imgBack:null };
-window.state=state;
-const ICONS={guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='#e7d08a' stroke='#2a1d0a' stroke-width='2'/><rect x='42' y='60' width='16' height='22' rx='4' fill='#f4f1e6' stroke='#2a1d0a' stroke-width='2'/></svg>`,druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='#6da86a' stroke='#1c3d19' stroke-width='2'/></svg>`};
-const front=document.getElementById('cardFront'); const ctx=front.getContext('2d');
-function rr(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
-function svgToImage(svg,cb){const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);const img=new Image();img.onload=()=>cb(img);img.src=url;}
-function cover(c,img,dx,dy,dw,dh,r=0){const ir=img.width/img.height,dr=dw/dh;let sx,sy,sw,sh;if(ir>dr){sh=img.height;sw=sh*dr;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/dr;sx=0;sy=(img.height-sh)/2;} if(r>0){c.save();rr(c,dx,dy,dw,dh,r);c.clip();} c.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh); if(r>0)c.restore();}
-function paintFrame(c,W,H){ c.fillStyle=state.frameColor; rr(c,0,0,W,H,36); c.fill(); rr(c,16,16,W-32,H-32,24); c.fillStyle=state.innerColor; c.fill(); }
-function defaultSymbolPos(){const W=750,s=state.classSize,right=W-44,y=71-s/2;state.classX=right-s;state.classY=y;}
-function drawFront(){const W=750,H=1050; ctx.clearRect(0,0,W,H); paintFrame(ctx,W,H);
-  ctx.globalAlpha=state.panelAlpha; ctx.fillStyle=state.panelColor; rr(ctx,28,28,W-56,86,16); ctx.fill(); rr(ctx,28,610,W-56,412,18); ctx.fill(); ctx.globalAlpha=1;
-  const ax=44,ay=132,aw=W-88,ah=460; if(state.imgFront) cover(ctx,state.imgFront,ax,ay,aw,ah,18); else {ctx.fillStyle='#cfcfcf'; rr(ctx,ax,ay,aw,ah,18); ctx.fill();}
-  // titolo
-  ctx.textBaseline='middle'; ctx.font=`700 ${state.titleSize}px ${state.titleFont}`; ctx.fillStyle=state.titleColor; ctx.fillText(state.title||'',44,71,520);
-  // simbolo
-  if(state.imgClass){ if(state.classX==null||state.classY==null) defaultSymbolPos(); cover(ctx,state.imgClass,state.classX,state.classY,state.classSize,state.classSize,10); }
-  // mana
-  if((state.mana||'').trim()){ ctx.fillStyle='#222'; ctx.font='600 22px Inter,sans-serif'; ctx.textAlign='right'; const right=750-44; const x = state.imgClass ? Math.min(right-8,(state.classX??(right-40))-10) : right; ctx.fillText(state.mana, x, 71); ctx.textAlign='left'; }
-  // descrizione
-  const bx=40,by=618,bw=W-80,bh=396; ctx.save(); rr(ctx,bx,by,bw,bh,18); ctx.clip(); ctx.fillStyle=state.descColor; ctx.font=`400 ${state.descSize}px ${state.descFont}`;
-  const t=(state.descText||'').split(/\s+/); let line='',yy=by+18; t.forEach(w=>{const s=line+w+' '; if(ctx.measureText(s).width>bw-36 && line){ ctx.fillText(line,bx+18,yy); line=w+' '; yy+=state.descSize*1.45; } else line=s;}); ctx.fillText(line,bx+18,yy); ctx.restore();
-}
-function drawBackCanvas(){const c=document.createElement('canvas'); c.width=750;c.height=1050;const g=c.getContext('2d'); paintFrame(g,750,1050); if(state.imgBack) cover(g,state.imgBack,16,16,750-32,1050-32,24); return c;}
-window.drawFront=drawFront;
-function $(id){return document.getElementById(id)}
-$('title').oninput=e=>{state.title=e.target.value;drawFront();}; $('mana').oninput=e=>{state.mana=e.target.value;drawFront();}
-$('titleFont').onchange=e=>{state.titleFont=e.target.value;drawFront();}; $('titleSize').oninput=e=>{state.titleSize=+e.target.value;drawFront();};
-$('titleEffect').onchange=e=>{drawFront();}; $('titleColor').oninput=e=>{state.titleColor=e.target.value;drawFront();}
-$('descFont').onchange=e=>{state.descFont=e.target.value;drawFront();}; $('descSize').oninput=e=>{state.descSize=+e.target.value;drawFront();}; $('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();}
-$('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();}
-$('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();}; $('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();}
-$('frameStyle').onchange=e=>{state.frameStyle=e.target.value;drawFront();}; $('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();}; $('innerColor').oninput=e=>{state.innerColor=e.target.value;drawFront();}
-$('classSource').onchange=e=>{state.classSource=e.target.value; $('dbRow').style.display=(state.classSource==='db')?'grid':'none'; $('uploadRow').style.display=(state.classSource==='upload')?'block':'none'; if(state.classSource==='none') state.imgClass=null; if(state.classSource==='db') loadDbIcon($('clazz').value); if(state.classSource!=='upload') $('classImg').value=''; drawFront();};
-$('clazz').onchange=e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); };
-$('classSize').oninput=e=>{state.classSize=+e.target.value; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();};
-$('classImg').addEventListener('change',e=>{ if(state.classSource!=='upload')return; const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);});
-$('artFront').addEventListener('change',e=>{ const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgFront=img; drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);});
-$('artBack').addEventListener('change',e=>{ const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgBack=img;}; img.src=ev.target.result;}; r.readAsDataURL(f);});
-let dragging=false,dx=0,dy=0; front.addEventListener('pointerdown',e=>{ if(!state.imgClass) return; const rect=front.getBoundingClientRect(),sx=front.width/rect.width,sy=front.height/rect.height; const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect.top)*sy, s=state.classSize; if(x>=state.classX&&x<=state.classX+s&&y>=state.classY&&y<=state.classY+s){dragging=true;dx=x-state.classX;dy=y-state.classY; front.setPointerCapture(e.pointerId);} });
-front.addEventListener('pointermove',e=>{ if(!dragging) return; const rect=front.getBoundingClientRect(),sx=front.width/rect.width,sy=front.height/rect.height; let nx=(e.clientX-rect.left)*sx-dx, ny=(e.clientY-rect.top)*sy-dy, s=state.classSize; nx=Math.max(0,Math.min(front.width-s,nx)); ny=Math.max(0,Math.min(front.height-s,ny)); state.classX=nx; state.classY=ny; drawFront();});
-front.addEventListener('pointerup',e=>{ if(dragging){dragging=false; front.releasePointerCapture(e.pointerId);} }); front.addEventListener('pointercancel',()=>dragging=false);
-function loadDbIcon(key){ const svg=ICONS[key]; if(!svg){state.imgClass=null;drawFront();return;} svgToImage(svg,img=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();});}
-function downloadDataUrl(name, url){const a=document.createElement('a'); a.download=name; a.href=url; a.click();}
-document.getElementById('pngFront').onclick=()=>{ drawFront(); downloadDataUrl('carta-front.png', front.toDataURL('image/png')); };
-document.getElementById('pngBack').onclick=()=>{ const b=drawBackCanvas(); downloadDataUrl('carta-back.png', b.toDataURL('image/png')); };
-document.getElementById('pdfSingleFront').onclick=()=>{ const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:[69,94]}); drawFront(); doc.addImage(front.toDataURL('image/png'),'PNG',0,0,69,94); doc.save('carta-front.pdf'); };
-document.getElementById('pdfSingleBack').onclick=()=>{ const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:[69,94]}); const b=drawBackCanvas(); doc.addImage(b.toDataURL('image/png'),'PNG',0,0,69,94); doc.save('carta-back.pdf'); };
-function init(){ svgToImage(ICONS[state.clazz],img=>{state.imgClass=img; defaultSymbolPos(); drawFront();}); const flag=localStorage.getItem('cm_hide_welcome'); if(flag==='true') document.getElementById('welcome').classList.add('hide'); }
-init();
-/* salvataggi locali minimi */
-const KEY='acm_cards_v13';
-const getSaved=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}};
-const setSaved=a=>localStorage.setItem(KEY,JSON.stringify(a));
-function snapshot(includeImages=true){ const out={...state}; if(includeImages){ out._imgFront=state.imgFront?.src||null; out._imgBack=state.imgBack?.src||null; out._imgClass=(state.classSource==='upload')?(state.imgClass?.src||null):null; } return out; }
-window.snapshot=snapshot;
-function applySnap(s){ Object.assign(state,s||{}); if(state.classSource==='db'){ loadDbIcon(state.clazz); }else if(state.classSource==='upload' && s?._imgClass){ const i=new Image(); i.onload=()=>{state.imgClass=i; drawFront();}; i.src=s._imgClass; } if(s?._imgFront){ const i=new Image(); i.onload=()=>{state.imgFront=i; drawFront();}; i.src=s._imgFront; } if(s?._imgBack){ const i=new Image(); i.onload=()=>{state.imgBack=i;}; i.src=s._imgBack; } drawFront(); }
-window.applySnap=applySnap;
-document.getElementById('saveCard').onclick=()=>{ const name=($('cardName').value||'Carta').trim(); const arr=getSaved(); const data=snapshot(true); const c=document.createElement('canvas'); c.width=150;c.height=210; c.getContext('2d').drawImage(front,0,0,150,210); const thumb=c.toDataURL('image/png'); const time=Date.now(); const i=arr.findIndex(x=>x.name===name); if(i>=0) arr[i]={name,data,thumb,time}; else arr.push({name,data,thumb,time}); setSaved(arr); renderLib(); alert('Salvata localmente!'); };
-document.getElementById('loadCard').onclick=()=>{ const arr=getSaved(); if(!arr.length) return alert('Nessuna carta salvata'); const names=arr.map((x,i)=>`${i+1}) ${x.name}`); const pick=prompt('Quale carta?\n'+names.join('\n')); const idx=(parseInt(pick||'',10)-1); if(isNaN(idx)||idx<0||idx>=arr.length) return; applySnap(arr[idx].data); $('cardName').value=arr[idx].name; };
-document.getElementById('exportJson').onclick=()=>{ const payload={meta:{app:'ACM',v:13},data:snapshot(true)}; const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=( $('cardName').value||'carta')+'.json'; a.click(); };
-document.getElementById('importJsonInput').addEventListener('change',e=>{const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const p=JSON.parse(r.result); applySnap(p.data); $('cardName').value=p.data?.title||'Carta importata'; alert('Import OK'); renderLib(); }catch{ alert('JSON non valido'); } }; r.readAsText(f);});
-function renderLib(){ const lib=$('library'); lib.innerHTML=''; getSaved().sort((a,b)=>b.time-a.time).forEach((it,idx)=>{ const row=document.createElement('div'); row.className='cardRow'; const img=document.createElement('img'); img.src=it.thumb||''; const meta=document.createElement('div'); meta.className='meta'; meta.innerHTML=`<div><strong>${it.name}</strong></div><div class="tag">${new Date(it.time).toLocaleString()}</div>`; const acts=document.createElement('div'); acts.style.display='flex'; acts.style.flexDirection='column'; acts.style.gap='6px'; const bLoad=document.createElement('button'); bLoad.className='btn'; bLoad.textContent='Carica'; bLoad.onclick=()=>{applySnap(it.data); $('cardName').value=it.name;}; const bDel=document.createElement('button'); bDel.className='btn'; bDel.textContent='Elimina'; bDel.onclick=()=>{ const arr=getSaved(); arr.splice(idx,1); setSaved(arr); renderLib(); }; acts.appendChild(bLoad); acts.appendChild(bDel); row.appendChild(img); row.appendChild(meta); row.appendChild(acts); lib.appendChild(row); }); }
-renderLib();
-</script>
-
-<!-- ===== Firebase + Cloud (Auth, Firestore, Storage) ===== -->
-<script type="module">
-  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-  import { getFirestore, serverTimestamp, collection, doc, setDoc, getDocs, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-  import { getStorage, ref as sRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
-
-  /* ---------- CONFIG (la tua) ---------- */
-  const firebaseConfig = {
-    apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
-    authDomain: "cardmaker-15cf5.firebaseapp.com",
-    projectId: "cardmaker-15cf5",
-    storageBucket: "cardmaker-15cf5.firebasestorage.app",
-    messagingSenderId: "782546269609",
-    appId: "1:782546269609:web:934c5740d007558bb900b8",
-    measurementId: "G-W68B78G600"
-  };
-  /* ------------------------------------ */
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-  const st   = getStorage(app);
-
-  const el = id => document.getElementById(id);
-
-  function setAuthUI(user){
-    const stEl=el('authState'), up=el('btnSignUp'), si=el('btnSignIn'), so=el('btnSignOut');
-    if(user){ stEl.textContent=`Connesso: ${user.email}`; up.style.display='none'; si.style.display='none'; so.style.display=''; cloudPull(); }
-    else{ stEl.textContent='Non autenticato'; up.style.display=''; si.style.display=''; so.style.display='none'; el('cloudLibrary').innerHTML=''; }
-  }
-  onAuthStateChanged(auth,setAuthUI);
-  el('btnSignUp').onclick=async()=>{ const e=el('authEmail').value.trim(), p=el('authPass').value.trim(); if(!e||!p) return alert('Email e password richieste'); try{ await createUserWithEmailAndPassword(auth,e,p); }catch(err){ alert(err.message); } };
-  el('btnSignIn').onclick=async()=>{ const e=el('authEmail').value.trim(), p=el('authPass').value.trim(); if(!e||!p) return alert('Email e password richieste'); try{ await signInWithEmailAndPassword(auth,e,p); }catch(err){ alert(err.message); } };
-  el('btnSignOut').onclick=()=>signOut(auth);
-
-  async function uploadIfAny(dataUrl, path){
-    if(!dataUrl) return null;
-    const ref=sRef(st,path); await uploadString(ref,dataUrl,'data_url'); return await getDownloadURL(ref);
-  }
-  function makeThumb(){
-    const c=document.createElement('canvas'); c.width=150; c.height=210;
-    const g=c.getContext('2d'); const src=document.getElementById('cardFront'); g.drawImage(src,0,0,150,210);
-    return c.toDataURL('image/png');
-  }
-
-  el('btnCloudSave').onclick=async()=>{
-    const user=auth.currentUser; if(!user) return alert('Accedi prima.');
-    const cardName=(el('cardName').value||'Carta senza nome').trim();
-    const deck=(el('deckName').value||'').trim();
-    const data = window.snapshot(true); // include immagini dataURL
-    const docRef = doc(collection(db, 'users', user.uid, 'cards')); // nuovo id
-    const base = `users/${user.uid}/cards/${docRef.id}`;
-    const urlFront = await uploadIfAny(data._imgFront, `${base}/front.png`);
-    const urlBack  = await uploadIfAny(data._imgBack,  `${base}/back.png`);
-    const urlClass = (data.classSource==='upload') ? await uploadIfAny(data._imgClass, `${base}/class.png`) : null;
-
-    const payload = {
-      name: cardName,
-      deck,
-      updatedAt: serverTimestamp(),
-      thumb: makeThumb(),
-      data: { ...data, _imgFront:urlFront||null, _imgBack:urlBack||null, _imgClass:urlClass||null }
+  <script>
+    // === CONFIGURAZIONE FIREBASE (la tua) ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
+      authDomain: "cardmaker-15cf5.firebaseapp.com",
+      projectId: "cardmaker-15cf5",
+      storageBucket: "cardmaker-15cf5.firebasestorage.app",
+      messagingSenderId: "782546269609",
+      appId: "1:782546269609:web:934c5740d007558bb900b8",
+      measurementId: "G-W68B78G600"
     };
-    await setDoc(docRef, payload);
-    alert('Salvata su cloud!');
-    cloudPull();
-  };
 
-  async function cloudPull(){
-    const user=auth.currentUser; if(!user){ el('cloudLibrary').innerHTML=''; return; }
-    el('cloudLibrary').innerHTML='Carico…';
-    const q=query(collection(db,'users',user.uid,'cards'), orderBy('updatedAt','desc'));
-    const snap=await getDocs(q);
-    const box=el('cloudLibrary'); box.innerHTML='';
-    snap.forEach(d=>{
-      const it=d.data();
-      const row=document.createElement('div'); row.className='cardRow';
-      const img=document.createElement('img'); img.src=it.thumb||'';
-      const meta=document.createElement('div'); meta.className='meta';
-      meta.innerHTML=`<div><strong>${it.name||'(senza nome)'}</strong> ${it.deck?`<span class="tag">• ${it.deck}</span>`:''}</div><div class="tag">${it.updatedAt?.toDate? it.updatedAt.toDate().toLocaleString():''}</div>`;
-      const acts=document.createElement('div'); acts.style.display='flex'; acts.style.flexDirection='column'; acts.style.gap='6px';
-      const bLoad=document.createElement('button'); bLoad.className='btn'; bLoad.textContent='Carica';
-      const bDel=document.createElement('button'); bDel.className='btn'; bDel.textContent='Elimina';
-      bLoad.onclick=async()=>{
-        const s=it.data||{};
-        const loadUrl=(u,cb)=>{ if(!u){cb(null);return;} const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>cb(im); im.src=u; };
-        if(s._imgFront) loadUrl(s._imgFront, im=>{ window.state.imgFront=im; window.drawFront(); });
-        if(s._imgBack)  loadUrl(s._imgBack,  im=>{ window.state.imgBack=im; });
-        if(s.classSource==='db'){ const k=s.clazz||'guerriero'; const svg=(window.ICONS&&window.ICONS[k])||null; if(svg){ const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); const im=new Image(); im.onload=()=>{ window.state.imgClass=im; window.drawFront(); }; im.src=url; } }
-        else if(s._imgClass) loadUrl(s._imgClass, im=>{ window.state.imgClass=im; window.drawFront(); });
-        window.applySnap ? window.applySnap(s) : (Object.assign(window.state,s), window.drawFront());
-        el('cardName').value = it.name||''; el('deckName').value = it.deck||'';
-      };
-      bDel.onclick=async()=>{ if(!confirm('Eliminare questa carta dal cloud?')) return; await deleteDoc(doc(db,'users',user.uid,'cards',d.id)); cloudPull(); };
-      acts.appendChild(bLoad); acts.appendChild(bDel);
-      row.appendChild(img); row.appendChild(meta); row.appendChild(acts);
-      box.appendChild(row);
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+    const st   = firebase.storage();
+
+    // === UI helpers ===
+    const $ = s => document.querySelector(s);
+    const authModal = $('#authModal');
+    const who = $('#who');
+    const libPanel = $('#libraryPanel');
+    const libList  = $('#libraryList');
+
+    // Mostra/nasconde elementi contrassegnati
+    function setAuthVisibility(isAuth){
+      document.querySelectorAll('[data-role="only-auth"]').forEach(el=>{
+        el.style.display = isAuth ? '' : 'none';
+      });
+      document.querySelectorAll('[data-role="only-guest"]').forEach(el=>{
+        el.style.display = !isAuth ? '' : 'none';
+      });
+    }
+
+    // === Accesso / Registrazione / Ospite ===
+    $('#btnLogin').onclick = async () => {
+      const email = $('#email').value.trim();
+      const pass  = $('#password').value;
+      if(!email || !pass) return alert('Inserisci email e password');
+      try{
+        await auth.signInWithEmailAndPassword(email, pass);
+        authModal.style.display='none';
+      }catch(e){ alert('Accesso fallito: '+e.message); }
+    };
+
+    $('#btnSignup').onclick = async () => {
+      const email = $('#email').value.trim();
+      const pass  = $('#password').value;
+      if(!email || !pass) return alert('Inserisci email e password');
+      try{
+        await auth.createUserWithEmailAndPassword(email, pass);
+        authModal.style.display='none';
+      }catch(e){ alert('Registrazione fallita: '+e.message); }
+    };
+
+    $('#btnGuest').onclick = () => {
+      authModal.style.display='none'; // entra senza login
+      setAuthVisibility(false);
+      who.textContent = 'Ospite';
+    };
+
+    $('#btnLogout').onclick = ()=> auth.signOut();
+
+    // Al cambio stato di auth
+    auth.onAuthStateChanged(user=>{
+      const logged = !!user;
+      setAuthVisibility(logged);
+      $('#btnLogout').style.display = logged ? '' : 'none';
+      who.textContent = logged ? (user.email || 'Utente') : 'Ospite';
+      if(logged){ loadLibrary(); }
     });
-  }
-  el('btnCloudPull').onclick=cloudPull;
-</script>
 
+    // All’avvio mostra modale (se vuoi forzare: aggiungi ?welcome=1)
+    window.addEventListener('load', ()=>{
+      const force = new URLSearchParams(location.search).get('welcome');
+      if(force==='1' || !auth.currentUser){
+        authModal.style.display='flex';
+      }
+      // render demo preview iniziale
+      renderDemoPreview();
+    });
+
+    // === Funzioni "hook" verso la tua app (se presenti, verranno usate) ===
+    function getCardStateFallback(){
+      return {
+        title: $('#titleInput')?.value || '',
+        mana:  $('#manaInput')?.value || '',
+        descriptionMd: $('#descInput')?.value || '',
+        borderColor: '#d4b76e',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+    }
+    function getCurrentCardState(){
+      if(typeof window.getCurrentCardState === 'function'){
+        try{ return window.getCurrentCardState(); }catch{}
+      }
+      return getCardStateFallback();
+    }
+
+    async function renderFrontToDataURL(){
+      if(typeof window.renderFrontToDataURL === 'function'){
+        try{ return await window.renderFrontToDataURL(); }catch{}
+      }
+      // demo: genera PNG dal canvas di anteprima
+      renderDemoPreview();
+      return $('#preview').toDataURL('image/png');
+    }
+
+    function loadCardState(card){
+      if(typeof window.loadCardState === 'function'){
+        try{ window.loadCardState(card); return; }catch{}
+      }
+      // fallback: riempi i campi base
+      $('#titleInput').value = card.title || '';
+      $('#manaInput').value  = card.mana  || '';
+      $('#descInput').value  = card.descriptionMd || '';
+      renderDemoPreview();
+    }
+
+    // === DEMO Preview (solo se non hai la tua UI di anteprima) ===
+    function renderDemoPreview(){
+      const c = $('#preview'); if(!c) return;
+      const ctx = c.getContext('2d');
+      const s = getCurrentCardState();
+      // sfondo
+      ctx.fillStyle='#f0e9cf'; ctx.fillRect(0,0,c.width,c.height);
+      // cornice
+      ctx.fillStyle=s.borderColor||'#d4b76e';
+      ctx.fillRect(18,18,c.width-36,c.height-36);
+      // interno
+      ctx.fillStyle='#f9f6ec'; ctx.fillRect(36,36,c.width-72,c.height-72);
+      // titolo
+      ctx.fillStyle='#222'; ctx.font='bold 42px serif';
+      ctx.fillText(s.title||'Titolo', 48, 100);
+      // mana
+      ctx.font='28px serif'; ctx.textAlign='right';
+      ctx.fillText(s.mana||'', c.width-60, 100);
+      ctx.textAlign='left';
+      // descrizione
+      ctx.font='24px serif';
+      wrapText(ctx, s.descriptionMd||'Descrizione…', 48, c.height-200, c.width-96, 28);
+      function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+        const words=text.split(' '); let line='', yy=y;
+        for(let n=0;n<words.length;n++){
+          const test=line+words[n]+' ';
+          if(ctx.measureText(test).width>maxWidth){ ctx.fillText(line,x,yy); line=words[n]+' '; yy+=lineHeight;}
+          else line=test;
+        } ctx.fillText(line,x,yy);
+      }
+    }
+
+    // === Storage helper: carica una miniatura PNG dataURL ===
+    async function uploadThumb(uid, dataURL){
+      const blob = await (await fetch(dataURL)).blob();
+      const path = `users/${uid}/thumbs/${Date.now()}.png`;
+      const ref = st.ref().child(path);
+      await ref.put(blob);
+      return await ref.getDownloadURL();
+    }
+
+    // === Salvataggio carta (Firestore + thumb su Storage) ===
+    async function saveCard(){
+      const u = auth.currentUser;
+      if(!u) return alert('Devi effettuare l’accesso per salvare nella libreria.');
+      // DataURL della preview del fronte
+      const dataURL = await renderFrontToDataURL();
+      const thumbUrl = await uploadThumb(u.uid, dataURL).catch(()=>null);
+      const card = getCurrentCardState();
+      card.updatedAt = Date.now();
+      if(thumbUrl) card.thumbUrl = thumbUrl;
+      await db.collection('users').doc(u.uid).collection('cards').add(card);
+      alert('Carta salvata nella tua libreria!');
+      loadLibrary();
+    }
+
+    // === Libreria: carica elenco ===
+    async function loadLibrary(){
+      const u = auth.currentUser; if(!u){ libPanel.style.display='none'; return; }
+      const snap = await db.collection('users').doc(u.uid).collection('cards')
+        .orderBy('updatedAt','desc').limit(100).get();
+      libList.innerHTML='';
+      snap.forEach(doc=>{
+        const d = doc.data();
+        const div = document.createElement('div'); div.className='thumb'; div.title = d.title||'';
+        const img = document.createElement('img'); img.alt='thumb';
+        img.src = d.thumbUrl || 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320"><rect width="100%" height="100%" fill="#111"/><text x="50%" y="50%" fill="#aaa" font-size="18" text-anchor="middle" dy=".3em">Nessuna anteprima</text></svg>`);
+        const cap = document.createElement('div'); cap.className='cap'; cap.textContent = d.title || 'Senza titolo';
+        div.appendChild(img); div.appendChild(cap);
+        div.onclick = ()=> loadCardState(d);
+        libList.appendChild(div);
+      });
+      libPanel.style.display = 'block';
+    }
+
+    // === Bottoni ===
+    $('#btnSaveCard').onclick = saveCard;
+    $('#btnOpenLibrary').onclick = ()=>{ const u=auth.currentUser; if(!u) return alert('Accedi per aprire la libreria.'); libPanel.style.display='block'; loadLibrary(); };
+    $('#btnReloadLibrary').onclick = loadLibrary;
+    $('#btnRenderPreview').onclick = renderDemoPreview;
+  </script>
 </body>
 </html>
