@@ -1,316 +1,232 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Arcane Cardmaker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Arcane CardMaker</title>
   <meta name="theme-color" content="#111" />
-  <style>
-    :root{--bg:#0d0f12;--panel:#151821;--ink:#e9eef5;--muted:#9aa4b2;--accent:#34c759;--border:#20242f}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#0b0d11;border-bottom:1px solid var(--border)}
-    header h1{margin:0;font-size:18px}
-    .wrap{display:grid;grid-template-columns:280px 1fr;gap:14px;padding:14px}
-    .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    label{display:block;font-size:12px;color:var(--muted);margin:6px 0 4px}
-    input[type=text],input[type=email],input[type=password], textarea, select{
-      width:100%;background:#0f1218;color:var(--ink);border:1px solid #272c38;border-radius:8px;padding:8px
-    }
-    textarea{min-height:80px}
-    button{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;background:#222;color:#eee;border:1px solid #333}
-    .btn-primary{background:var(--accent);color:#000;border-color:transparent}
-    .btn-ghost{background:#1f1f1f}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
-    .thumb{background:#0f1218;border:1px solid #2a3040;border-radius:10px;overflow:hidden}
-    .thumb img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#191d28}
-    .thumb .cap{padding:6px 8px;font-size:12px;color:#cdd6e3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .muted{opacity:.7;font-size:12px}
-    [data-role="only-auth"]{display:none} /* abilitati dopo login */
-    [data-role="only-guest"]{display:none}
-
-    /* Modal accesso */
-    .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999}
-    .modal-card{width:min(520px,92vw);background:#111;color:#eee;border:1px solid #333;border-radius:16px;padding:18px 16px 14px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-    .modal-card h2{margin:6px 0 10px;font-size:22px}
-    .modal-card p{opacity:.9;line-height:1.4;margin:0 0 14px}
-    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-  </style>
+  <link rel="stylesheet" href="style.css" />
+  <!-- jsPDF per i PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <!-- Google Fonts usati dai preset -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Welcome / Accesso -->
+  <div id="welcome" class="modal-mask">
+    <div class="modal-card">
+      <h2>Benvenuto in Card Maker</h2>
+      <p>Crea carte in stile Magic. Accedi per salvare nella tua Libreria, oppure entra come Ospite.</p>
+      <div class="stack">
+        <div class="row">
+          <input id="email" type="email" placeholder="Email">
+          <input id="password" type="password" placeholder="Password">
+        </div>
+        <div class="row">
+          <button class="btn primary" id="btnLogin">Accedi</button>
+          <button class="btn" id="btnSignup">Registrati</button>
+          <button class="btn ghost" id="btnGuest">Entra come ospite</button>
+        </div>
+        <label class="muted"><input type="checkbox" id="dontShow"> Non mostrare più</label>
+      </div>
+    </div>
+  </div>
+
   <header>
-    <h1>Arcane Cardmaker</h1>
+    <strong>Arcane CardMaker</strong>
     <div class="row">
-      <span id="who" class="muted">Ospite</span>
-      <button id="btnLogout" style="display:none">Esci</button>
+      <span id="userStatus" class="muted">Ospite</span>
+      <button id="btnLogout" class="btn" style="display:none">Esci</button>
     </div>
   </header>
 
   <div class="wrap">
-    <!-- Controlli base (usati solo se la tua app non fornisce le sue funzioni) -->
-    <div class="panel">
-      <h3>Campi base (di test)</h3>
-      <label>Titolo</label><input id="titleInput" type="text" placeholder="Titolo carta">
-      <label>Mana</label><input id="manaInput" type="text" placeholder="{G}{U} o 2G / opzionale">
-      <label>Descrizione</label><textarea id="descInput" placeholder="Testo / descrizione..."></textarea>
-      <div class="row" style="margin-top:8px">
-        <button id="btnRenderPreview">Aggiorna anteprima</button>
-      </div>
-      <p class="muted" style="margin-top:8px">Se la tua app fornisce <code>getCurrentCardState()</code>, <code>renderFrontToDataURL()</code> e <code>loadCardState(card)</code>, questi campi non servono.</p>
-      <hr style="border-color:#222;margin:12px 0">
-      <div class="row" style="gap:8px">
-        <button id="btnSaveCard" class="btn-primary" data-role="only-auth">💾 Salva carta</button>
-        <button id="btnOpenLibrary" data-role="only-auth">📚 Libreria</button>
-        <button id="btnReloadLibrary" data-role="only-auth">🔄 Ricarica</button>
-      </div>
-      <p class="muted" data-role="only-guest" id="guestNote">Accesso come ospite: salvataggi disattivati. Puoi comunque esportare PDF/PNG dalla tua app.</p>
-    </div>
-
-    <!-- Anteprima molto semplice (se non c'è la tua) -->
-    <div class="panel">
-      <h3>Anteprima (demo)</h3>
-      <canvas id="preview" width="630" height="880" style="width:270px;height:auto;border-radius:12px;border:1px solid #2a3040;background:#0f1218"></canvas>
-
-      <!-- Libreria -->
-      <div id="libraryPanel" class="panel" style="margin-top:12px;display:none">
-        <div class="row" style="justify-content:space-between">
-          <h3 style="margin:0">La mia libreria</h3>
-          <small class="muted">Tocca una carta per caricarla</small>
+    <!-- Pannello comandi -->
+    <aside class="panel" id="controls">
+      <h3>Fronte</h3>
+      <div class="row2">
+        <div>
+          <label>Titolo</label>
+          <input id="title" placeholder="Nome incantesimo">
         </div>
-        <div id="libraryList" class="grid" style="margin-top:10px"></div>
+        <div>
+          <label>Font titolo</label>
+          <select id="titleFont">
+            <option value='"Cinzel",serif'>Cinzel</option>
+            <option value='"Spectral",serif'>Spectral</option>
+            <option value='Inter,sans-serif'>Inter</option>
+            <option value='CardCustom'>Custom (upload)</option>
+          </select>
+          <label class="muted">Carica font TTF/OTF</label>
+          <input id="titleFontFile" type="file" accept=".ttf,.otf">
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- MODALE DI ACCESSO -->
-  <div id="authModal" class="modal-mask" style="display:none">
-    <div class="modal-card">
-      <h2>Benvenuto in Arcane Cardmaker</h2>
-      <p>Scegli come entrare:</p>
-
-      <div id="emailForm" class="panel" style="background:#0e0e0f;border-color:#282828">
-        <div class="row" style="gap:8px;flex-wrap:wrap">
-          <input id="email" type="email" placeholder="Email">
-          <input id="password" type="password" placeholder="Password">
-          <button id="btnLogin" class="btn-primary">Accedi</button>
-          <button id="btnSignup" class="btn-ghost">Registrati</button>
+      <div class="row2">
+        <div>
+          <label>Colore titolo</label><input id="titleColor" type="color" value="#ffffff">
+        </div>
+        <div>
+          <label>Dimensione titolo</label><input id="titleSize" type="range" min="24" max="56" value="42">
         </div>
       </div>
 
-      <div class="btn-row">
-        <button id="btnGuest" class="btn-ghost">Entra come ospite</button>
+      <div class="row2">
+        <div>
+          <label><input id="showMana" type="checkbox" checked> Mostra mana</label>
+          <input id="mana" placeholder="{G}{G} o 2G">
+        </div>
+        <div>
+          <label>Simbolo classe</label>
+          <select id="classSource">
+            <option value="none">Nessuno</option>
+            <option value="db" selected>Database</option>
+            <option value="upload">Carica immagine…</option>
+          </select>
+          <div id="dbClassRow" class="stack" style="margin-top:6px">
+            <select id="clazz">
+              <optgroup label="Base">
+                <option value="guerriero">Guerriero</option>
+                <option value="druido">Druido</option>
+                <option value="monaco">Monaco</option>
+                <option value="mago">Mago</option>
+                <option value="ladro">Ladro</option>
+              </optgroup>
+              <optgroup label="Espansione">
+                <option value="barbaro">Barbaro</option>
+                <option value="paladino">Paladino</option>
+                <option value="chierico">Chierico</option>
+                <option value="bardo">Bardo</option>
+                <option value="ranger">Ranger</option>
+                <option value="stregone">Stregone</option>
+                <option value="warlock">Warlock</option>
+                <option value="artificiere">Artificiere</option>
+              </optgroup>
+            </select>
+          </div>
+          <div id="uploadClassRow" class="stack" style="display:none;margin-top:6px">
+            <input id="classImg" type="file" accept="image/*">
+          </div>
+        </div>
       </div>
 
-      <p class="muted">Come ospite non puoi salvare nella libreria. Da utente registrato sì.</p>
-    </div>
+      <div class="row2">
+        <div>
+          <label>Dimensione simbolo</label><input id="classSize" type="range" min="24" max="160" value="64">
+          <small class="muted">Trascina il simbolo sull’anteprima per spostarlo.</small>
+        </div>
+        <div>
+          <label>Colore linee/riquadri</label><input id="panelColor" type="color" value="#cdbb7d">
+          <label>Opacità riquadri</label><input id="panelAlpha" type="range" min="0" max="100" value="85">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>Stile cornice</label>
+          <select id="frameStyle">
+            <option value="flat">Colore piatto</option>
+            <option value="foil-gold">Foil oro</option>
+            <option value="foil-silver">Foil argento</option>
+            <option value="foil-rainbow">Foil arcobaleno</option>
+            <option value="wood">Legno</option>
+            <option value="stone">Pietra</option>
+            <option value="arcane">Arcano</option>
+            <option value="nature">Natura</option>
+          </select>
+        </div>
+        <div>
+          <label>Colore cornice (piatto) & interno</label>
+          <div class="row2 tight">
+            <input id="frameColor" type="color" value="#d8cfae">
+            <input id="innerColor" type="color" value="#f7f5ef">
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <label>Immagine fronte</label><input id="artFront" type="file" accept="image/*">
+      </div>
+
+      <div class="group">
+        <label>Descrizione (riquadro basso)</label>
+        <textarea id="rulesText" placeholder="Testo/incantesimo… **parole chiave** in grassetto."></textarea>
+        <div class="row2">
+          <div>
+            <label>Font descrizione</label>
+            <select id="descFont">
+              <option value='"Spectral",serif'>Spectral</option>
+              <option value='"Cinzel",serif'>Cinzel</option>
+              <option value='Inter,sans-serif'>Inter</option>
+              <option value='CardCustom'>Custom (upload)</option>
+            </select>
+            <label class="muted">Carica font descrizione (TTF/OTF)</label>
+            <input id="descFontFile" type="file" accept=".ttf,.otf">
+          </div>
+          <div>
+            <label>Dimensione descrizione</label><input id="descSize" type="range" min="14" max="26" value="18">
+            <label>Colore descrizione</label><input id="descColor" type="color" value="#111111">
+          </div>
+        </div>
+      </div>
+
+      <h3>Retro</h3>
+      <div class="group">
+        <label>Immagine retro (full-bleed)</label><input id="artBack" type="file" accept="image/*">
+        <small class="muted">Riempie tutta l’area interna; cornice uguale al fronte.</small>
+      </div>
+
+      <h3>Salvataggi</h3>
+      <div class="row2">
+        <div><label>Nome carta</label><input id="cardName" placeholder="Es. Lame del Bosco"></div>
+        <div><label>Mazzo (cartella cloud, opz.)</label><input id="deckName" placeholder="Es. Incantesimi Druido"></div>
+      </div>
+      <div class="btnbar">
+        <button class="btn" id="saveLocal">Salva locale</button>
+        <button class="btn" id="loadLocal">Carica locale…</button>
+        <button class="btn" id="exportJson">Esporta JSON</button>
+        <label class="btn" for="importJson" style="cursor:pointer">Importa JSON</label>
+        <input id="importJson" type="file" accept="application/json" style="display:none">
+      </div>
+
+      <div class="group" data-auth="only">
+        <h4>Account & Cloud</h4>
+        <div class="row2">
+          <button class="btn" id="btnCloudSave">Salva su cloud</button>
+          <button class="btn" id="btnCloudPull">Ricarica libreria cloud</button>
+        </div>
+        <div id="cloudLibrary" class="library"></div>
+      </div>
+
+      <h3>Export</h3>
+      <div class="btnbar">
+        <button class="btn" id="pngFront">PNG (fronte)</button>
+        <button class="btn" id="pngBack">PNG (retro)</button>
+        <button class="btn" id="pdfSingleFront">PDF singola (fronte)</button>
+        <button class="btn" id="pdfSingleBack">PDF singola (retro)</button>
+        <button class="btn" id="pdfA4Front">PDF A4 3×3 (fronti)</button>
+        <button class="btn" id="pdfA4Back">PDF A4 3×3 (retro)</button>
+        <button class="btn" id="pdfA4Both">PDF A4 3×3 (fronte+retro)</button>
+      </div>
+      <small class="muted">Stampa A4 verticale, margini minimi, scala 100%.</small>
+    </aside>
+
+    <!-- Anteprime -->
+    <section class="panel preview">
+      <div class="previewHead"><h3>Anteprima</h3></div>
+      <div class="grid2">
+        <div>
+          <canvas id="cardFront" width="750" height="1050" aria-label="Fronte"></canvas>
+        </div>
+        <div>
+          <canvas id="cardBack" width="750" height="1050" aria-label="Retro"></canvas>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <!-- Firebase SDK (compat per semplicità) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-  <script>
-    // === CONFIGURAZIONE FIREBASE (la tua) ===
-    const firebaseConfig = {
-      apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
-      authDomain: "cardmaker-15cf5.firebaseapp.com",
-      projectId: "cardmaker-15cf5",
-      storageBucket: "cardmaker-15cf5.firebasestorage.app",
-      messagingSenderId: "782546269609",
-      appId: "1:782546269609:web:934c5740d007558bb900b8",
-      measurementId: "G-W68B78G600"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
-    const st   = firebase.storage();
-
-    // === UI helpers ===
-    const $ = s => document.querySelector(s);
-    const authModal = $('#authModal');
-    const who = $('#who');
-    const libPanel = $('#libraryPanel');
-    const libList  = $('#libraryList');
-
-    // Mostra/nasconde elementi contrassegnati
-    function setAuthVisibility(isAuth){
-      document.querySelectorAll('[data-role="only-auth"]').forEach(el=>{
-        el.style.display = isAuth ? '' : 'none';
-      });
-      document.querySelectorAll('[data-role="only-guest"]').forEach(el=>{
-        el.style.display = !isAuth ? '' : 'none';
-      });
-    }
-
-    // === Accesso / Registrazione / Ospite ===
-    $('#btnLogin').onclick = async () => {
-      const email = $('#email').value.trim();
-      const pass  = $('#password').value;
-      if(!email || !pass) return alert('Inserisci email e password');
-      try{
-        await auth.signInWithEmailAndPassword(email, pass);
-        authModal.style.display='none';
-      }catch(e){ alert('Accesso fallito: '+e.message); }
-    };
-
-    $('#btnSignup').onclick = async () => {
-      const email = $('#email').value.trim();
-      const pass  = $('#password').value;
-      if(!email || !pass) return alert('Inserisci email e password');
-      try{
-        await auth.createUserWithEmailAndPassword(email, pass);
-        authModal.style.display='none';
-      }catch(e){ alert('Registrazione fallita: '+e.message); }
-    };
-
-    $('#btnGuest').onclick = () => {
-      authModal.style.display='none'; // entra senza login
-      setAuthVisibility(false);
-      who.textContent = 'Ospite';
-    };
-
-    $('#btnLogout').onclick = ()=> auth.signOut();
-
-    // Al cambio stato di auth
-    auth.onAuthStateChanged(user=>{
-      const logged = !!user;
-      setAuthVisibility(logged);
-      $('#btnLogout').style.display = logged ? '' : 'none';
-      who.textContent = logged ? (user.email || 'Utente') : 'Ospite';
-      if(logged){ loadLibrary(); }
-    });
-
-    // All’avvio mostra modale (se vuoi forzare: aggiungi ?welcome=1)
-    window.addEventListener('load', ()=>{
-      const force = new URLSearchParams(location.search).get('welcome');
-      if(force==='1' || !auth.currentUser){
-        authModal.style.display='flex';
-      }
-      // render demo preview iniziale
-      renderDemoPreview();
-    });
-
-    // === Funzioni "hook" verso la tua app (se presenti, verranno usate) ===
-    function getCardStateFallback(){
-      return {
-        title: $('#titleInput')?.value || '',
-        mana:  $('#manaInput')?.value || '',
-        descriptionMd: $('#descInput')?.value || '',
-        borderColor: '#d4b76e',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-    }
-    function getCurrentCardState(){
-      if(typeof window.getCurrentCardState === 'function'){
-        try{ return window.getCurrentCardState(); }catch{}
-      }
-      return getCardStateFallback();
-    }
-
-    async function renderFrontToDataURL(){
-      if(typeof window.renderFrontToDataURL === 'function'){
-        try{ return await window.renderFrontToDataURL(); }catch{}
-      }
-      // demo: genera PNG dal canvas di anteprima
-      renderDemoPreview();
-      return $('#preview').toDataURL('image/png');
-    }
-
-    function loadCardState(card){
-      if(typeof window.loadCardState === 'function'){
-        try{ window.loadCardState(card); return; }catch{}
-      }
-      // fallback: riempi i campi base
-      $('#titleInput').value = card.title || '';
-      $('#manaInput').value  = card.mana  || '';
-      $('#descInput').value  = card.descriptionMd || '';
-      renderDemoPreview();
-    }
-
-    // === DEMO Preview (solo se non hai la tua UI di anteprima) ===
-    function renderDemoPreview(){
-      const c = $('#preview'); if(!c) return;
-      const ctx = c.getContext('2d');
-      const s = getCurrentCardState();
-      // sfondo
-      ctx.fillStyle='#f0e9cf'; ctx.fillRect(0,0,c.width,c.height);
-      // cornice
-      ctx.fillStyle=s.borderColor||'#d4b76e';
-      ctx.fillRect(18,18,c.width-36,c.height-36);
-      // interno
-      ctx.fillStyle='#f9f6ec'; ctx.fillRect(36,36,c.width-72,c.height-72);
-      // titolo
-      ctx.fillStyle='#222'; ctx.font='bold 42px serif';
-      ctx.fillText(s.title||'Titolo', 48, 100);
-      // mana
-      ctx.font='28px serif'; ctx.textAlign='right';
-      ctx.fillText(s.mana||'', c.width-60, 100);
-      ctx.textAlign='left';
-      // descrizione
-      ctx.font='24px serif';
-      wrapText(ctx, s.descriptionMd||'Descrizione…', 48, c.height-200, c.width-96, 28);
-      function wrapText(ctx,text,x,y,maxWidth,lineHeight){
-        const words=text.split(' '); let line='', yy=y;
-        for(let n=0;n<words.length;n++){
-          const test=line+words[n]+' ';
-          if(ctx.measureText(test).width>maxWidth){ ctx.fillText(line,x,yy); line=words[n]+' '; yy+=lineHeight;}
-          else line=test;
-        } ctx.fillText(line,x,yy);
-      }
-    }
-
-    // === Storage helper: carica una miniatura PNG dataURL ===
-    async function uploadThumb(uid, dataURL){
-      const blob = await (await fetch(dataURL)).blob();
-      const path = `users/${uid}/thumbs/${Date.now()}.png`;
-      const ref = st.ref().child(path);
-      await ref.put(blob);
-      return await ref.getDownloadURL();
-    }
-
-    // === Salvataggio carta (Firestore + thumb su Storage) ===
-    async function saveCard(){
-      const u = auth.currentUser;
-      if(!u) return alert('Devi effettuare l’accesso per salvare nella libreria.');
-      // DataURL della preview del fronte
-      const dataURL = await renderFrontToDataURL();
-      const thumbUrl = await uploadThumb(u.uid, dataURL).catch(()=>null);
-      const card = getCurrentCardState();
-      card.updatedAt = Date.now();
-      if(thumbUrl) card.thumbUrl = thumbUrl;
-      await db.collection('users').doc(u.uid).collection('cards').add(card);
-      alert('Carta salvata nella tua libreria!');
-      loadLibrary();
-    }
-
-    // === Libreria: carica elenco ===
-    async function loadLibrary(){
-      const u = auth.currentUser; if(!u){ libPanel.style.display='none'; return; }
-      const snap = await db.collection('users').doc(u.uid).collection('cards')
-        .orderBy('updatedAt','desc').limit(100).get();
-      libList.innerHTML='';
-      snap.forEach(doc=>{
-        const d = doc.data();
-        const div = document.createElement('div'); div.className='thumb'; div.title = d.title||'';
-        const img = document.createElement('img'); img.alt='thumb';
-        img.src = d.thumbUrl || 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320"><rect width="100%" height="100%" fill="#111"/><text x="50%" y="50%" fill="#aaa" font-size="18" text-anchor="middle" dy=".3em">Nessuna anteprima</text></svg>`);
-        const cap = document.createElement('div'); cap.className='cap'; cap.textContent = d.title || 'Senza titolo';
-        div.appendChild(img); div.appendChild(cap);
-        div.onclick = ()=> loadCardState(d);
-        libList.appendChild(div);
-      });
-      libPanel.style.display = 'block';
-    }
-
-    // === Bottoni ===
-    $('#btnSaveCard').onclick = saveCard;
-    $('#btnOpenLibrary').onclick = ()=>{ const u=auth.currentUser; if(!u) return alert('Accedi per aprire la libreria.'); libPanel.style.display='block'; loadLibrary(); };
-    $('#btnReloadLibrary').onclick = loadLibrary;
-    $('#btnRenderPreview').onclick = renderDemoPreview;
-  </script>
+  <!-- Script modulari -->
+  <script type="module" src="card.js"></script>
+  <script type="module" src="export.js"></script>
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
