@@ -10,14 +10,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   getFirestore,
-  doc, setDoc, getDoc, getDocs, collection, query, where
+  serverTimestamp,
+  collection, doc, setDoc, getDocs, query, orderBy, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   getStorage,
-  ref, uploadBytes, getDownloadURL, listAll
+  ref as sRef, uploadString, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
-// 🔑 La tua configurazione
+// 🔑 Config (la tua)
 const firebaseConfig = {
   apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
   authDomain: "cardmaker-15cf5.firebaseapp.com",
@@ -28,22 +29,22 @@ const firebaseConfig = {
   measurementId: "G-W68B78G600"
 };
 
-// Inizializza
+// Init
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+const db   = getFirestore(app);
+const st   = getStorage(app);
 
-// Metti tutto in window._fb
+// Espone tutto su window._fb
 window._fb = {
-  app, auth, db, storage,
+  app, auth, db, st,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  doc, setDoc, getDoc, getDocs, collection, query, where,
-  ref, uploadBytes, getDownloadURL, listAll
+  serverTimestamp,
+  collection, doc, setDoc, getDocs, query, orderBy, deleteDoc,
+  sRef, uploadString, getDownloadURL, deleteObject
 };
 
-// Debug in console
 console.log("[Firebase] Inizializzato ✔");
