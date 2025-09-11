@@ -195,3 +195,73 @@ function init(){
   document.getElementById('btnGuest').addEventListener('click',()=>{ if(dont?.checked) localStorage.setItem('cm_hide_welcome','true'); document.getElementById('welcome').style.display='none'; });
 }
 init();
+// ===== Cloud library UI (auth.js) =====
+async function acmFetchCloudList() {
+  const fb = window._fb;
+  if (!fb || !fb.auth.currentUser) return [];
+  const uid = fb.auth.currentUser.uid;
+  const colRef = fb.fsCollection(fb.db, 'users', uid, 'cards');
+  const snap = await fb.getDocs(colRef);
+  const items = [];
+  snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+  // ordinati per data
+  items.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
+  return items;
+}
+
+async function acmRenderCloudList() {
+  const box = document.querySelector('#cloudLibrary');
+  if (!box) return;
+  box.innerHTML = '<div class="muted">Caricamento…</div>';
+  try {
+    const items = await acmFetchCloudList();
+    if (!items.length) { box.innerHTML = '<div class="muted">Nessuna carta sul cloud.</div>'; return; }
+    box.innerHTML = items.map(it => `
+      <div class="lib-item">
+        <img src="${it.thumb||''}" alt="" class="thumb">
+        <div class="meta">
+          <div class="name"><strong>${(it.name||it.form?.title||'Senza nome').replace(/[<>&]/g,'')}</strong></div>
+          <div class="when muted">${new Date(it.savedAt||Date.now()).toLocaleString()}</div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-act="load" data-id="${it.id}">Carica</button>
+          <button class="btn danger" data-act="del" data-id="${it.id}">Elimina</button>
+        </div>
+      </div>
+    `).join('');
+    box.querySelectorAll('button[data-act]').forEach(b=>{
+      b.onclick = async () => {
+        const act = b.getAttribute('data-act');
+        const id  = b.getAttribute('data-id');
+        const fb = window._fb;
+        const uid = fb.auth.currentUser.uid;
+        const docRef = fb.fsDoc(fb.db, 'users', uid, 'cards', id);
+        if (act==='load') {
+          const snap = await fb.getDoc(docRef);
+          if (snap.exists()) {
+            // riusa la tua loadCardState se esiste
+            if (window.loadCardState) window.loadCardState(snap.data());
+            document.dispatchEvent(new Event('acm:state:loaded'));
+          }
+        }
+        if (act==='del') {
+          if (confirm('Eliminare questa carta dal cloud?')) {
+            await fb.deleteDoc(docRef);
+            acmRenderCloudList();
+          }
+        }
+      };
+    });
+  } catch (e) {
+    box.innerHTML = `<div class="error">Errore caricando la libreria cloud.<br>${(e?.message||e)}</div>`;
+    console.error('Cloud list error', e);
+  }
+}
+
+// Aggancia al bottone esistente
+document.querySelector('#btnCloudPull')?.addEventListener('click', acmRenderCloudList);
+
+// opzionale: aggiorna auto dopo login
+document.addEventListener('acm:auth:ready', () => {
+  if (window._fb?.auth?.currentUser) acmRenderCloudList();
+});
