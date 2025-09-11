@@ -1,4 +1,4 @@
-// auth.js — Login/Ospite/Logout + Libreria Cloud (Firestore+Storage) con SALVATAGGIO COMPLETO
+// auth.js — Login/Ospite/Logout + Libreria Cloud (Firestore+Storage) con SALVATAGGIO COMPLETO + debug
 
 import { snapshot, applySnap, frontPNG, backPNG } from './card.js';
 
@@ -8,7 +8,7 @@ import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWith
 import { getFirestore, serverTimestamp, collection, doc, setDoc, getDocs, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 
-/* ==== TUA CONFIG FIREBASE (puoi lasciarla così) ==== */
+/* ==== TUA CONFIG FIREBASE ==== */
 const firebaseConfig = {
   apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
   authDomain: "cardmaker-15cf5.firebaseapp.com",
@@ -18,7 +18,7 @@ const firebaseConfig = {
   appId: "1:782546269609:web:934c5740d007558bb900b8",
   measurementId: "G-W68B78G600"
 };
-/* ================================================ */
+/* ================================= */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -82,13 +82,14 @@ $('btnCloudSave')?.addEventListener('click', async ()=>{
   const deck     = ($('deckName')?.value || '').trim();
 
   try{
-    // Stato COMPLETO senza incorporare base64 (evita 1MiB limit)
-    const dataStateOnly = snapshot(false); // <-- tutto lo stato della carta (testi, colori, font, posizioni, ecc.)
+    console.log('[cloudSave] start');
+    // Stato COMPLETO senza base64 (evita limite 1MiB)
+    const dataStateOnly = snapshot(false);
 
     // Thumb dal fronte
     const thumbDataURL = frontPNG();
 
-    // Preparo documento + base path su Storage
+    // Documento + percorsi Storage
     const docRef = doc(collection(db, 'users', user.uid, 'cards'));
     const base   = `users/${user.uid}/cards/${docRef.id}`;
 
@@ -100,34 +101,36 @@ $('btnCloudSave')?.addEventListener('click', async ()=>{
       return await getDownloadURL(ref);
     };
 
-    // PNG fronte/retro dai canvas (retro può non esserci)
+    // PNG fronte/retro generati dai canvas
     const urlFront = await up(frontPNG(), `${base}/front.png`);
     let urlBack = null;
     try { urlBack = await up(backPNG(), `${base}/back.png`); } catch{}
 
-    // Simbolo custom (se la tua app lo salva come dataURL nello stato, aggiungi qui l'upload)
+    // Simbolo custom (se la tua app mantiene un dataURL nel tuo state, caricalo qui)
     let urlClass = null;
-    // Esempio (decommenta se nel tuo state tieni _imgClass come dataURL):
+    // Esempio (decommenta se salvi _imgClass in snapshot(false)):
     // if (dataStateOnly._imgClass) urlClass = await up(dataStateOnly._imgClass, `${base}/class.png`);
 
-    // Thumb
     const urlThumb = await up(thumbDataURL, `${base}/thumb.png`);
 
-    // Documento Firestore: STATO COMPLETO + ASSET
+    // Documento Firestore: owner + stato completo + asset
     const payload = {
+      owner: user.uid,               // <--- aggiunto per tracciabilità/filtri
       name: cardName,
       deck,
       updatedAt: serverTimestamp(),
       thumb: urlThumb,
-      state: dataStateOnly,
-      assets: { front: urlFront, back: urlBack, class: urlClass }
+      state: dataStateOnly,          // definizione completa della carta (senza blob)
+      assets: { front: urlFront, back: urlBack, class: urlClass } // file su Storage
     };
+
     await setDoc(docRef, payload);
+    console.log('[cloudSave] done:', docRef.id);
 
     alert('Carta salvata su cloud ✅');
     await cloudPull(true);
   }catch(err){
-    console.error(err);
+    console.error('[cloudSave] error', err);
     alert('Errore salvataggio cloud: ' + err.message);
   }
 });
@@ -136,6 +139,7 @@ $('btnCloudSave')?.addEventListener('click', async ()=>{
 $('btnCloudPull')?.addEventListener('click', ()=> cloudPull(true));
 
 async function cloudPull(openPanel=false){
+  console.log('[cloudPull] start');
   const user = auth.currentUser;
   if(!cloudBox) return;
   if(!user){
@@ -148,6 +152,7 @@ async function cloudPull(openPanel=false){
   try{
     const qref = query(collection(db,'users',user.uid,'cards'), orderBy('updatedAt','desc'));
     const snap = await getDocs(qref);
+    console.log('[cloudPull] docs:', snap.size);
 
     if (snap.empty){
       cloudBox.innerHTML = '<div class="tag">Nessuna carta nel cloud. Salva su cloud per vederla qui.</div>';
@@ -160,7 +165,7 @@ async function cloudPull(openPanel=false){
       const it = d.data();
       const row = document.createElement('div'); row.className='cardRow';
 
-      // Thumb o front
+      // Thumb o immagine fronte se manca la thumb
       const img = document.createElement('img');
       img.src = it.thumb || it.assets?.front || '';
 
@@ -173,6 +178,7 @@ async function cloudPull(openPanel=false){
       // Carica: ricostruisci dallo stato completo + asset
       const bLoad = document.createElement('button'); bLoad.className='btn'; bLoad.textContent='Carica';
       bLoad.onclick = async ()=>{
+        console.log('[cloudLoad] load doc', d.id);
         const cardState = it.state || {};
         // collega asset (se esistono) per ricaricare immagini dal cloud
         if (it.assets?.front) cardState._imgFront = it.assets.front;
@@ -193,7 +199,6 @@ async function cloudPull(openPanel=false){
       bDel.onclick = async ()=>{
         if(!confirm('Eliminare questa carta dal cloud?')) return;
         await deleteDoc(doc(collection(db,'users',user.uid,'cards'), d.id));
-        // opzionale: rimuovi anche i file su Storage
         try{
           const base = `users/${user.uid}/cards/${d.id}`;
           const del = async path => { try{ await deleteObject(sRef(st, path)); }catch{} };
@@ -214,8 +219,9 @@ async function cloudPull(openPanel=false){
 
     if(openPanel) scrollIntoViewSmooth(cloudBox);
   }catch(err){
-    console.error(err);
+    console.error('[cloudPull] error', err);
     cloudBox.innerHTML = '<div class="tag">Errore nel caricamento della libreria.</div>';
+    alert('Errore libreria cloud: ' + err.message);
   }
 }
 
@@ -225,10 +231,10 @@ function scrollIntoViewSmooth(el){
 
 /* ====== Mostra welcome a avvio (se non nascosto) ====== */
 (function(){
-  const p=new URLSearchParams(location.search);
-  const force=p.get('welcome')==='1';
-  const hide=localStorage.getItem('cm_hide_welcome')==='true';
-  if(force){ localStorage.removeItem('cm_hide_welcome'); if (welcome) welcome.style.display='flex'; }
-  else if(hide){ if (welcome) welcome.style.display='none'; }
+  const p = new URLSearchParams(location.search);
+  const force = p.get('welcome') === '1';
+  const hide  = localStorage.getItem('cm_hide_welcome') === 'true';
+  if (force){ localStorage.removeItem('cm_hide_welcome'); if (welcome) welcome.style.display='flex'; }
+  else if (hide){ if (welcome) welcome.style.display='none'; }
   else { if (welcome) welcome.style.display='flex'; }
 })();
