@@ -45,28 +45,28 @@
     <aside class="panel" id="controls">
       <h3>Fronte</h3>
       <!-- ... TUTTI I TUOI CONTROLLI CARTE (come già erano) ... -->
+<h3>Salvataggi</h3>
+<div class="row2">
+  <div><label>Nome carta</label><input id="cardName" placeholder="Es. Lame del Bosco"></div>
+  <div><label>Mazzo (cartella cloud, opz.)</label><input id="deckName" placeholder="Es. Incantesimi Druido"></div>
+</div>
 
-      <h3>Salvataggi</h3>
-      <div class="row2">
-        <div><label>Nome carta</label><input id="cardName" placeholder="Es. Lame del Bosco"></div>
-        <div><label>Mazzo (cartella cloud, opz.)</label><input id="deckName" placeholder="Es. Incantesimi Druido"></div>
-      </div>
+<div class="btnbar">
+  <button class="btn" id="saveLocal">Salva locale</button>
+  <button class="btn" id="loadLocal">Apri libreria locale</button>
+</div>
+<div id="localLibrary" class="library" style="display:none"></div>
 
-      <div class="btnbar">
-        <button class="btn" id="saveLocal">Salva locale</button>
-        <button class="btn" id="loadLocal">Apri libreria locale</button>
-      </div>
-      <div id="localLibrary" class="library" style="display:none"></div>
-
-      <div class="group" data-auth="only">
-        <h4>Account & Cloud</h4>
-        <div class="row2">
-          <button class="btn" id="btnCloudSave">Salva su cloud</button>
-          <button class="btn" id="btnCloudPull">Apri libreria cloud</button>
-          <button class="btn danger" id="btnCloudClear">Svuota cloud</button>
-        </div>
-        <div id="cloudLibrary" class="library" style="display:none"></div>
-      </div>
+<div class="group" data-auth="only">
+  <h4>Account & Cloud</h4>
+  <div class="row2">
+    <button class="btn" id="btnCloudSave">Salva su cloud</button>
+    <button class="btn" id="btnCloudPull">Apri libreria cloud</button>
+    <button class="btn danger" id="btnCloudClear">Svuota cloud</button>
+  </div>
+  <div id="cloudLibrary" class="library" style="display:none"></div>
+</div>
+     
 
       <h3>Export</h3>
       <div class="btnbar">
