@@ -1,5 +1,4 @@
-// firebase.js — init centralizzato + API esposte in window._fb
-
+// firebase.js — init centralizzato + API in window._fb
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth, onAuthStateChanged,
@@ -18,7 +17,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
   authDomain: "cardmaker-15cf5.firebaseapp.com",
   projectId: "cardmaker-15cf5",
-  storageBucket: "cardmaker-15cf5.appspot.com",
+  storageBucket: "cardmaker-15cf5.appspot.com", // corretto: .appspot.com
   messagingSenderId: "782546269609",
   appId: "1:782546269609:web:934c5740d007558bb900b8",
   measurementId: "G-W68B78G600"
@@ -30,7 +29,7 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 const st   = getStorage(app);
 
-// Espongo in window._fb
+// Espongo tutto in window._fb per gli altri moduli
 window._fb = {
   app, auth, db, st,
   // auth
