@@ -1,4 +1,4 @@
-// card-local.js — libreria locale: salva / lista / carica / elimina (senza JSON)
+// card-local.js — libreria locale: salva / lista / carica / elimina (niente JSON)
 
 import { snapshot, applySnap, frontPNG } from './card.js';
 
@@ -28,12 +28,12 @@ function saveLocal(){
   alert('Salvato in locale ✅');
 }
 
-function renderList(){
+function renderLocalList(){
   const map = readAll();
   const items = Object.values(map).sort((a,b)=> (b.savedAt||0)-(a.savedAt||0));
+  box.style.display = 'block';
   if (!items.length){
     box.innerHTML = '<div class="muted">Nessun salvataggio locale.</div>';
-    box.style.display = 'block';
     return;
   }
   const frag = document.createDocumentFragment();
@@ -55,16 +55,16 @@ function renderList(){
     const bDel = document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Elimina';
     bDel.onclick = ()=>{
       if(!confirm('Eliminare questo salvataggio locale?')) return;
-      const map2 = readAll(); delete map2[it.name]; writeAll(map2); renderList();
+      const map2 = readAll(); delete map2[it.name]; writeAll(map2); renderLocalList();
     };
 
     acts.append(bLoad, bDel);
     row.appendChild(acts);
     frag.appendChild(row);
   });
-  box.innerHTML = ''; box.appendChild(frag); box.style.display='block';
+  box.innerHTML = ''; box.appendChild(frag);
 }
 
 // Eventi UI
 btnSave?.addEventListener('click', (e)=>{ e.preventDefault(); saveLocal(); });
-btnOpen?.addEventListener('click', (e)=>{ e.preventDefault(); renderList(); });
+btnOpen?.addEventListener('click', (e)=>{ e.preventDefault(); renderLocalList(); });
