@@ -18,11 +18,13 @@ function writeAll(map){
 }
 
 function saveLocal(){
-  const name = ($('#cardName')?.value || $('#title')?.value || '').trim() || `Carta ${new Date().toLocaleString()}`;
+  const name =
+    ($('#cardName')?.value || $('#title')?.value || '').trim() ||
+    `Carta ${new Date().toLocaleString()}`;
   const map = readAll();
-  const state = snapshot(false); // stato completo (senza blob)
+  const state = snapshot(false); // stato completo (senza blob/immagini inline)
   let thumb = '';
-  try{ thumb = frontPNG(); }catch{}
+  try { thumb = frontPNG(); } catch {}
   map[name] = { name, savedAt: Date.now(), state, thumb };
   writeAll(map);
   alert('Salvato in locale ✅');
@@ -36,21 +38,28 @@ function renderLocalList(){
     box.innerHTML = '<div class="muted">Nessun salvataggio locale.</div>';
     return;
   }
+
   const frag = document.createDocumentFragment();
   items.forEach(it=>{
     const row = document.createElement('div'); row.className='lib-row';
 
-    const img = document.createElement('img'); img.className='lib-thumb'; img.src = it.thumb || ''; row.appendChild(img);
+    const img = document.createElement('img'); img.className='lib-thumb';
+    img.src = it.thumb || ''; row.appendChild(img);
 
     const meta = document.createElement('div'); meta.className='lib-meta';
-    const t = document.createElement('div'); t.className='lib-title'; t.textContent = it.name || 'Senza nome';
-    const sub = document.createElement('div'); sub.className='lib-sub'; sub.textContent = new Date(it.savedAt||Date.now()).toLocaleString();
+    const t = document.createElement('div'); t.className='lib-title';
+    t.textContent = it.name || 'Senza nome';
+    const sub = document.createElement('div'); sub.className='lib-sub';
+    sub.textContent = new Date(it.savedAt||Date.now()).toLocaleString();
     meta.append(t, sub); row.appendChild(meta);
 
     const acts = document.createElement('div'); acts.className='lib-actions';
 
     const bLoad = document.createElement('button'); bLoad.className='btn'; bLoad.textContent='Carica';
-    bLoad.onclick = ()=>{ try{ applySnap(it.state || {}); alert('Carta caricata dal locale ✅'); }catch(e){ console.error(e); alert('Impossibile caricare.'); } };
+    bLoad.onclick = ()=>{
+      try { applySnap(it.state || {}); alert('Carta caricata dal locale ✅'); }
+      catch(e){ console.error(e); alert('Impossibile caricare.'); }
+    };
 
     const bDel = document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Elimina';
     bDel.onclick = ()=>{
@@ -62,7 +71,9 @@ function renderLocalList(){
     row.appendChild(acts);
     frag.appendChild(row);
   });
-  box.innerHTML = ''; box.appendChild(frag);
+
+  box.innerHTML = '';
+  box.appendChild(frag);
 }
 
 // Eventi UI
