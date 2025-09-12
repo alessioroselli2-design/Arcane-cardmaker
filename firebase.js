@@ -18,7 +18,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
   authDomain: "cardmaker-15cf5.firebaseapp.com",
   projectId: "cardmaker-15cf5",
-  storageBucket: "cardmaker-15cf5.appspot.com", // <— appspot.com è quello giusto per lo Storage
+  storageBucket: "cardmaker-15cf5.appspot.com",
   messagingSenderId: "782546269609",
   appId: "1:782546269609:web:934c5740d007558bb900b8",
   measurementId: "G-W68B78G600"
@@ -30,7 +30,7 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 const st   = getStorage(app);
 
-// Espongo tutto in window._fb per gli altri file
+// Espongo in window._fb
 window._fb = {
   app, auth, db, st,
   // auth
