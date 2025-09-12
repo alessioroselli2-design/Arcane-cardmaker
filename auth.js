@@ -22,7 +22,7 @@ function setAuthUI(user){
   if (userStatus) userStatus.textContent = logged ? (user.email || 'Account') : 'Ospite';
 }
 
-// Welcome / Accesso
+/* ===== Welcome / Accesso ===== */
 $('btnGuest')?.addEventListener('click', ()=>{
   if ($('dontShow')?.checked) localStorage.setItem('cm_hide_welcome','true');
   if (welcome) welcome.style.display = 'none';
@@ -75,20 +75,16 @@ function cardsCol(uid){
               : collection(db,'users',uid,'cards');
 }
 
-// ========== CLOUD: SALVA ==========
+/* ===== CLOUD: SALVA ===== */
 btnCloudSave?.addEventListener('click', async ()=>{
   const { auth, serverTimestamp, doc, setDoc, sRef, uploadString, getDownloadURL, st } = fb();
   const user = auth.currentUser; if(!user) return alert('Accedi prima.');
   const name = ($('cardName')?.value || 'Carta senza nome').trim();
   try{
-    // Stato completo (senza blob interni)
     const state = snapshot(false);
-    // Genero immagini da canvas
     const dataFront = frontPNG();
-    let dataBack = null;
-    try{ dataBack = backPNG(); }catch{}
+    let dataBack = null; try{ dataBack = backPNG(); }catch{}
 
-    // Carico su Storage (thumb/front/back)
     const docRef = doc(cardsCol(user.uid)); // id auto
     const base   = `users/${user.uid}/cards/${docRef.id}`;
     const up = async (dataUrl, path) => {
@@ -99,9 +95,8 @@ btnCloudSave?.addEventListener('click', async ()=>{
     };
     const urlFront = await up(dataFront, `${base}/front.png`);
     const urlBack  = await up(dataBack,  `${base}/back.png`);
-    const urlThumb = urlFront; // riuso fronte come thumb
+    const urlThumb = urlFront;
 
-    // Documento Firestore
     await setDoc(docRef, {
       owner: user.uid,
       name,
@@ -120,23 +115,26 @@ btnCloudSave?.addEventListener('click', async ()=>{
   }
 });
 
-// ========== CLOUD: LISTA / CARICA / ELIMINA ==========
+/* ===== CLOUD: LISTA / CARICA / ELIMINA ===== */
 btnCloudPull?.addEventListener('click', ()=> cloudLoad(true));
 
 async function cloudLoad(show=true){
-  const { auth, db, collection, query, orderBy, getDocs, doc, deleteDoc, st, sRef, deleteObject } = fb();
+  const { auth, query, orderBy, getDocs, doc, deleteDoc, st, sRef, deleteObject } = fb();
   const user = auth.currentUser;
   if(!cloudBox) return;
+
+  cloudBox.style.display='block';
+
   if(!user){
     cloudBox.innerHTML = '<div class="muted">Accedi per vedere la libreria cloud.</div>';
-    cloudBox.style.display='block';
     return;
   }
-  cloudBox.style.display='block';
+
   cloudBox.innerHTML = '<div class="muted">Caricamento…</div>';
 
   try{
-    const qref = query(cardsCol(user.uid), orderBy('updatedAt','desc'));
+    const qref = orderBy ? fb().query(cardsCol(user.uid), orderBy('updatedAt','desc'))
+                         : fb().query(cardsCol(user.uid));
     const snap = await getDocs(qref);
 
     if (snap.empty){
@@ -173,7 +171,6 @@ async function cloudLoad(show=true){
       bDel.onclick = async ()=>{
         if(!confirm('Eliminare questa carta dal cloud?')) return;
         await deleteDoc(doc(cardsCol(user.uid), d.id));
-        // (opzionale) elimina i file associati
         try{
           const base = `users/${user.uid}/cards/${d.id}`;
           await Promise.all([
@@ -194,12 +191,12 @@ async function cloudLoad(show=true){
     if (show) cloudBox.scrollIntoView({behavior:'smooth', block:'start'});
   }catch(err){
     console.error('[cloudLoad] error', err);
-    cloudBox.innerHTML = '<div class="muted">Errore nel caricamento della libreria.</div>';
+    cloudBox.innerHTML = '<div class="muted">Errore nel caricamento della libreria cloud.</div>';
     alert('Errore libreria cloud: ' + err.message);
   }
 }
 
-// (opzionale) svuota tutto
+/* (opzionale) svuota tutto */
 btnCloudClear?.addEventListener('click', async ()=>{
   const { auth, getDocs, query, collection, deleteDoc } = fb();
   const user = auth.currentUser; if(!user) return alert('Accedi prima.');
@@ -213,12 +210,14 @@ btnCloudClear?.addEventListener('click', async ()=>{
   cloudBox.style.display='block';
 });
 
-// Welcome al primo avvio
+/* Welcome al primo avvio (forzabile con ?welcome=1) */
 (function(){
+  const el = document.getElementById('welcome');
+  if (!el) return;
   const p = new URLSearchParams(location.search);
   const force = p.get('welcome') === '1';
   const hide  = localStorage.getItem('cm_hide_welcome') === 'true';
-  if (force){ localStorage.removeItem('cm_hide_welcome'); if (welcome) welcome.style.display='flex'; }
-  else if (hide){ if (welcome) welcome.style.display='none'; }
-  else { if (welcome) welcome.style.display='flex'; }
+  if (force) { localStorage.removeItem('cm_hide_welcome'); el.style.display = 'flex'; return; }
+  if (hide) el.style.display = 'none';
+  else      el.style.display = 'flex';
 })();
