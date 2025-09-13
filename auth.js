@@ -1,21 +1,20 @@
-// auth.js — login/ospite/logout + Libreria CLOUD (salva/lista/carica/elimina)
+// auth.js — login/ospite/logout + Libreria CLOUD (salva / lista / carica / elimina)
 
 import { snapshot, applySnap, frontPNG, backPNG } from './card.js';
 
-const $ = id => document.getElementById(id);
-const fb = () =>
-  window._fb ||
-  (() => { throw new Error('Firebase non inizializzato: controlla <script type="module" src="firebase.js"> in index.html'); })();
+const $  = id => document.getElementById(id);
+const fb = () => window._fb || (() => { throw new Error('Firebase non inizializzato'); })();
 
-// UI refs
-const welcome       = $('welcome');
-const userStatus    = $('userStatus');
-const btnLogout     = $('btnLogout');
-const cloudBox      = $('cloudLibrary');
-const btnCloudSave  = $('btnCloudSave');
-const btnCloudPull  = $('btnCloudPull');
-const btnCloudClear = $('btnCloudClear');
+// ——— UI refs
+const welcome        = $('welcome');
+const userStatus     = $('userStatus');
+const btnLogout      = $('btnLogout');
+const cloudBox       = $('cloudLibrary');
+const btnCloudSave   = $('btnCloudSave');
+const btnCloudPull   = $('btnCloudPull');
+const btnCloudClear  = $('btnCloudClear');
 
+// ——— Stato UI auth
 function setAuthUI(user){
   const logged = !!user;
   if (btnLogout) btnLogout.style.display = logged ? '' : 'none';
@@ -29,9 +28,11 @@ $('btnGuest')?.addEventListener('click', ()=>{
   if ($('dontShow')?.checked) localStorage.setItem('cm_hide_welcome','true');
   if (welcome) welcome.style.display = 'none';
 });
+
 $('btnLogin')?.addEventListener('click', async ()=>{
   const { auth, signInWithEmailAndPassword } = fb();
-  const e = $('email')?.value.trim(), p = $('password')?.value;
+  const e = $('email')?.value.trim();
+  const p = $('password')?.value;
   if(!e || !p) return alert('Email e password richieste');
   try{
     await signInWithEmailAndPassword(auth, e, p);
@@ -40,9 +41,11 @@ $('btnLogin')?.addEventListener('click', async ()=>{
     cloudLoad(true);
   }catch(err){ alert(err.message); }
 });
+
 $('btnSignup')?.addEventListener('click', async ()=>{
   const { auth, createUserWithEmailAndPassword } = fb();
-  const e = $('email')?.value.trim(), p = $('password')?.value;
+  const e = $('email')?.value.trim();
+  const p = $('password')?.value;
   if(!e || !p) return alert('Email e password richieste');
   try{
     await createUserWithEmailAndPassword(auth, e, p);
@@ -51,12 +54,13 @@ $('btnSignup')?.addEventListener('click', async ()=>{
     cloudLoad(true);
   }catch(err){ alert(err.message); }
 });
+
 btnLogout?.addEventListener('click', ()=>{
   const { auth, signOut } = fb();
   signOut(auth);
 });
 
-// Stato auth
+// ——— Watcher auth
 (function initAuthWatcher(){
   const { auth, onAuthStateChanged } = fb();
   onAuthStateChanged(auth, (u)=>{
@@ -69,7 +73,7 @@ btnLogout?.addEventListener('click', ()=>{
   });
 })();
 
-// Helpers
+// ——— Helpers Firestore
 function cardsCol(uid){
   const deck = ($('deckName')?.value || '').trim();
   const { db, collection } = fb();
@@ -86,34 +90,34 @@ btnCloudSave?.addEventListener('click', async ()=>{
   const name = ($('cardName')?.value || 'Carta senza nome').trim();
 
   try{
-    const state    = snapshot(false);   // JSON della carta (senza blob)
-    const dataFront= frontPNG();        // preview fronte come dataURL
-    let dataBack   = null; try{ dataBack = backPNG(); }catch{}
+    // 1) prendo lo stato (senza oggetti Image)
+    const state     = snapshot(false);
+    const dataFront = frontPNG();
+    let   dataBack  = null; try { dataBack = backPNG(); } catch {}
 
-    // crea doc con ID auto nella collezione (cards o decks/<deck>/cards)
-    const docRef = doc(cardsCol(user.uid));
-    // usa lo STESSO path anche per lo storage (allineato a Firestore)
-    const basePath = docRef.path; // es. "users/<uid>/cards/<docId>" oppure "users/<uid>/decks/<deck>/cards/<docId>"
+    // 2) creo un doc con ID automatico NELLA collezione giusta
+    const docRef   = doc(cardsCol(user.uid));   // genera un id senza scrivere
+    const basePath = docRef.path;               // user.../cards/... oppure .../decks/<deck>/cards/<id>
 
-    const upload = async (dataUrl, file) => {
+    // 3) carico immagini in Storage usando lo stesso path del doc
+    const up = async (dataUrl, fileName) => {
       if(!dataUrl) return null;
-      const ref = sRef(st, `${basePath}/${file}`);
+      const ref = sRef(st, `${basePath}/${fileName}`);
       await uploadString(ref, dataUrl, 'data_url');
       return await getDownloadURL(ref);
     };
+    const urlFront = await up(dataFront, 'front.png');
+    const urlBack  = await up(dataBack,  'back.png');
 
-    const urlFront = await upload(dataFront, 'front.png');
-    const urlBack  = await upload(dataBack,  'back.png');
-    const urlThumb = urlFront;
-
+    // 4) salvo il documento (ora che ho gli URL)
     await setDoc(docRef, {
       owner: user.uid,
       name,
       deck: ($('deckName')?.value || '').trim() || null,
       updatedAt: serverTimestamp(),
-      thumb: urlThumb,
-      state,
-      assets: { front: urlFront, back: urlBack }
+      thumb: urlFront || null,
+      state,                                  // tutto lo stato (senza Image)
+      assets: { front: urlFront || null, back: urlBack || null }
     });
 
     alert('Carta salvata su cloud ✅');
@@ -132,7 +136,7 @@ async function cloudLoad(show=true){
   const user = auth.currentUser;
   if(!cloudBox) return;
 
-  cloudBox.style.display='block';
+  cloudBox.style.display = 'block';
 
   if(!user){
     cloudBox.innerHTML = '<div class="muted">Accedi per vedere la libreria cloud.</div>';
@@ -142,10 +146,11 @@ async function cloudLoad(show=true){
   cloudBox.innerHTML = '<div class="muted">Caricamento…</div>';
 
   try{
-    const qref = orderBy ? fb().query(cardsCol(user.uid), orderBy('updatedAt','desc'))
-                         : fb().query(cardsCol(user.uid));
-    const snap = await getDocs(qref);
+    const qref = orderBy
+      ? fb().query(cardsCol(user.uid), orderBy('updatedAt','desc'))
+      : fb().query(cardsCol(user.uid));
 
+    const snap = await getDocs(qref);
     if (snap.empty){
       cloudBox.innerHTML = '<div class="muted">Nessuna carta sul cloud.</div>';
       return;
@@ -153,8 +158,9 @@ async function cloudLoad(show=true){
 
     const frag = document.createDocumentFragment();
     snap.forEach(d=>{
-      const it  = d.data();
-      const row = document.createElement('div'); row.className='lib-row';
+      const it = d.data();
+
+      const row = document.createElement('div'); row.className = 'lib-row';
 
       const img = document.createElement('img'); img.className='lib-thumb';
       img.src = it.thumb || it.assets?.front || '';
@@ -165,17 +171,21 @@ async function cloudLoad(show=true){
       title.textContent = it.name || '(senza nome)';
       const sub   = document.createElement('div'); sub.className='lib-sub';
       sub.textContent = it.deck ? `Cloud · ${it.deck}` : 'Cloud';
-      meta.append(title, sub); row.appendChild(meta);
+      meta.append(title, sub);
+      row.appendChild(meta);
 
       const acts = document.createElement('div'); acts.className='lib-actions';
 
-      const bLoad = document.createElement('button'); bLoad.className='btn'; bLoad.textContent='Carica';
+      // Carica
+      const bLoad = document.createElement('button');
+      bLoad.className = 'btn';
+      bLoad.textContent = 'Carica';
       bLoad.onclick = async ()=>{
         try{
           const st = it.state || {};
           if (it.assets?.front) st._imgFront = it.assets.front;
           if (it.assets?.back)  st._imgBack  = it.assets.back;
-          await applySnap(st);                        // attende caricamento immagini
+          await applySnap(st);                   // attende il caricamento immagini
           alert('Carta caricata dalla cloud ✅');
         }catch(e){
           console.error(e);
@@ -183,18 +193,19 @@ async function cloudLoad(show=true){
         }
       };
 
-      const bDel = document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Elimina';
+      // Elimina
+      const bDel = document.createElement('button');
+      bDel.className = 'btn danger';
+      bDel.textContent = 'Elimina';
       bDel.onclick = async ()=>{
         if(!confirm('Eliminare questa carta dal cloud?')) return;
         try{
           const { deleteDoc, sRef, deleteObject, st } = fb();
-          // elimina doc
-          await deleteDoc(d.ref);
-          // prova a togliere anche i PNG dallo storage usando lo stesso path del doc
-          const basePath = d.ref.path; // stesso schema usato in salvataggio
+          await deleteDoc(d.ref);                       // elimina doc
+          const basePath = d.ref.path;                  // stesso path
           await Promise.all([
             deleteObject(sRef(st, `${basePath}/front.png`)).catch(()=>{}),
-            deleteObject(sRef(st, `${basePath}/back.png`)).catch(()=>{}),
+            deleteObject(sRef(st, `${basePath}/back.png`)).catch(()=>{})
           ]);
           row.remove();
         }catch(err){
@@ -210,7 +221,7 @@ async function cloudLoad(show=true){
 
     cloudBox.innerHTML = '';
     cloudBox.appendChild(frag);
-    if (show) cloudBox.scrollIntoView({behavior:'smooth', block:'start'});
+    if (show) cloudBox.scrollIntoView({ behavior:'smooth', block:'start' });
   }catch(err){
     console.error('[cloudLoad] error', err);
     cloudBox.innerHTML = '<div class="muted">Errore nel caricamento della libreria cloud.</div>';
@@ -229,7 +240,7 @@ btnCloudClear?.addEventListener('click', async ()=>{
   snap.forEach(d => jobs.push(deleteDoc(d.ref)));
   await Promise.all(jobs);
   cloudBox.innerHTML = '<div class="muted">Libreria cloud vuota.</div>';
-  cloudBox.style.display='block';
+  cloudBox.style.display = 'block';
 });
 
 /* Welcome al primo avvio (forzabile con ?welcome=1) */
