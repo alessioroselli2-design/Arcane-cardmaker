@@ -21,6 +21,7 @@ function setBusy(btn, text = 'Attendi…') {
   btn.dataset.oldText = old;
   btn.disabled = true;
   btn.textContent = text;
+  // restituisce la funzione di ripristino
   return () => { btn.disabled = false; btn.textContent = btn.dataset.oldText || old; };
 }
 function flash(btn, text = 'Fatto ✅') {
@@ -94,12 +95,11 @@ btnCloudSave?.addEventListener('click', async () => {
   const name = (document.getElementById('cardName')?.value || 'Carta senza nome').trim();
   const deck = (document.getElementById('deckName')?.value || '').trim() || null;
 
-  // UI busy
-  const btn = btnCloudSave;
-  const restore = setBusy(btn, 'Salvataggio…');
+  // UI: blocca e mostra “Salvataggio…”
+  const restore = setBusy(btnCloudSave, 'Salvataggio…');
 
   try {
-    // 1) crea doc placeholder (ottieni l'ID allineato allo storage)
+    // 1) crea doc placeholder (per allineare il path dello Storage)
     const colRef = cardsCol(user.uid);
     const docRef = await addDoc(colRef, {
       owner: user.uid,
@@ -113,18 +113,17 @@ btnCloudSave?.addEventListener('click', async () => {
     let   dataBack  = null; try { dataBack = backPNG(); } catch {}
 
     // 3) upload PNG in parallelo sullo stesso path del doc
-    const basePath = docRef.path; // es. users/<uid>/cards/<id> o .../decks/<deck>/cards/<id>
+    const basePath = docRef.path; // users/<uid>/cards/<id> oppure .../decks/<deck>/cards/<id>
     const up = async (dataUrl, fileName) => {
       if (!dataUrl) return null;
       const ref = sRef(st, `${basePath}/${fileName}`);
       await uploadString(ref, dataUrl, 'data_url');
       return await getDownloadURL(ref);
     };
-
     const [urlFront, urlBack] = await Promise.allSettled([
       up(dataFront, 'front.png'),
       up(dataBack,  'back.png')
-    ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : null));
+    ]).then(r => r.map(x => x.status === 'fulfilled' ? x.value : null));
 
     // 4) completa/aggiorna il documento
     await setDoc(docRef, {
@@ -134,12 +133,14 @@ btnCloudSave?.addEventListener('click', async () => {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    // UI ok
+    // UI: sblocca e mostra “Salvato ✅”
+    restore();
     flash(btnCloudSave, 'Salvato ✅');
+
   } catch (err) {
     console.error('[cloudSave] error', err);
     alert('Errore salvataggio cloud: ' + err.message);
-  } finally {
+    // in errore, torna comunque cliccabile
     restore();
   }
 });
@@ -204,7 +205,6 @@ function renderCloudListFromSnapshot(qsnap){
         const { deleteDoc, sRef, deleteObject, st } = fb();
         bDel.disabled = true; bLoad.disabled = true; bDel.textContent = 'Elimino…';
         await deleteDoc(d.ref);   // lo snapshot aggiornerà la lista
-        // PNG in background
         const basePath = d.ref.path;
         Promise.allSettled([
           deleteObject(sRef(st, `${basePath}/front.png`)),
@@ -238,12 +238,11 @@ async function cloudLoadOnce(){
   renderCloudListFromSnapshot(snap);
 }
 
-// attiva la lista (se già loggato) quando premi "Apri libreria cloud"
+// “Apri libreria cloud” → realtime (se disponibile) o one-shot
 btnCloudPull?.addEventListener('click', ()=>{
   const { auth, onSnapshot, query, orderBy } = fb();
   const user = auth.currentUser;
   if(!user) return alert('Accedi prima.');
-
   if (unsubscribeCloud) { unsubscribeCloud(); unsubscribeCloud = null; }
 
   if (onSnapshot) {
