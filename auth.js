@@ -14,23 +14,23 @@ const btnCloudSave   = $('btnCloudSave');
 const btnCloudPull   = $('btnCloudPull');
 const btnCloudClear  = $('btnCloudClear');
 
-// ===== Helpers UI (feedback sui pulsanti) =====
-function setBusy(btn, text="Attendi…"){
-  if(!btn) return ()=>{};
+/* =============== Helpers UI =============== */
+function setBusy(btn, text = 'Attendi…') {
+  if (!btn) return () => {};
   const old = btn.textContent;
   btn.dataset.oldText = old;
   btn.disabled = true;
   btn.textContent = text;
   return () => { btn.disabled = false; btn.textContent = btn.dataset.oldText || old; };
 }
-function flash(btn, text="Fatto ✅"){
-  if(!btn) return;
+function flash(btn, text = 'Fatto ✅') {
+  if (!btn) return;
   const old = btn.textContent;
   btn.textContent = text;
-  setTimeout(()=> { btn.textContent = old; }, 1200);
+  setTimeout(() => { btn.textContent = old; }, 1500);
 }
 
-// ===== Stato UI auth =====
+/* =============== Stato UI auth =============== */
 function setAuthUI(user){
   const logged = !!user;
   if (btnLogout) btnLogout.style.display = logged ? '' : 'none';
@@ -39,7 +39,7 @@ function setAuthUI(user){
   if (userStatus) userStatus.textContent = logged ? (user.email || 'Account') : 'Ospite';
 }
 
-/* ===== Welcome / Accesso ===== */
+/* =============== Welcome / Accesso =============== */
 $('btnGuest')?.addEventListener('click', ()=>{
   if ($('dontShow')?.checked) localStorage.setItem('cm_hide_welcome','true');
   if (welcome) welcome.style.display = 'none';
@@ -71,7 +71,7 @@ btnLogout?.addEventListener('click', ()=>{
   signOut(auth);
 });
 
-// ===== Helpers Firestore =====
+/* =============== Helpers Firestore =============== */
 function cardsCol(uid){
   const deck = ($('deckName')?.value || '').trim();
   const { db, collection } = fb();
@@ -80,7 +80,7 @@ function cardsCol(uid){
     : collection(db, 'users', uid, 'cards');
 }
 
-// ===== Salvataggio CLOUD =====
+/* =============== Salvataggio CLOUD =============== */
 btnCloudSave?.addEventListener('click', async () => {
   const {
     auth, serverTimestamp,
@@ -94,14 +94,12 @@ btnCloudSave?.addEventListener('click', async () => {
   const name = (document.getElementById('cardName')?.value || 'Carta senza nome').trim();
   const deck = (document.getElementById('deckName')?.value || '').trim() || null;
 
-  // — UI: blocca il bottone e mostra "Salvataggio…"
+  // UI busy
   const btn = btnCloudSave;
-  const oldText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Salvataggio…';
+  const restore = setBusy(btn, 'Salvataggio…');
 
   try {
-    // 1) crea il doc placeholder (per avere l'ID)
+    // 1) crea doc placeholder (ottieni l'ID allineato allo storage)
     const colRef = cardsCol(user.uid);
     const docRef = await addDoc(colRef, {
       owner: user.uid,
@@ -114,7 +112,7 @@ btnCloudSave?.addEventListener('click', async () => {
     const dataFront = frontPNG();
     let   dataBack  = null; try { dataBack = backPNG(); } catch {}
 
-    // 3) upload PNG in Storage sullo stesso path del doc
+    // 3) upload PNG in parallelo sullo stesso path del doc
     const basePath = docRef.path; // es. users/<uid>/cards/<id> o .../decks/<deck>/cards/<id>
     const up = async (dataUrl, fileName) => {
       if (!dataUrl) return null;
@@ -122,12 +120,13 @@ btnCloudSave?.addEventListener('click', async () => {
       await uploadString(ref, dataUrl, 'data_url');
       return await getDownloadURL(ref);
     };
-    const [urlFront, urlBack] = await Promise.all([
+
+    const [urlFront, urlBack] = await Promise.allSettled([
       up(dataFront, 'front.png'),
       up(dataBack,  'back.png')
-    ]);
+    ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : null));
 
-    // 4) completa il documento
+    // 4) completa/aggiorna il documento
     await setDoc(docRef, {
       thumb: urlFront || null,
       state,
@@ -135,21 +134,17 @@ btnCloudSave?.addEventListener('click', async () => {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    // — UI: feedback chiaro “Salvato ✅”, poi torna allo stato normale
-    btn.textContent = 'Salvato ✅';
-    setTimeout(() => {
-      btn.textContent = oldText;
-      btn.disabled = false;
-    }, 1200);
+    // UI ok
+    flash(btnCloudSave, 'Salvato ✅');
   } catch (err) {
     console.error('[cloudSave] error', err);
     alert('Errore salvataggio cloud: ' + err.message);
-    // — UI: ripristina in caso di errore
-    btn.textContent = oldText;
-    btn.disabled = false;
+  } finally {
+    restore();
   }
 });
-// ===== Lista realtime / carica / elimina =====
+
+/* =============== Lista realtime / carica / elimina =============== */
 let unsubscribeCloud = null;
 
 function renderCloudListFromSnapshot(qsnap){
@@ -199,7 +194,7 @@ function renderCloudListFromSnapshot(qsnap){
       }
     };
 
-    // Elimina (ottimistica: rimuove subito la riga)
+    // Elimina (ottimistico)
     const bDel = document.createElement('button');
     bDel.className = 'btn danger';
     bDel.textContent = 'Elimina';
@@ -208,8 +203,8 @@ function renderCloudListFromSnapshot(qsnap){
       try{
         const { deleteDoc, sRef, deleteObject, st } = fb();
         bDel.disabled = true; bLoad.disabled = true; bDel.textContent = 'Elimino…';
-        await deleteDoc(d.ref);   // rimuove subito dal Firestore -> lo snapshot aggiorna la lista
-        // cancella PNG in background (non blocca l’UI)
+        await deleteDoc(d.ref);   // lo snapshot aggiornerà la lista
+        // PNG in background
         const basePath = d.ref.path;
         Promise.allSettled([
           deleteObject(sRef(st, `${basePath}/front.png`)),
@@ -231,7 +226,6 @@ function renderCloudListFromSnapshot(qsnap){
 }
 
 async function cloudLoadOnce(){
-  // fallback one-shot (se manca onSnapshot)
   const { auth, query, orderBy, getDocs } = fb();
   const user = auth.currentUser;
   if(!user) return;
@@ -252,7 +246,6 @@ btnCloudPull?.addEventListener('click', ()=>{
 
   if (unsubscribeCloud) { unsubscribeCloud(); unsubscribeCloud = null; }
 
-  // se c'è onSnapshot usiamo realtime, altrimenti facciamo un caricamento singolo
   if (onSnapshot) {
     const qref = orderBy
       ? fb().query(cardsCol(user.uid), orderBy('updatedAt','desc'))
@@ -269,7 +262,7 @@ btnCloudPull?.addEventListener('click', ()=>{
   }
 });
 
-// ===== svuota tutto =====
+/* =============== Svuota tutto =============== */
 btnCloudClear?.addEventListener('click', async ()=>{
   const { auth, getDocs, query, deleteDoc } = fb();
   const user = auth.currentUser; if(!user) return alert('Accedi prima.');
@@ -283,7 +276,7 @@ btnCloudClear?.addEventListener('click', async ()=>{
   cloudBox.style.display = 'block';
 });
 
-// ===== Watcher auth =====
+/* =============== Watcher auth =============== */
 (function initAuthWatcher(){
   const { auth, onAuthStateChanged } = fb();
   onAuthStateChanged(auth, (u)=>{
