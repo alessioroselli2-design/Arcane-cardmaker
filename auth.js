@@ -87,7 +87,9 @@ btnCloudSave?.addEventListener('click', async ()=>{
 
   try{
     // 1) Salva SUBITO lo stato su Firestore (senza dipendere dallo Storage)
-    const state  = snapshot(false);
+    const stateRaw = snapshot(false);
+// rimuove undefined/funzioni/oggetti non serializzabili
+const state = JSON.parse(JSON.stringify(stateRaw));
     const docRef = doc(cardsCol(user.uid)); // id auto
     await setDoc(docRef, {
       owner: user.uid,
