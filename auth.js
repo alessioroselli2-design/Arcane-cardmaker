@@ -83,25 +83,38 @@ function cardsCol(uid){
 }
 
 /* ===== CLOUD: SALVA ===== */
-btnCloudSave?.addEventListener('click', async ()=>{
-  const { auth, serverTimestamp, doc, setDoc, sRef, uploadString, getDownloadURL, st } = fb();
-  const user = auth.currentUser;
-  if(!user) return alert('Accedi prima.');
-  const name = ($('cardName')?.value || 'Carta senza nome').trim();
+btnCloudSave?.addEventListener('click', async () => {
+  const {
+    auth, serverTimestamp,
+    addDoc, setDoc, collection,
+    sRef, uploadString, getDownloadURL, st
+  } = fb();
 
-  try{
-    // 1) prendo lo stato (senza oggetti Image)
+  const user = auth.currentUser;
+  if (!user) return alert('Accedi prima.');
+
+  const name = ($('cardName')?.value || 'Carta senza nome').trim();
+  const deck = ($('deckName')?.value || '').trim() || null;
+
+  try {
+    // 1) crea SUBITO un documento (ottieni l'id)
+    const colRef = cardsCol(user.uid);
+    const docRef = await addDoc(colRef, {
+      owner: user.uid,
+      name,
+      deck,
+      updatedAt: serverTimestamp()
+    });
+
+    // 2) prepara stato e PNG
     const state     = snapshot(false);
     const dataFront = frontPNG();
     let   dataBack  = null; try { dataBack = backPNG(); } catch {}
 
-    // 2) creo un doc con ID automatico NELLA collezione giusta
-    const docRef   = doc(cardsCol(user.uid));   // genera un id senza scrivere
-    const basePath = docRef.path;               // user.../cards/... oppure .../decks/<deck>/cards/<id>
-
-    // 3) carico immagini in Storage usando lo stesso path del doc
+    // 3) carica PNG in Storage usando lo stesso path del doc
+    const basePath = docRef.path; // es. users/<uid>/cards/<id> oppure .../decks/<deck>/cards/<id>
     const up = async (dataUrl, fileName) => {
-      if(!dataUrl) return null;
+      if (!dataUrl) return null;
       const ref = sRef(st, `${basePath}/${fileName}`);
       await uploadString(ref, dataUrl, 'data_url');
       return await getDownloadURL(ref);
@@ -109,25 +122,21 @@ btnCloudSave?.addEventListener('click', async ()=>{
     const urlFront = await up(dataFront, 'front.png');
     const urlBack  = await up(dataBack,  'back.png');
 
-    // 4) salvo il documento (ora che ho gli URL)
+    // 4) completa il documento con preview/stato
     await setDoc(docRef, {
-      owner: user.uid,
-      name,
-      deck: ($('deckName')?.value || '').trim() || null,
-      updatedAt: serverTimestamp(),
       thumb: urlFront || null,
-      state,                                  // tutto lo stato (senza Image)
-      assets: { front: urlFront || null, back: urlBack || null }
-    });
+      state,
+      assets: { front: urlFront || null, back: urlBack || null },
+      updatedAt: serverTimestamp()
+    }, { merge: true });
 
     alert('Carta salvata su cloud ✅');
     await cloudLoad(true);
-  }catch(err){
+  } catch (err) {
     console.error('[cloudSave] error', err);
     alert('Errore salvataggio cloud: ' + err.message);
   }
 });
-
 /* ===== CLOUD: LISTA / CARICA / ELIMINA ===== */
 btnCloudPull?.addEventListener('click', ()=> cloudLoad(true));
 
