@@ -170,13 +170,42 @@ export function snapshot(includeImages=true){
   return out;
 }
 
-export function applySnap(s){
-  Object.assign(state,s||{});
-  if(state.classSource==='db'){ loadDbIcon(state.clazz); }
-  else if(state.classSource==='upload' && s?._imgClass){ const i=new Image(); i.onload=()=>{state.imgClass=i; drawFront();}; i.src=s._imgClass; }
-  if(s?._imgFront){ const i=new Image(); i.onload=()=>{state.imgFront=i; drawFront();}; i.src=s._imgFront; }
-  if(s?._imgBack){ const i=new Image(); i.onload=()=>{state.imgBack=i; drawBack();}; i.src=s._imgBack; }
-  drawFront(); drawBack();
+// applySnap ASINCRONA: carica immagini da URL/DataURL e ridisegna solo quando sono pronte
+export async function applySnap(s) {
+  // unisci lo stato base
+  Object.assign(state, s || {});
+
+  // helper per caricare un'Image in modo affidabile
+  const loadImg = (url) =>
+    new Promise((resolve, reject) => {
+      if (!url) return resolve(null);
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // importante per storage public URLs
+      img.onload = () => resolve(img);
+      img.onerror = (e) => reject(e);
+      img.src = url;
+    });
+
+  try {
+    const [f, b, c] = await Promise.all([
+      s?._imgFront ? loadImg(s._imgFront) : null,
+      s?._imgBack  ? loadImg(s._imgBack)  : null,
+      s?._imgClass ? loadImg(s._imgClass) : null,
+    ]);
+
+    if (f) state.imgFront = f;
+    if (b) state.imgBack  = b;
+    if (c) state.imgClass = c;
+
+    drawFront();
+    drawBack();
+  } catch (err) {
+    console.error('[applySnap] errore nel caricare le immagini:', err);
+    // provo comunque a ridisegnare quello che ho
+    drawFront();
+    drawBack();
+    throw err;
+  }
 }
 
 export function frontPNG(){ return frontCanvas.toDataURL('image/png'); }
