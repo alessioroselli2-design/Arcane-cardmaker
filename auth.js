@@ -91,13 +91,17 @@ btnCloudSave?.addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user) return alert('Accedi prima.');
 
-  const name = ($('cardName')?.value || 'Carta senza nome').trim();
-  const deck = ($('deckName')?.value || '').trim() || null;
+  const name = (document.getElementById('cardName')?.value || 'Carta senza nome').trim();
+  const deck = (document.getElementById('deckName')?.value || '').trim() || null;
 
-  const done = setBusy(btnCloudSave, 'Salvataggio…');
+  // — UI: blocca il bottone e mostra "Salvataggio…"
+  const btn = btnCloudSave;
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Salvataggio…';
 
   try {
-    // 1) crea doc placeholder per ottenere l’ID (così path Storage combacia)
+    // 1) crea il doc placeholder (per avere l'ID)
     const colRef = cardsCol(user.uid);
     const docRef = await addDoc(colRef, {
       owner: user.uid,
@@ -110,8 +114,8 @@ btnCloudSave?.addEventListener('click', async () => {
     const dataFront = frontPNG();
     let   dataBack  = null; try { dataBack = backPNG(); } catch {}
 
-    // 3) carica PNG in Storage sullo stesso path del doc
-    const basePath = docRef.path;
+    // 3) upload PNG in Storage sullo stesso path del doc
+    const basePath = docRef.path; // es. users/<uid>/cards/<id> o .../decks/<deck>/cards/<id>
     const up = async (dataUrl, fileName) => {
       if (!dataUrl) return null;
       const ref = sRef(st, `${basePath}/${fileName}`);
@@ -131,15 +135,20 @@ btnCloudSave?.addEventListener('click', async () => {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    flash(btnCloudSave, 'Salvato ✅');
+    // — UI: feedback chiaro “Salvato ✅”, poi torna allo stato normale
+    btn.textContent = 'Salvato ✅';
+    setTimeout(() => {
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }, 1200);
   } catch (err) {
     console.error('[cloudSave] error', err);
     alert('Errore salvataggio cloud: ' + err.message);
-  } finally {
-    done();
+    // — UI: ripristina in caso di errore
+    btn.textContent = oldText;
+    btn.disabled = false;
   }
 });
-
 // ===== Lista realtime / carica / elimina =====
 let unsubscribeCloud = null;
 
