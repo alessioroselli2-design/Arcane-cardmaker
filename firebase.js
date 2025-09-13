@@ -7,7 +7,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   getFirestore, serverTimestamp,
-  collection, doc, setDoc, getDocs, query, orderBy, deleteDoc, addDoc
+  collection, doc, setDoc, getDocs, query, orderBy, deleteDoc, addDoc,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject
@@ -39,10 +40,10 @@ window._fb = {
   onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
 
   // Firestore
-  serverTimestamp, collection, doc, setDoc, getDocs, query, orderBy, deleteDoc, addDoc,
+  serverTimestamp, collection, doc, setDoc, getDocs, query, orderBy, deleteDoc, addDoc, onSnapshot,
 
   // Storage
   sRef, uploadString, getDownloadURL, deleteObject
 };
 
-console.log("[Firebase] Inizializzato ✔");
+console.log("[Firebase] Inizializzato ✔", { hasOnSnapshot: typeof onSnapshot === "function" });
