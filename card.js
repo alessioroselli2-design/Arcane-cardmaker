@@ -160,12 +160,18 @@ function loadDbIcon(key){ const svg=ICONS[key]; if(!svg){state.imgClass=null;dra
   svgToImage(svg,img=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();});
 }
 
-export function snapshot(includeImages=true){
-  const out={...state};
-  if(includeImages){
-    out._imgFront=state.imgFront?.src||null;
-    out._imgBack=state.imgBack?.src||null;
-    out._imgClass=(state.classSource==='upload')?(state.imgClass?.src||null):null;
+export function snapshot(includeImages = true) {
+  const out = { ...state };
+
+  // NON salvare gli oggetti Image in Firestore
+  delete out.imgFront;
+  delete out.imgBack;
+  delete out.imgClass;
+
+  if (includeImages) {
+    out._imgFront = state.imgFront?.src || null;
+    out._imgBack  = state.imgBack?.src  || null;
+    out._imgClass = (state.classSource === 'upload') ? (state.imgClass?.src || null) : null;
   }
   return out;
 }
