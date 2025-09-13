@@ -17,7 +17,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyC2yGBahkZpzd4bRsIHThpUHTl1TtpSwKI",
   authDomain: "cardmaker-15cf5.firebaseapp.com",
   projectId: "cardmaker-15cf5",
-  storageBucket: "cardmaker-15cf5.appspot.com", // corretto: .appspot.com
+  storageBucket: "cardmaker-15cf5.appspot.com",
   messagingSenderId: "782546269609",
   appId: "1:782546269609:web:934c5740d007558bb900b8",
   measurementId: "G-W68B78G600"
