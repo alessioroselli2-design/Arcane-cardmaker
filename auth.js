@@ -98,7 +98,19 @@ btnCloudSave?.addEventListener('click', async () => {
   // UI: blocca e mostra “Salvataggio…”
   const restore = setBusy(btnCloudSave, 'Salvataggio…');
 
+  // Watchdog: se qualcosa resta appeso, sblocca comunque dopo 25s
+  let kicked = false;
+  const watchdog = setTimeout(() => {
+    if (!kicked) {
+      kicked = true;
+      console.warn('[cloudSave] watchdog: ripristino forzato UI');
+      restore();
+      flash(btnCloudSave, 'Pronto');
+    }
+  }, 25000);
+
   try {
+    console.log('[cloudSave] start');
     // 1) crea doc placeholder (per allineare il path dello Storage)
     const colRef = cardsCol(user.uid);
     const docRef = await addDoc(colRef, {
@@ -106,6 +118,53 @@ btnCloudSave?.addEventListener('click', async () => {
       name, deck,
       updatedAt: serverTimestamp()
     });
+    console.log('[cloudSave] doc id:', docRef.id);
+
+    // 2) stato + PNG
+    const state     = snapshot(false);
+    const dataFront = frontPNG();
+    let   dataBack  = null; try { dataBack = backPNG(); } catch {}
+    console.log('[cloudSave] got images', { hasFront: !!dataFront, hasBack: !!dataBack });
+
+    // 3) upload PNG in parallelo sullo stesso path del doc
+    const basePath = docRef.path; // users/<uid>/cards/<id> oppure .../decks/<deck>/cards/<id>
+    const up = async (dataUrl, fileName) => {
+      if (!dataUrl) return null;
+      const ref = sRef(st, `${basePath}/${fileName}`);
+      await uploadString(ref, dataUrl, 'data_url');
+      return await getDownloadURL(ref);
+    };
+
+    const [urlFront, urlBack] = await Promise.allSettled([
+      up(dataFront, 'front.png'),
+      dataBack ? up(dataBack, 'back.png') : Promise.resolve(null)
+    ]).then(r => r.map(x => x.status === 'fulfilled' ? x.value : null));
+    console.log('[cloudSave] urls', { urlFront, urlBack });
+
+    // 4) completa/aggiorna il documento
+    await setDoc(docRef, {
+      thumb: urlFront || null,
+      state,
+      assets: { front: urlFront || null, back: urlBack || null },
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    console.log('[cloudSave] setDoc ok');
+
+    // UI: sblocca e mostra “Salvato ✅”
+    if (!kicked) {
+      clearTimeout(watchdog);
+      restore();
+      flash(btnCloudSave, 'Salvato ✅');
+    }
+  } catch (err) {
+    console.error('[cloudSave] error', err);
+    alert('Errore salvataggio cloud: ' + err.message);
+    if (!kicked) {
+      clearTimeout(watchdog);
+      restore();
+    }
+  }
+});
 
     // 2) stato + PNG
     const state     = snapshot(false);
