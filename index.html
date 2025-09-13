@@ -6,28 +6,30 @@
   <title>Arcane CardMaker</title>
   <meta name="theme-color" content="#111" />
   <link rel="stylesheet" href="style.css" />
+
   <!-- jsPDF per i PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
-  <!-- Google Fonts -->
+
+  <!-- Google Fonts (preset) -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- Welcome / Accesso -->
-  <div id="welcome" class="modal-mask">
+  <div id="welcome" class="modal-mask" style="display:none">
     <div class="modal-card">
       <h2>Benvenuto in Card Maker</h2>
       <p>Crea carte in stile Magic. Accedi per salvare nella tua Libreria Cloud, oppure entra come Ospite.</p>
       <div class="stack">
         <div class="row">
-          <input id="email" type="email" placeholder="Email">
-          <input id="password" type="password" placeholder="Password">
+          <input id="email" type="email" placeholder="Email" />
+          <input id="password" type="password" placeholder="Password" />
         </div>
         <div class="row">
           <button class="btn primary" id="btnLogin">Accedi</button>
           <button class="btn" id="btnSignup">Registrati</button>
           <button class="btn ghost" id="btnGuest">Entra come ospite</button>
         </div>
-        <label class="muted"><input type="checkbox" id="dontShow"> Non mostrare più</label>
+        <label class="muted"><input type="checkbox" id="dontShow" /> Non mostrare più</label>
       </div>
     </div>
   </div>
@@ -41,32 +43,182 @@
   </header>
 
   <div class="wrap">
-    <!-- Pannello comandi -->
+    <!-- ===================== PANNELLO COMANDI ===================== -->
     <aside class="panel" id="controls">
       <h3>Fronte</h3>
-      <!-- ... TUTTI I TUOI CONTROLLI CARTE (come già erano) ... -->
-<h3>Salvataggi</h3>
-<div class="row2">
-  <div><label>Nome carta</label><input id="cardName" placeholder="Es. Lame del Bosco"></div>
-  <div><label>Mazzo (cartella cloud, opz.)</label><input id="deckName" placeholder="Es. Incantesimi Druido"></div>
-</div>
 
-<div class="btnbar">
-  <button class="btn" id="saveLocal">Salva locale</button>
-  <button class="btn" id="loadLocal">Apri libreria locale</button>
-</div>
-<div id="localLibrary" class="library" style="display:none"></div>
+      <div class="row2">
+        <div>
+          <label>Titolo</label>
+          <input id="title" placeholder="Nome incantesimo" />
+        </div>
+        <div>
+          <label>Font titolo</label>
+          <select id="titleFont">
+            <option value='"Cinzel",serif'>Cinzel</option>
+            <option value='"Spectral",serif'>Spectral</option>
+            <option value='Inter,sans-serif'>Inter</option>
+            <option value='CardCustom'>Custom (upload)</option>
+          </select>
+          <label class="muted">Carica font TTF/OTF</label>
+          <input id="titleFontFile" type="file" accept=".ttf,.otf" />
+        </div>
+      </div>
 
-<div class="group" data-auth="only">
-  <h4>Account & Cloud</h4>
-  <div class="row2">
-    <button class="btn" id="btnCloudSave">Salva su cloud</button>
-    <button class="btn" id="btnCloudPull">Apri libreria cloud</button>
-    <button class="btn danger" id="btnCloudClear">Svuota cloud</button>
-  </div>
-  <div id="cloudLibrary" class="library" style="display:none"></div>
-</div>
-     
+      <div class="row2">
+        <div>
+          <label>Colore titolo</label>
+          <input id="titleColor" type="color" value="#ffffff" />
+        </div>
+        <div>
+          <label>Dimensione titolo</label>
+          <input id="titleSize" type="range" min="24" max="56" value="42" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label><input id="showMana" type="checkbox" checked /> Mostra mana</label>
+          <input id="mana" placeholder="{G}{U} o 2G" />
+        </div>
+        <div>
+          <label>Simbolo di classe</label>
+          <select id="classSource">
+            <option value="none">Nessuno</option>
+            <option value="db" selected>Database</option>
+            <option value="upload">Carica immagine…</option>
+          </select>
+
+          <!-- Database classi -->
+          <div id="dbClassRow" class="stack" style="margin-top:6px">
+            <select id="clazz">
+              <optgroup label="Base">
+                <option value="guerriero">Guerriero</option>
+                <option value="druido">Druido</option>
+                <option value="monaco">Monaco</option>
+                <option value="mago">Mago</option>
+                <option value="ladro">Ladro</option>
+              </optgroup>
+              <optgroup label="Espansione">
+                <option value="barbaro">Barbaro</option>
+                <option value="paladino">Paladino</option>
+                <option value="chierico">Chierico</option>
+                <option value="bardo">Bardo</option>
+                <option value="ranger">Ranger</option>
+                <option value="stregone">Stregone</option>
+                <option value="warlock">Warlock</option>
+                <option value="artificiere">Artificiere</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <!-- Upload simbolo -->
+          <div id="uploadClassRow" class="stack" style="display:none;margin-top:6px">
+            <input id="classImg" type="file" accept="image/*" />
+          </div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>Dimensione simbolo</label>
+          <input id="classSize" type="range" min="24" max="160" value="64" />
+          <small class="muted">Trascina il simbolo sull’anteprima per spostarlo.</small>
+        </div>
+        <div>
+          <label>Colore linee/riquadri</label>
+          <input id="panelColor" type="color" value="#cdbb7d" />
+          <label>Opacità riquadri</label>
+          <input id="panelAlpha" type="range" min="0" max="100" value="85" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>Stile cornice</label>
+          <select id="frameStyle">
+            <option value="flat">Colore piatto</option>
+            <option value="foil-gold">Foil oro</option>
+            <option value="foil-silver">Foil argento</option>
+            <option value="foil-rainbow">Foil arcobaleno</option>
+            <option value="wood">Legno</option>
+            <option value="stone">Pietra</option>
+            <option value="arcane">Arcano</option>
+            <option value="nature">Natura</option>
+          </select>
+        </div>
+        <div>
+          <label>Colore cornice (piatto) & interno</label>
+          <div class="row2 tight">
+            <input id="frameColor" type="color" value="#d8cfae" />
+            <input id="innerColor" type="color" value="#f7f5ef" />
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <label>Immagine fronte</label>
+        <input id="artFront" type="file" accept="image/*" />
+      </div>
+
+      <div class="group">
+        <label>Descrizione (riquadro basso)</label>
+        <textarea id="rulesText" placeholder="Testo/incantesimo… **parole chiave** in grassetto."></textarea>
+        <div class="row2">
+          <div>
+            <label>Font descrizione</label>
+            <select id="descFont">
+              <option value='"Spectral",serif'>Spectral</option>
+              <option value='"Cinzel",serif'>Cinzel</option>
+              <option value='Inter,sans-serif'>Inter</option>
+              <option value='CardCustom'>Custom (upload)</option>
+            </select>
+            <label class="muted">Carica font descrizione (TTF/OTF)</label>
+            <input id="descFontFile" type="file" accept=".ttf,.otf" />
+          </div>
+          <div>
+            <label>Dimensione descrizione</label>
+            <input id="descSize" type="range" min="14" max="26" value="18" />
+            <label>Colore descrizione</label>
+            <input id="descColor" type="color" value="#111111" />
+          </div>
+        </div>
+      </div>
+
+      <h3>Retro</h3>
+      <div class="group">
+        <label>Immagine retro (full-bleed)</label>
+        <input id="artBack" type="file" accept="image/*" />
+        <small class="muted">Riempie tutta l’area interna; cornice uguale al fronte.</small>
+      </div>
+
+      <h3>Salvataggi</h3>
+      <div class="row2">
+        <div>
+          <label>Nome carta</label>
+          <input id="cardName" placeholder="Es. Lame del Bosco" />
+        </div>
+        <div>
+          <label>Mazzo (cartella cloud, opz.)</label>
+          <input id="deckName" placeholder="Es. Incantesimi Druido" />
+        </div>
+      </div>
+
+      <div class="btnbar">
+        <button class="btn" id="saveLocal">Salva locale</button>
+        <button class="btn" id="loadLocal">Apri libreria locale</button>
+      </div>
+      <div id="localLibrary" class="library" style="display:none"></div>
+
+      <div class="group" data-auth="only" style="display:none">
+        <h4>Account & Cloud</h4>
+        <div class="row2">
+          <button class="btn" id="btnCloudSave">Salva su cloud</button>
+          <button class="btn" id="btnCloudPull">Apri libreria cloud</button>
+          <button class="btn danger" id="btnCloudClear">Svuota cloud</button>
+        </div>
+        <div id="cloudLibrary" class="library" style="display:none"></div>
+      </div>
 
       <h3>Export</h3>
       <div class="btnbar">
@@ -81,25 +233,26 @@
       <small class="muted">Stampa A4 verticale, margini minimi, scala 100%.</small>
     </aside>
 
-    <!-- Anteprime -->
+    <!-- ===================== ANTEPRIME ===================== -->
     <section class="panel preview">
       <div class="previewHead"><h3>Anteprima</h3></div>
       <div class="grid2">
-        <div>
-          <canvas id="cardFront" width="750" height="1050" aria-label="Fronte"></canvas>
-        </div>
-        <div>
-          <canvas id="cardBack" width="750" height="1050" aria-label="Retro"></canvas>
-        </div>
+        <div><canvas id="cardFront" width="750" height="1050" aria-label="Fronte"></canvas></div>
+        <div><canvas id="cardBack"  width="750" height="1050" aria-label="Retro"></canvas></div>
       </div>
     </section>
   </div>
 
-  <!-- Script -->
+  <!-- ===================== SCRIPT ===================== -->
+  <!-- 1) Firebase config (inizializza window._fb) -->
   <script type="module" src="firebase.js"></script>
+  <!-- 2) Motore carta (disegno + stato) -->
   <script type="module" src="card.js"></script>
+  <!-- 3) Libreria locale (salva/lista/carica/elimina) -->
   <script type="module" src="card-local.js"></script>
+  <!-- 4) Export PNG/PDF -->
   <script type="module" src="export.js"></script>
+  <!-- 5) Auth + Cloud (login, libreria cloud) -->
   <script type="module" src="auth.js"></script>
 </body>
 </html>
