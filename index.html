@@ -76,6 +76,22 @@
         </div>
       </div>
 
+      <!-- NOVITÀ: effetto e ombra del titolo -->
+      <div class="row2">
+        <div>
+          <label>Effetto titolo</label>
+          <select id="titleFoil">
+            <option value="none" selected>Nessuno</option>
+            <option value="foil-gold">Foil oro</option>
+            <option value="foil-silver">Foil argento</option>
+            <option value="foil-rainbow">Foil arcobaleno</option>
+          </select>
+        </div>
+        <div>
+          <label><input id="titleShadow" type="checkbox" /> Ombra titolo</label>
+        </div>
+      </div>
+
       <div class="row2">
         <div>
           <label><input id="showMana" type="checkbox" checked /> Mostra mana</label>
@@ -244,15 +260,10 @@
   </div>
 
   <!-- ===================== SCRIPT ===================== -->
-  <!-- 1) Firebase config (inizializza window._fb) -->
   <script type="module" src="firebase.js"></script>
-  <!-- 2) Motore carta (disegno + stato) -->
   <script type="module" src="card.js"></script>
-  <!-- 3) Libreria locale (salva/lista/carica/elimina) -->
   <script type="module" src="card-local.js"></script>
-  <!-- 4) Export PNG/PDF -->
   <script type="module" src="export.js"></script>
-  <!-- 5) Auth + Cloud (login, libreria cloud) -->
   <script type="module" src="auth.js"></script>
 </body>
 </html>
