@@ -1,4 +1,4 @@
-// card.js — motore di disegno carte
+// card.js — motore di disegno carte (versione con riquadri come esempio)
 
 // ===== Stato globale =====
 export const state = {
@@ -9,6 +9,7 @@ export const state = {
   titleShadow:false,         // ombra del titolo
   descText:'', descFont:'"Spectral",serif', descSize:18, descColor:'#111111',
   // pannelli/cornice
+  // (i controlli panelColor/panelAlpha sono ignorati per riprodurre esattamente il look richiesto)
   panelColor:'#cdbb7d', panelAlpha:.85,
   frameStyle:'flat', frameColor:'#d8cfae', innerColor:'#f7f5ef',
   // simbolo classe
@@ -25,7 +26,7 @@ const backCanvas  = document.getElementById('cardBack');
 const ctxF = frontCanvas.getContext('2d');
 const ctxB = backCanvas.getContext('2d');
 
-// ===== Icone DB (minimal demo) =====
+// ===== Icone DB (demo) =====
 const ICONS = {
   guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 l12 18 h18 l-15 12 6 20 -21-12 -21 12 6-20 -15-12 h18z' fill='#e7d08a' stroke='#2a1d0a' stroke-width='2'/><rect x='42' y='60' width='16' height='22' rx='4' fill='#f4f1e6' stroke='#2a1d0a' stroke-width='2'/></svg>`,
   druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 C28 36,26 60,50 90 C74 60,72 36,50 10 Z' fill='#6da86a' stroke='#1c3d19' stroke-width='2'/></svg>`,
@@ -48,7 +49,7 @@ function svgToImage(svg,cb){const url='data:image/svg+xml;charset=utf-8,'+encode
 function rr(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function cover(c,img,dx,dy,dw,dh,r=0){const ir=img.width/img.height,dr=dw/dh;let sx,sy,sw,sh;if(ir>dr){sh=img.height;sw=sh*dr;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/dr;sx=0;sy=(img.height-sh)/2;} if(r>0){c.save();rr(c,dx,dy,dw,dh,r);c.clip();} c.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh); if(r>0)c.restore();}
 
-// ===== Gradiente foil =====
+// ===== Foil gradiente =====
 function makeFoilGradient(ctx, x, y, w, h, kind='gold'){
   const g = ctx.createLinearGradient(x, y, x+w, y+h);
   if (kind === 'gold'){
@@ -74,7 +75,7 @@ function makeFoilGradient(ctx, x, y, w, h, kind='gold'){
   return g;
 }
 
-// ===== Texture semplici per legno/pietra/arcano/natura =====
+// ===== Texture semplici =====
 function textureWood(ctx, x, y, w, h){
   ctx.fillStyle = '#b08b57'; ctx.fillRect(x,y,w,h);
   ctx.globalAlpha=0.25; ctx.strokeStyle='#7a5a2b';
@@ -102,18 +103,14 @@ function textureNature(ctx, x, y, w, h){
 
 // ===== Cornice =====
 function paintFrame(c,W,H){
-  // anello esterno
   const outer = {x:12,y:12,w:W-24,h:H-24,r:22};
   const inner = {x:28,y:28,w:W-56,h:H-56,r:18};
 
   c.save();
-  // clip ad anello (cornice = area tra outer e inner)
   c.beginPath();
   rr(c,outer.x,outer.y,outer.w,outer.h,outer.r);
-  c.save(); // salva per inner clip
-  c.globalCompositeOperation='source-over';
+  c.save();
 
-  // riempi outer
   if (state.frameStyle === 'flat'){
     c.fillStyle = state.frameColor;
     c.fill();
@@ -122,24 +119,20 @@ function paintFrame(c,W,H){
     c.fillStyle = makeFoilGradient(c, outer.x, outer.y, outer.w, outer.h, kind);
     c.fill();
   } else {
-    // texture
-    // disegno su un layer separato e poi clippo ad anello
-    const off = document.createElement('canvas');
-    off.width=W; off.height=H;
+    const off = document.createElement('canvas'); off.width=W; off.height=H;
     const cx = off.getContext('2d');
     if (state.frameStyle==='wood')  textureWood(cx, outer.x, outer.y, outer.w, outer.h);
     if (state.frameStyle==='stone') textureStone(cx, outer.x, outer.y, outer.w, outer.h);
     if (state.frameStyle==='arcane')textureArcane(cx, outer.x, outer.y, outer.w, outer.h);
     if (state.frameStyle==='nature')textureNature(cx, outer.x, outer.y, outer.w, outer.h);
-    // applico
     c.drawImage(off,0,0);
   }
 
-  // buco la parte interna (per lasciare spazio all'interno chiaro)
+  // ritaglia l'interno
   c.globalCompositeOperation='destination-out';
   rr(c,inner.x,inner.y,inner.w,inner.h,inner.r);
   c.fill();
-  c.restore(); // esce da clip anello
+  c.restore();
 
   // area interna
   rr(c,inner.x,inner.y,inner.w,inner.h,inner.r);
@@ -154,33 +147,50 @@ function defaultSymbolPos(){const W=750,s=state.classSize,right=W-44,y=71-s/2;st
 export function drawFront(){
   const W=750,H=1050; ctxF.clearRect(0,0,W,H); paintFrame(ctxF,W,H);
 
-  // pannelli
-  ctxF.globalAlpha=state.panelAlpha; ctxF.fillStyle=state.panelColor;
-  rr(ctxF,28,28,W-56,86,16); ctxF.fill();      // barra titolo
-  rr(ctxF,28,610,W-56,412,18); ctxF.fill();    // descrizione
-  ctxF.globalAlpha=1;
+  // === Riquadro TITOLO (stile come nel tuo esempio) ===
+  // pill verde chiaro con bordo tenue e leggero highlight superiore
+  const t = {x:28, y:28, w:W-56, h:86, r:16};
+  rr(ctxF, t.x, t.y, t.w, t.h, t.r);
+  ctxF.fillStyle = '#e6f2e6';        // riempimento molto chiaro
+  ctxF.fill();
+  ctxF.lineWidth = 2;
+  ctxF.strokeStyle = '#89b97f';      // bordo verde tenue
+  ctxF.stroke();
+  // highlight morbido in alto
+  const gTop = ctxF.createLinearGradient(0,t.y,0,t.y+t.h*0.6);
+  gTop.addColorStop(0,'rgba(255,255,255,.65)');
+  gTop.addColorStop(1,'rgba(255,255,255,0)');
+  ctxF.save();
+  rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, t.r-4);
+  ctxF.clip();
+  ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6);
+  ctxF.restore();
+
+  // === Riquadro DESCRIZIONE (bianco con bordo) ===
+  const b = {x:28, y:610, w:W-56, h:412, r:18};
+  rr(ctxF, b.x, b.y, b.w, b.h, b.r);
+  ctxF.fillStyle = '#fcfcf8';        // quasi bianco
+  ctxF.fill();
+  ctxF.lineWidth = 2;
+  ctxF.strokeStyle = 'rgba(122,177,114,.7)'; // bordo verde leggero
+  ctxF.stroke();
 
   // immagine centrale
   const ax=44,ay=132,aw=W-88,ah=460;
   if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
   else{ ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
-  // TITOLO (con foil/ombra opzionali)
-  const titleArea = {x:28,y:28,w:W-56,h:86};
+  // TITOLO (foil/ombra opzionali)
+  const titleArea = t;
   ctxF.textBaseline='middle'; ctxF.textAlign='left';
   ctxF.font=`700 ${state.titleSize}px ${state.titleFont}`;
 
   if(state.titleShadow){
-    ctxF.shadowColor='rgba(0,0,0,.55)';
-    ctxF.shadowBlur=8;
-    ctxF.shadowOffsetX=0;
-    ctxF.shadowOffsetY=2;
+    ctxF.shadowColor='rgba(0,0,0,.55)'; ctxF.shadowBlur=8; ctxF.shadowOffsetX=0; ctxF.shadowOffsetY=2;
   } else {
-    ctxF.shadowColor='transparent';
-    ctxF.shadowBlur=0; ctxF.shadowOffsetX=0; ctxF.shadowOffsetY=0;
+    ctxF.shadowColor='transparent'; ctxF.shadowBlur=0; ctxF.shadowOffsetX=0; ctxF.shadowOffsetY=0;
   }
 
-  // colore/gradiente del testo titolo
   if(state.titleFoil !== 'none'){
     const kind = state.titleFoil.replace('foil-','');
     ctxF.fillStyle = makeFoilGradient(ctxF, titleArea.x, titleArea.y, titleArea.w, titleArea.h, kind);
@@ -203,14 +213,16 @@ export function drawFront(){
   }
 
   // descrizione (+ **grassetto** semplice)
-  const bx=40,by=618,bw=W-80,bh=396; ctxF.save(); rr(ctxF,bx,by,bw,bh,18); ctxF.clip(); ctxF.fillStyle=state.descColor; ctxF.font=`400 ${state.descSize}px ${state.descFont}`;
+  const bx=b.x+12, by=b.y+8, bw=b.w-24, bh=b.h-16;
+  ctxF.save(); rr(ctxF,bx-12,by-8,bw+24,bh+16,b.r-2); ctxF.clip();
+  ctxF.fillStyle=state.descColor; ctxF.font=`400 ${state.descSize}px ${state.descFont}`;
   const text=(state.descText||''); const words=text.split(/(\*\*.*?\*\*)|\s+/g).filter(Boolean); let line='',yy=by+18;
-  function flush(){ctxF.fillText(line,bx+18,yy); line=''; yy+=state.descSize*1.45;}
+  function flush(){ctxF.fillText(line,bx,yy); line=''; yy+=state.descSize*1.45;}
   words.forEach(tok=>{ let chunk=tok; let bold=false; if(/^\*\*.*\*\*$/.test(tok)){bold=true; chunk=tok.slice(2,-2);} const test=line+chunk+(chunk.match(/\s/)?'':' ');
-    if(ctxF.measureText(test).width>bw-36 && line) flush();
-    if(bold){ ctxF.save(); ctxF.font=`700 ${state.descSize}px ${state.descFont}`; ctxF.fillText(chunk,bx+18,yy); ctxF.restore(); line+=' '; }
+    if(ctxF.measureText(test).width>bw && line) flush();
+    if(bold){ ctxF.save(); ctxF.font=`700 ${state.descSize}px ${state.descFont}`; ctxF.fillText(chunk,bx,yy); ctxF.restore(); line+=' '; }
     else line+=chunk+(chunk.match(/\s/)?'':' '); });
-  if(line.trim()) ctxF.fillText(line,bx+18,yy); ctxF.restore();
+  if(line.trim()) ctxF.fillText(line,bx,yy); ctxF.restore();
 }
 
 // ===== Disegno retro =====
@@ -254,8 +266,9 @@ function bind(){
   $id('descColor').oninput=e=>{state.descColor=e.target.value;drawFront();};
   $id('rulesText').oninput=e=>{state.descText=e.target.value;drawFront();};
 
-  $id('panelColor').oninput=e=>{state.panelColor=e.target.value;drawFront();};
-  $id('panelAlpha').oninput=e=>{state.panelAlpha=+e.target.value/100;drawFront();};
+  // questi due controlli ora non influenzano i riquadri (look fisso come richiesto)
+  $id('panelColor').oninput=()=>drawFront();
+  $id('panelAlpha').oninput=()=>drawFront();
 
   $id('frameStyle').onchange=e=>{state.frameStyle=e.target.value;drawFront();drawBack();};
   $id('frameColor').oninput=e=>{state.frameColor=e.target.value;drawFront();drawBack();};
@@ -347,11 +360,9 @@ export function backPNG(){  return backCanvas.toDataURL('image/png'); }
 // ===== Init =====
 function init(){
   bind();
-  // default icona
   loadDbIcon(state.clazz);
   drawFront(); drawBack();
 
-  // welcome come prima
   const force=new URLSearchParams(location.search).get('welcome')==='1';
   const flag=localStorage.getItem('cm_hide_welcome');
   if(force){ localStorage.removeItem('cm_hide_welcome'); document.getElementById('welcome').style.display='flex'; }
