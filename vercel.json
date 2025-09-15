@@ -1,14 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    { "source": "/app", "destination": "/app/", "permanent": true }
-  ],
   "rewrites": [
-    { "source": "/app/", "destination": "/app/index.html" },
-    { "source": "/app/(.*)", "destination": "/app/$1" },
-
     { "source": "/", "destination": "/landing/index.html" },
-    { "source": "/(.*)", "destination": "/landing/$1" }
+    { "source": "/app", "destination": "/app/index.html" },
+    { "source": "/app/(.*)", "destination": "/app/$1" }
   ]
 }
