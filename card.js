@@ -1,6 +1,6 @@
-// card.js — motore di disegno carte (fronte/retro) + stato + bind UI (FIX foil/ombra + margini pannelli + icone più ricche)
+// card.js — motore di disegno carte (fronte/retro) + stato + bind UI
+// (Fix: pannelli prendono panelColor+panelAlpha, retro full-bleed come prima, icone più “fantasy”)
 
-// ======== STATO ========
 export let state = {
   // titolo / mana
   title: '',
@@ -26,9 +26,9 @@ export let state = {
   frameColor: '#d8cfae',
   innerColor: '#f7f5ef',
 
-  // riquadri / linee (panelColor lo uso per i bordi dei pannelli)
-  panelColor: '#7ab172',
-  panelAlpha: 0.85,
+  // riquadri / linee
+  panelColor: '#cdbb7d',  // colore scelto da UI per i pannelli
+  panelAlpha: 0.85,       // opacità pannelli (0..1)
 
   // immagini
   imgFront: null,
@@ -42,65 +42,60 @@ export let state = {
 };
 window.state = state;
 
-// ======== CANVAS ========
+/* ===== Canvas ===== */
 const frontCanvas = document.getElementById('cardFront');
 const backCanvas  = document.getElementById('cardBack');
 const ctxF = frontCanvas?.getContext('2d') || null;
 const ctxB = backCanvas?.getContext('2d') || null;
-if (!ctxF || !ctxB) {
-  console.warn('[card.js] canvas non trovati, salto init');
-}
+if (!ctxF || !ctxB) console.warn('[card.js] canvas non trovati, salto init');
 
-// ======== ICONE DB (un po’ più “ricche”) ========
+/* ===== Icone DB (più “fantasy”, ma leggere) ===== */
 const ICONS = {
   guerriero:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#f7e7a1'/><stop offset='.6' stop-color='#d4af37'/><stop offset='1' stop-color='#fff2b3'/></linearGradient></defs>
-    <circle cx='50' cy='50' r='40' fill='url(#g)' stroke='#6b5a2a' stroke-width='3'/>
+    <defs>
+      <linearGradient id='g1' x1='0' y1='0' x2='1' y2='1'>
+        <stop offset='0' stop-color='#f7e7a1'/><stop offset='.6' stop-color='#d4af37'/><stop offset='1' stop-color='#fff2b3'/>
+      </linearGradient>
+    </defs>
+    <circle cx='50' cy='50' r='40' fill='url(#g1)' stroke='#6b5a2a' stroke-width='3'/>
     <path d='M50 18 l12 16 h14 l-12 10 5 16 -19-10 -19 10 5-16 -12-10 h14z' fill='#fff' opacity='.7'/>
   </svg>`,
   druido:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='leaf' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#9fd59b'/><stop offset='1' stop-color='#4f8e46'/></linearGradient></defs>
+    <defs><linearGradient id='leaf' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#a8e0a3'/><stop offset='1' stop-color='#4f8e46'/></linearGradient></defs>
     <path d='M50 10 C26 38,26 60,50 90 C74 60,74 38,50 10 Z' fill='url(#leaf)' stroke='#1c3d19' stroke-width='3'/>
     <path d='M50 22 C44 40,44 60,50 78' stroke='#1c3d19' stroke-width='2' fill='none'/>
   </svg>`,
-  monaco:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <circle cx='50' cy='50' r='34' fill='none' stroke='#caa96b' stroke-width='6'/>
-    <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
-    <circle cx='50' cy='50' r='6' fill='#caa96b'/>
-  </svg>`,
   mago:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><radialGradient id='m' cx='.4' cy='.3' r='.9'><stop offset='0' stop-color='#bfe1ff'/><stop offset='1' stop-color='#5aa3ff'/></radialGradient></defs>
+    <defs><radialGradient id='m' cx='.4' cy='.3' r='.9'><stop offset='0' stop-color='#dbeafe'/><stop offset='1' stop-color='#60a5fa'/></radialGradient></defs>
     <path d='M50 16 l24 42 -48 0 z' fill='url(#m)' stroke='#2a3a6b' stroke-width='2'/>
     <circle cx='50' cy='62' r='6' fill='#fff'/>
-  </svg>`,
-  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <rect x='18' y='40' width='64' height='20' rx='6' fill='#222'/>
-    <circle cx='34' cy='50' r='6' fill='#ddd'/><circle cx='66' cy='50' r='6' fill='#ddd'/>
-    <path d='M20 40 q30 -18 60 0' stroke='#444' stroke-width='3' fill='none'/>
-  </svg>`,
-  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <rect x='18' y='28' width='20' height='44' rx='4' fill='#9b4d2e'/><rect x='62' y='28' width='20' height='44' rx='4' fill='#9b4d2e'/>
-    <rect x='46' y='18' width='8' height='64' fill='#5b371f'/>
   </svg>`,
   paladino:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
     <path d='M20 20 h60 v28 c0 24 -30 36 -30 36 s-30 -12 -30 -36 z' fill='#e5ddb5' stroke='#8a7b45' stroke-width='2'/>
     <path d='M50 26 v36' stroke='#8a7b45' stroke-width='3'/>
+  </svg>`,
+  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M22 78 l56 -56' stroke='#4a8f3b' stroke-width='6'/>
+    <path d='M68 26 l12 -6 -6 12 z' fill='#4a8f3b'/>
+  </svg>`,
+  ladro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <rect x='18' y='40' width='64' height='20' rx='6' fill='#1f2937'/>
+    <circle cx='34' cy='50' r='6' fill='#ddd'/><circle cx='66' cy='50' r='6' fill='#ddd'/>
+  </svg>`,
+  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='24' fill='none' stroke='#9cf' stroke-width='4'/>
+    <circle cx='50' cy='50' r='7' fill='#9cf'/><path d='M50 26 v-8' stroke='#9cf' stroke-width='3'/>
+  </svg>`,
+  barbaro:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <rect x='18' y='28' width='20' height='44' rx='4' fill='#9b4d2e'/><rect x='62' y='28' width='20' height='44' rx='4' fill='#9b4d2e'/>
+    <rect x='46' y='18' width='8' height='64' fill='#5b371f'/>
   </svg>`,
   chierico:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
     <path d='M48 16 h4 v28 h28 v4 h-28 v28 h-4 v-28 h-28 v-4 h28 z' fill='#e9e2d3' stroke='#7b6a4a' stroke-width='2'/>
   </svg>`,
   bardo:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
     <path d='M30 20 c40 0 40 60 0 60' fill='none' stroke='#b5649c' stroke-width='6'/>
-    <circle cx='54' cy='48' r='6' fill='#fff'/><path d='M30 20 l12 10' stroke='#b5649c' stroke-width='4'/>
-  </svg>`,
-  ranger:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <path d='M22 78 l56 -56' stroke='#4a8f3b' stroke-width='6'/>
-    <path d='M68 26 l12 -6 -6 12 z' fill='#4a8f3b'/>
-  </svg>`,
-  stregone:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <circle cx='50' cy='50' r='24' fill='none' stroke='#9cf' stroke-width='4'/>
-    <circle cx='50' cy='50' r='7' fill='#9cf'/>
-    <path d='M50 26 v-8' stroke='#9cf' stroke-width='3'/>
+    <circle cx='54' cy='48' r='6' fill='#fff'/>
   </svg>`,
   warlock:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
     <path d='M50 14 l18 22 -18 50 -18 -50 z' fill='#7d4bb3' stroke='#4b2a6b' stroke-width='2'/>
@@ -108,17 +103,14 @@ const ICONS = {
   artificiere:`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
     <rect x='22' y='38' width='56' height='24' rx='6' fill='#bdbdbd' stroke='#666' stroke-width='2'/>
     <circle cx='34' cy='50' r='6' fill='#333'/><circle cx='66' cy='50' r='6' fill='#333'/>
-    <rect x='46' y='28' width='8' height='44' fill='#888'/>
   </svg>`
 };
 window.ICONS = ICONS;
 
-// ======== HELPERS ========
+/* ===== Helpers ===== */
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-  const img=new Image();
-  img.onload=()=>cb(img);
-  img.src=url;
+  const img=new Image(); img.onload=()=>cb(img); img.src=url;
 }
 function rr(c,x,y,w,h,r){
   r=Math.min(r,w/2,h/2);
@@ -130,7 +122,6 @@ function rr(c,x,y,w,h,r){
   c.arcTo(x,y,x+w,y,r);
   c.closePath();
 }
-// cover con ritaglio centrato
 function cover(c,img,dx,dy,dw,dh,r=0){
   const ir=img.width/img.height, dr=dw/dh;
   let sx,sy,sw,sh;
@@ -155,6 +146,14 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
   }
   return g;
 }
+// colore pannelli da hex+alpha
+function hexToRgba(hex, a=1){
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '#ffffff');
+  const r = m ? parseInt(m[1],16) : 255;
+  const g = m ? parseInt(m[2],16) : 255;
+  const b = m ? parseInt(m[3],16) : 255;
+  return `rgba(${r},${g},${b},${Math.max(0,Math.min(1,a))})`;
+}
 function paintFrame(c,W,H){
   // cornice esterna
   c.save();
@@ -166,7 +165,7 @@ function paintFrame(c,W,H){
     c.fillStyle = state.frameColor;
   }
   c.fill(); c.restore();
-  // interno (lo “spazio” visibile tra pannelli e cornice prende innerColor)
+  // interno (spazio tra cornice e pannelli)
   rr(c,28,28,W-56,H-56,18);
   c.fillStyle = state.innerColor;
   c.fill();
@@ -177,37 +176,40 @@ function defaultSymbolPos(){
   state.classY = y;
 }
 
-// ======== FRONT ========
+/* ===== Front ===== */
 export function drawFront(){
   if(!ctxF) return;
   const W=750, H=1050;
   ctxF.clearRect(0,0,W,H);
   paintFrame(ctxF,W,H);
 
-  // ==== Margini pannelli più staccati ====
-  // pannello titolo più “dentro” rispetto alla cornice interna
+  // pannello TITOLO (margini “staccati” + colore da panelColor/alpha)
   const t = { x: 40, y: 40, w: W-80, h: 96, r: 16 };
   rr(ctxF, t.x, t.y, t.w, t.h, t.r);
-  ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
-  ctxF.lineWidth = 2; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
+  ctxF.fillStyle = hexToRgba(state.panelColor, state.panelAlpha ?? .85);
+  ctxF.fill();
+  ctxF.lineWidth = 2; ctxF.strokeStyle = hexToRgba(state.panelColor, 0.9);
+  ctxF.stroke();
   // highlight morbido
   const gTop = ctxF.createLinearGradient(0,t.y,0,t.y+t.h*0.6);
-  gTop.addColorStop(0,'rgba(255,255,255,.65)'); gTop.addColorStop(1,'rgba(255,255,255,0)');
+  gTop.addColorStop(0,'rgba(255,255,255,.35)'); gTop.addColorStop(1,'rgba(255,255,255,0)');
   ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, t.r-4); ctxF.clip();
   ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
-  // immagine con più respiro ai lati
+  // immagine (leggermente più dentro)
   const ax=56, ay=152, aw=W-112, ah=452;
   if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
   else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
-  // pannello descrizione più staccato
+  // pannello DESCRIZIONE (stesso colore del titolo)
   const b = { x: 40, y: 628, w: W-80, h: 382, r: 18 };
   rr(ctxF, b.x, b.y, b.w, b.h, b.r);
-  ctxF.fillStyle = '#fcfcf8'; ctxF.fill();
-  ctxF.lineWidth = 2; ctxF.strokeStyle = 'rgba(122,177,114,.7)'; ctxF.stroke();
+  ctxF.fillStyle = hexToRgba(state.panelColor, state.panelAlpha ?? .85);
+  ctxF.fill();
+  ctxF.lineWidth = 2; ctxF.strokeStyle = hexToRgba(state.panelColor, 0.9);
+  ctxF.stroke();
 
-  // ===== Titolo (ombra opzionale + foil opzionale)
+  // titolo (ombra + foil opzionali)
   ctxF.textBaseline='middle';
   ctxF.textAlign='left';
   ctxF.font = `700 ${state.titleSize}px ${state.titleFont}`;
@@ -224,13 +226,13 @@ export function drawFront(){
   }
   ctxF.fillText(state.title || '', t.x+16, t.y + t.h/2, t.w - 200);
 
-  // ===== Simbolo di classe
+  // simbolo di classe
   if(state.imgClass){
     if(state.classX==null || state.classY==null) defaultSymbolPos();
     cover(ctxF,state.imgClass,state.classX,state.classY,state.classSize,state.classSize,10);
   }
 
-  // ===== Mana
+  // mana
   if(state.showMana && (state.mana||'').trim()){
     ctxF.shadowColor='transparent';
     ctxF.fillStyle='#222';
@@ -242,7 +244,7 @@ export function drawFront(){
     ctxF.textAlign='left';
   }
 
-  // ===== Descrizione (wrap semplice con **grassetto**)
+  // descrizione
   const bx=b.x+14, by=b.y+20, bw=b.w-28;
   ctxF.save();
   ctxF.fillStyle=state.descColor;
@@ -251,23 +253,22 @@ export function drawFront(){
   ctxF.restore();
 }
 
-// ======== BACK ========
+/* ===== Back (ripristino: immagine fino alla cornice interna, 28px) ===== */
 export function drawBack(){
   if(!ctxB) return;
   const W=750,H=1050;
   ctxB.clearRect(0,0,W,H);
   paintFrame(ctxB,W,H);
-  // retro full-bleed dentro l’area interna (stessa “aria” dei pannelli)
-  if(state.imgBack) cover(ctxB,state.imgBack,40,40,W-80,H-80,18);
+  if(state.imgBack) cover(ctxB,state.imgBack,28,28,W-56,H-56,18);
   else{
-    ctxB.save(); rr(ctxB,52,52,W-104,H-104,14);
+    ctxB.save(); rr(ctxB,40,40,W-80,H-80,14);
     ctxB.fillStyle='#d5d5d5'; ctxB.globalAlpha=.35; ctxB.fill(); ctxB.restore();
     ctxB.fillStyle='#6b7280'; ctxB.font='16px Inter,sans-serif';
-    ctxB.fillText('Carica immagine retro (full-bleed)',60,74);
+    ctxB.fillText('Carica immagine retro (full-bleed)',48,62);
   }
 }
 
-// ======== TEXT WRAP (supporta **grassetto**) ========
+/* ===== Text wrap (supporta **grassetto**) ===== */
 function wrapText(ctx,text,x,y,maxWidth,lineHeight){
   if(!text) return;
   const parts = (text||'').split(/(\*\*.*?\*\*)|\s+/g).filter(Boolean);
@@ -292,7 +293,7 @@ function wrapText(ctx,text,x,y,maxWidth,lineHeight){
   if (line.trim()) ctx.fillText(line,x,yy,maxWidth);
 }
 
-// ======== SNAPSHOT / RESTORE ========
+/* ===== Snapshot / Restore ===== */
 export function snapshot(includeImages = true){
   const out = { ...state };
   delete out.imgFront; delete out.imgBack; delete out.imgClass;
@@ -322,11 +323,11 @@ export async function applySnap(s) {
   }
 }
 
-// ======== PNG ========
+/* ===== PNG ===== */
 export function frontPNG(){ return frontCanvas.toDataURL('image/png'); }
 export function backPNG(){ return backCanvas.toDataURL('image/png'); }
 
-// ======== DRAG SIMBOLO ========
+/* ===== Drag simbolo ===== */
 let dragging=false,dx=0,dy=0;
 frontCanvas?.addEventListener('pointerdown',e=>{
   if(!state.imgClass) return;
@@ -347,7 +348,7 @@ frontCanvas?.addEventListener('pointermove',e=>{
 frontCanvas?.addEventListener('pointerup',e=>{ if(dragging){dragging=false; frontCanvas.releasePointerCapture(e.pointerId);} });
 frontCanvas?.addEventListener('pointercancel',()=>dragging=false);
 
-// ======== BIND UI ========
+/* ===== Bind UI ===== */
 const $id = (x)=>document.getElementById(x);
 function bind(){
   // titolo
@@ -355,7 +356,6 @@ function bind(){
   $id('titleFont')?.addEventListener('change',e=>{state.titleFont=e.target.value;drawFront();});
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
-  // >>> FIX: bind mancanti
   $id('titleFoil')?.addEventListener('change',e=>{state.titleFoil=e.target.value;drawFront();});
   $id('titleShadow')?.addEventListener('change',e=>{state.titleShadow=e.target.checked;drawFront();});
 
@@ -393,14 +393,23 @@ function bind(){
   $id('clazz')?.addEventListener('change',e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); });
   $id('classSize')?.addEventListener('input',e=>{state.classSize=+e.target.value; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();});
 
+  // upload icone/font
   $id('classImg')?.addEventListener('change',e=>{
     if(state.classSource!=='upload')return;
     const f=e.target.files?.[0]; if(!f) return;
     const r=new FileReader();
     r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);
   });
-
-  // font custom
+  $id('artFront')?.addEventListener('change',e=>{
+    const f=e.target.files?.[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgFront=img; drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);
+  });
+  $id('artBack')?.addEventListener('change',e=>{
+    const f=e.target.files?.[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgBack=img; drawBack();}; img.src=ev.target.result;}; r.readAsDataURL(f);
+  });
   $id('titleFontFile')?.addEventListener('change', async e=>{
     const f=e.target.files?.[0]; if(!f)return;
     const buf=await f.arrayBuffer(); const ff=new FontFace('CardCustom',buf);
@@ -423,14 +432,14 @@ function loadDbIcon(key){
   });
 }
 
-// ======== INIT ========
+/* ===== Init ===== */
 function init(){
   bind();
   loadDbIcon(state.clazz);
   drawFront();
   drawBack();
 
-  // welcome coerente con index (non blocca canvas)
+  // welcome coerente con index
   const el = document.getElementById('welcome');
   const p = new URLSearchParams(location.search);
   const force = p.get('welcome') === '1';
