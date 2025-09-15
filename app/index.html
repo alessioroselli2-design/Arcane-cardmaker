@@ -5,13 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Arcane CardMaker</title>
   <meta name="theme-color" content="#111" />
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- IMPORTANT: fa risolvere tutti i percorsi sotto /app/ -->
+  <base href="/app/">
+
+  <!-- CSS (nome corretto: stile.css) -->
+  <link rel="stylesheet" href="stile.css" />
 
   <!-- jsPDF per i PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
 
   <!-- Google Fonts (preset) -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Manifest PWA (nome corretto) -->
+  <link rel="manifest" href="manifesto.webmanifest">
 </head>
 <body>
   <!-- Welcome / Accesso -->
@@ -105,7 +113,6 @@
             <option value="upload">Carica immagine…</option>
           </select>
 
-          <!-- Database classi -->
           <div id="dbClassRow" class="stack" style="margin-top:6px">
             <select id="clazz">
               <optgroup label="Base">
@@ -128,7 +135,6 @@
             </select>
           </div>
 
-          <!-- Upload simbolo -->
           <div id="uploadClassRow" class="stack" style="display:none;margin-top:6px">
             <input id="classImg" type="file" accept="image/*" />
           </div>
@@ -260,10 +266,16 @@
   </div>
 
   <!-- ===================== SCRIPT ===================== -->
-  <script type="module" src="firebase.js"></script>
+  <!-- attenzione ai nomi: rispecchiano i file che hai in /app -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
+    }
+  </script>
+  <script type="module" src="Firebase.js"></script>
   <script type="module" src="card.js"></script>
-  <script type="module" src="card-local.js"></script>
-  <script type="module" src="export.js"></script>
+  <script type="module" src="carta-locale.js"></script>
+  <script type="module" src="esportazione.js"></script>
   <script type="module" src="auth.js"></script>
 </body>
 </html>
