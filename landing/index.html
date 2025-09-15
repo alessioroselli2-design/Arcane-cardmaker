@@ -5,16 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Arcane CardMaker — crea carte in stile TCG in 60s</title>
   <meta name="description" content="Crea carte in stile Magic/TCG in pochi click. Foil, cornici, font personalizzati, export PNG/PDF e libreria Cloud. Gratis.">
-  <link rel="icon" href="/favicon.ico" />
+
+  <!-- favicon e font -->
+  <link rel="icon" href="/landing/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/landing.css">
+
+  <!-- CSS della landing -->
+  <link rel="stylesheet" href="./style.css">
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Arcane CardMaker — crea carte in 60s">
   <meta property="og:description" content="Cornici foil, titoli con ombra/foil, esportazione PNG/PDF, Cloud realtime.">
-  <meta property="og:image" content="https://TUO-DOMINIO.vercel.app/og-preview.jpg">
+  <meta property="og:image" content="https://arcane-cardmaker.vercel.app/landing/og-preview.jpg">
   <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
@@ -22,14 +26,14 @@
   <header class="nav">
     <div class="wrap">
       <div class="brand">
-        <img class="logo" src="/logo.svg" alt="Arcane CardMaker" />
+        <img class="logo" src="./logo.svg" alt="Arcane CardMaker" />
         <span>Arcane CardMaker</span>
       </div>
       <nav class="navlinks">
         <a href="#features">Funzioni</a>
         <a href="#gallery">Gallery</a>
         <a href="#faq">FAQ</a>
-        <a class="btn primary" href="/index.html">Apri l’app</a>
+        <a class="btn primary" href="/app">Apri l’app</a>
       </nav>
       <button class="nav-toggle" aria-label="menu">☰</button>
     </div>
@@ -42,7 +46,7 @@
         <h1>Crea carte in stile TCG in <span class="accent">60 secondi</span></h1>
         <p>Foil oro/argento/arcobaleno, titoli con ombra, cornici eleganti, font custom, esportazione PNG/PDF e libreria Cloud realtime.</p>
         <div class="cta">
-          <a class="btn primary lg" href="/index.html">Inizia ora — Gratis</a>
+          <a class="btn primary lg" href="/app">Inizia ora — Gratis</a>
           <a class="btn ghost lg" href="#features">Guarda le funzioni</a>
         </div>
         <div class="trust">
@@ -52,7 +56,7 @@
         </div>
       </div>
       <div class="hero-shot">
-        <img src="/hero-shot.png" alt="Anteprima carte" loading="eager">
+        <img src="./hero-shot.png" alt="Anteprima carte" loading="eager">
       </div>
     </div>
   </section>
@@ -95,12 +99,12 @@
     <div class="wrap">
       <h2>Risultati reali</h2>
       <div class="gallery">
-        <img src="/gallery/card-1.png" alt="Esempio carta 1">
-        <img src="/gallery/card-2.png" alt="Esempio carta 2">
-        <img src="/gallery/card-3.png" alt="Esempio carta 3">
-        <img src="/gallery/card-4.png" alt="Esempio carta 4">
+        <img src="./gallery/card-1.png" alt="Esempio carta 1">
+        <img src="./gallery/card-2.png" alt="Esempio carta 2">
+        <img src="./gallery/card-3.png" alt="Esempio carta 3">
+        <img src="./gallery/card-4.png" alt="Esempio carta 4">
       </div>
-      <p class="center"><a class="btn" href="/index.html">Prova subito</a></p>
+      <p class="center"><a class="btn" href="/app">Prova subito</a></p>
     </div>
   </section>
 
@@ -131,7 +135,7 @@
   <section class="cta-final">
     <div class="wrap center">
       <h2>Pronto a creare il tuo mazzo?</h2>
-      <a class="btn primary lg" href="/index.html">Apri l’app</a>
+      <a class="btn primary lg" href="/app">Apri l’app</a>
     </div>
   </section>
 
@@ -140,7 +144,7 @@
     <div class="wrap fgrid">
       <div>
         <div class="brand small">
-          <img class="logo" src="/logo.svg" alt="">
+          <img class="logo" src="./logo.svg" alt="">
           <span>Arcane CardMaker</span>
         </div>
         <p class="muted">© <span id="y"></span> Arcane Studio — Tutti i diritti riservati.</p>
@@ -149,14 +153,13 @@
         <a href="#features">Funzioni</a>
         <a href="#gallery">Gallery</a>
         <a href="#faq">FAQ</a>
-        <a href="/index.html">Apri l’app</a>
+        <a href="/app">Apri l’app</a>
       </nav>
     </div>
   </footer>
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
-    // menu mobile
     const btn = document.querySelector('.nav-toggle');
     const nav = document.querySelector('.navlinks');
     btn?.addEventListener('click',()=>nav.classList.toggle('open'));
