@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Oro "foil" semplice -->
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F5E6C8"/>
+      <stop offset="45%" stop-color="#D9B97B"/>
+      <stop offset="100%" stop-color="#B08D57"/>
+    </linearGradient>
+    <!-- Glow arcano -->
+    <radialGradient id="glow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#6A7DFF" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#2A3A66" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#0B1020" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Fondo trasparente: il logo si adatta a qualsiasi pagina -->
+  <!-- Disco arcano -->
+  <circle cx="128" cy="128" r="98" fill="#0B1020"/>
+  <circle cx="128" cy="128" r="98" fill="url(#glow)"/>
+  <circle cx="128" cy="128" r="96" fill="none" stroke="url(#gold)" stroke-width="3"/>
+
+  <!-- Sigilli / rune (punti e segmenti decorativi, vettoriali puri) -->
+  <g stroke="url(#gold)" stroke-width="2" stroke-linecap="round">
+    <!-- 8 tacche cardinali -->
+    <path d="M128 26 L128 36"/>
+    <path d="M128 220 L128 230"/>
+    <path d="M26 128 L36 128"/>
+    <path d="M220 128 L230 128"/>
+    <!-- 4 tacche diagonali -->
+    <path d="M53 53 L60 60"/>
+    <path d="M203 203 L196 196"/>
+    <path d="M53 203 L60 196"/>
+    <path d="M203 53 L196 60"/>
+  </g>
+
+  <!-- Mini stelle arcane (semplici crocette) -->
+  <g stroke="url(#gold)" stroke-width="1.6" stroke-linecap="round">
+    <path d="M96 72 l0 8 M92 76 l8 0"/>
+    <path d="M160 72 l0 8 M156 76 l8 0"/>
+    <path d="M84 168 l0 8 M80 172 l8 0"/>
+    <path d="M176 164 l0 8 M172 168 l8 0"/>
+  </g>
+
+  <!-- Carta centrale stilizzata -->
+  <g transform="translate(0,0)">
+    <!-- Carta -->
+    <rect x="96" y="70" rx="10" ry="10" width="64" height="112"
+          fill="#151B2A" stroke="url(#gold)" stroke-width="3"/>
+    <!-- Bordo interno -->
+    <rect x="102" y="76" rx="8" ry="8" width="52" height="100"
+          fill="none" stroke="#34405A" stroke-width="2"/>
+    <!-- Diamante/sigillo sulla carta -->
+    <path d="M128 102 L144 128 L128 154 L112 128 Z"
+          fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+    <!-- Piccolo accento superiore/inferiore -->
+    <path d="M128 90 L132 96 L124 96 Z" fill="url(#gold)"/>
+    <path d="M128 186 L124 180 L132 180 Z" fill="url(#gold)"/>
+  </g>
+
+  <!-- Anello interno sottile per profondità -->
+  <circle cx="128" cy="128" r="80" fill="none" stroke="#223059" stroke-width="2"/>
+
+  <!-- Alone sottile intorno alla carta -->
+  <ellipse cx="128" cy="128" rx="44" ry="70" fill="none" stroke="#2F3D66" stroke-width="1.5"/>
+
+  <!-- Versione monocolore automatica (fallback CSS: currentColor) -->
+  <!-- Se vuoi usare il logo come icona a tinta unita, puoi forzare fill/stroke via CSS su <img> inline -->
+</svg>
