@@ -14,22 +14,22 @@ const btnCloudPull   = $('btnCloudPull');
 const btnCloudClear  = $('btnCloudClear');
 
 /* Helpers UI */
-function setBusy(btn, text='Attendi…'){
-  if(!btn) return ()=>{};
+function setBusy(btn, text = 'Attendi…') {
+  if (!btn) return () => {};
   const old = btn.textContent;
   btn.dataset.oldText = old;
   btn.disabled = true;
   btn.textContent = text;
   return () => { btn.disabled = false; btn.textContent = btn.dataset.oldText || old; };
 }
-function flash(btn, text='Fatto ✅'){
-  if(!btn) return;
+function flash(btn, text = 'Fatto ✅') {
+  if (!btn) return;
   const old = btn.textContent;
   btn.textContent = text;
-  setTimeout(()=>{ btn.textContent = old; }, 1500);
+  setTimeout(() => { btn.textContent = old; }, 1500);
 }
 
-/* Stato UI auth */
+/* UI auth */
 function setAuthUI(user){
   const logged = !!user;
   if (btnLogout) btnLogout.style.display = logged ? '' : 'none';
@@ -68,7 +68,7 @@ btnLogout?.addEventListener('click', ()=>{
   signOut(auth);
 });
 
-/* Helpers Firestore */
+/* Firestore helpers */
 function cardsCol(uid){
   const deck = ($('deckName')?.value || '').trim();
   const { db, collection } = fb();
@@ -82,15 +82,15 @@ btnCloudSave?.addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user) return alert('Accedi prima.');
 
-  const name = (document.getElementById('cardName')?.value || 'Carta senza nome').trim();
-  const deck = (document.getElementById('deckName')?.value || '').trim() || null;
+  const name = ($('cardName')?.value || 'Carta senza nome').trim();
+  const deck = ($('deckName')?.value || '').trim() || null;
 
   const restore = setBusy(btnCloudSave, 'Salvataggio…');
 
   // Watchdog: sblocca comunque dopo 25s
   let kicked = false;
   const watchdog = setTimeout(() => {
-    if (!kicked) { kicked = true; console.warn('[cloudSave] watchdog'); restore(); flash(btnCloudSave,'Pronto'); }
+    if (!kicked) { kicked = true; restore(); flash(btnCloudSave,'Pronto'); }
   }, 25000);
 
   try {
@@ -108,7 +108,6 @@ btnCloudSave?.addEventListener('click', async () => {
       await uploadString(ref, dataUrl, 'data_url');
       return await getDownloadURL(ref);
     };
-
     const [urlFront, urlBack] = await Promise.allSettled([
       up(dataFront, 'front.png'),
       dataBack ? up(dataBack, 'back.png') : Promise.resolve(null)
@@ -123,7 +122,6 @@ btnCloudSave?.addEventListener('click', async () => {
 
     if (!kicked) { clearTimeout(watchdog); restore(); flash(btnCloudSave, 'Salvato ✅'); }
   } catch (err) {
-    console.error('[cloudSave] error', err);
     alert('Errore salvataggio cloud: ' + err.message);
     if (!kicked) { clearTimeout(watchdog); restore(); }
   }
@@ -156,14 +154,14 @@ function renderCloudListFromSnapshot(qsnap){
     const acts = document.createElement('div'); acts.className='lib-actions';
 
     const bLoad = document.createElement('button'); bLoad.className='btn'; bLoad.textContent='Carica';
-    bLoad.onclick = async ()=> {
-      try {
+    bLoad.onclick = async ()=>{
+      try{
         const st = it.state || {};
         if (it.assets?.front) st._imgFront = it.assets.front;
         if (it.assets?.back)  st._imgBack  = it.assets.back;
         await applySnap(st);
         alert('Carta caricata dalla cloud ✅');
-      } catch(e) { console.error(e); alert('Impossibile caricare questa carta.'); }
+      }catch(e){ alert('Impossibile caricare questa carta.'); }
     };
 
     const bDel = document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Elimina';
@@ -178,7 +176,7 @@ function renderCloudListFromSnapshot(qsnap){
           deleteObject(sRef(st, `${basePath}/front.png`)),
           deleteObject(sRef(st, `${basePath}/back.png`))
         ]).catch(()=>{});
-      }catch(err){ console.error('[delete] errore', err); alert('Eliminazione non riuscita.'); }
+      }catch(err){ alert('Eliminazione non riuscita.'); }
     };
 
     acts.append(bLoad, bDel); row.appendChild(acts); frag.appendChild(row);
@@ -189,7 +187,8 @@ function renderCloudListFromSnapshot(qsnap){
 async function cloudLoadOnce(){
   const { auth, query, orderBy, getDocs } = fb();
   const user = auth.currentUser; if(!user) return;
-  cloudBox.style.display = 'block'; cloudBox.innerHTML = '<div class="muted">Caricamento…</div>';
+  cloudBox.style.display = 'block';
+  cloudBox.innerHTML = '<div class="muted">Caricamento…</div>';
   const qref = orderBy ? fb().query(cardsCol(user.uid), orderBy('updatedAt','desc'))
                        : fb().query(cardsCol(user.uid));
   const snap = await getDocs(qref);
@@ -205,9 +204,8 @@ btnCloudPull?.addEventListener('click', ()=>{
                          : fb().query(cardsCol(user.uid));
     cloudBox.style.display = 'block';
     cloudBox.innerHTML = '<div class="muted">In ascolto…</div>';
-    unsubscribeCloud = onSnapshot(qref, renderCloudListFromSnapshot, (err)=>{
-      console.error('[onSnapshot] errore', err);
-      cloudBox.innerHTML = '<div class="muted">Errore nel realtime, ricarico una volta sola…</div>';
+    unsubscribeCloud = onSnapshot(qref, renderCloudListFromSnapshot, ()=>{
+      cloudBox.innerHTML = '<div class="muted">Errore realtime. Carico una volta…</div>';
       cloudLoadOnce();
     });
   } else {
@@ -240,14 +238,4 @@ btnCloudClear?.addEventListener('click', async ()=>{
       if (cloudBox) { cloudBox.innerHTML=''; cloudBox.style.display='none'; }
     }
   });
-})();
-
-/* Welcome al primo avvio (forzabile con ?welcome=1) */
-(function(){
-  const el = document.getElementById('welcome'); if (!el) return;
-  const p = new URLSearchParams(location.search);
-  const force = p.get('welcome') === '1';
-  const hide  = localStorage.getItem('cm_hide_welcome') === 'true';
-  if (force) { localStorage.removeItem('cm_hide_welcome'); el.style.display = 'flex'; return; }
-  if (hide) el.style.display = 'none'; else el.style.display = 'flex';
 })();
