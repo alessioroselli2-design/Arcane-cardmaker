@@ -2,169 +2,110 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Arcane CardMaker — crea carte in stile TCG in 60s</title>
-  <meta name="description" content="Crea carte in stile Magic/TCG in pochi click. Foil, cornici, font personalizzati, export PNG/PDF e libreria Cloud. Gratis.">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Arcane CardMaker</title>
+  <meta name="description" content="Crea carte TCG in stile fantasy in pochi secondi. Foil oro/argento/arcobaleno, font custom, esportazione PNG/PDF e libreria Cloud." />
+  <meta name="theme-color" content="#111" />
 
-  <!-- favicon -->
-  <link rel="icon" href="/landing/favicon.ico" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="Arcane CardMaker" />
+  <meta property="og:description" content="Crea carte TCG in stile fantasy in pochi secondi." />
+  <meta property="og:image" content="og-preview.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://arcane-cardmaker.vercel.app/" />
 
-  <!-- font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-
-  <!-- CSS della landing -->
-  <link rel="stylesheet" href="/landing/style.css">
-
-  <!-- Open Graph / Social -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Arcane CardMaker — crea carte in 60s">
-  <meta property="og:description" content="Cornici foil, titoli con ombra/foil, esportazione PNG/PDF, Cloud realtime.">
-  <meta property="og:image" content="https://arcane-cardmaker.vercel.app/landing/og-preview.jpg">
-  <meta name="twitter:card" content="summary_large_image">
+  <!-- Favicon e logo -->
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- NAV -->
-  <header class="nav">
-    <div class="wrap">
-      <div class="brand">
-        <img class="logo" src="/landing/logo.svg" alt="Arcane CardMaker" />
-        <span>Arcane CardMaker</span>
-      </div>
-      <nav class="navlinks">
-        <a href="#features">Funzioni</a>
-        <a href="#gallery">Gallery</a>
-        <a href="#faq">FAQ</a>
-        <a class="btn primary" href="/app">Apri l’app</a>
-      </nav>
-      <button class="nav-toggle" aria-label="menu">☰</button>
-    </div>
+  <header class="site-header">
+    <img src="logo.png" alt="Arcane CardMaker" class="logo" />
+    <nav>
+      <a href="#funzioni">Funzioni</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#faq">FAQ</a>
+      <a href="/app/">Apri l’app</a>
+    </nav>
   </header>
 
-  <!-- HERO -->
+  <!-- Hero -->
   <section class="hero">
-    <div class="wrap hero-grid">
-      <div class="hero-copy">
-        <h1>Crea carte in stile TCG in <span class="accent">60 secondi</span></h1>
-        <p>Foil oro/argento/arcobaleno, titoli con ombra, cornici eleganti, font custom, esportazione PNG/PDF e libreria Cloud realtime.</p>
-        <div class="cta">
-          <a class="btn primary lg" href="/app">Inizia ora — Gratis</a>
-          <a class="btn ghost lg" href="#features">Guarda le funzioni</a>
-        </div>
-        <div class="trust">
-          <span>⚡ Nessuna installazione</span>
-          <span>🔒 Dati salvati nel tuo Cloud</span>
-          <span>📄 Export pronto per la stampa</span>
-        </div>
+    <div class="hero-text">
+      <h1>Crea carte in stile TCG in <span class="accent">60 secondi</span></h1>
+      <p>Foil oro/argento/arcobaleno, titoli con ombra, cornici eleganti, font custom, esportazione PNG/PDF e libreria Cloud realtime.</p>
+      <div class="cta">
+        <a class="btn primary" href="/app/">Inizia ora — Gratis</a>
+        <a class="btn ghost" href="#funzioni">Guarda le funzioni</a>
       </div>
-      <div class="hero-shot">
-        <img src="/landing/hero-shot.png" alt="Anteprima carte" loading="eager">
+      <ul class="hero-points">
+        <li>⚡ Nessuna installazione</li>
+        <li>🔒 Dati salvati nel tuo Cloud</li>
+        <li>🖨 Export pronto per la stampa</li>
+      </ul>
+    </div>
+    <div class="hero-image">
+      <img src="hero-shot.png" alt="Esempio carte create" />
+    </div>
+  </section>
+
+  <!-- Funzioni -->
+  <section id="funzioni">
+    <h2>Funzioni principali</h2>
+    <div class="features">
+      <div>
+        <h3>Foil & Cornici</h3>
+        <p>Cornici foil oro/argento/arcobaleno o colore piatto. Spaziatura precisa per look premium.</p>
+      </div>
+      <div>
+        <h3>Titoli Pro</h3>
+        <p>Titolo con ombra e foil indipendente dalla cornice. Font Cinzel, Spectral o caricamento TTF/OTF.</p>
+      </div>
+      <div>
+        <h3>Symbol & Icon</h3>
+        <p>Simboli di classe D&D, icone personalizzate o caricamento da file.</p>
+      </div>
+      <div>
+        <h3>Cloud & Export</h3>
+        <p>Libreria locale e cloud realtime. Export PNG singolo o PDF multiplo pronto per la stampa.</p>
       </div>
     </div>
   </section>
 
-  <!-- FEATURES -->
-  <section id="features" class="section">
-    <div class="wrap">
-      <h2>Funzioni principali</h2>
-      <div class="cards">
-        <article class="card">
-          <h3>Foil & Cornici</h3>
-          <p>Cornici <b>foil oro/argento/arcobaleno</b> o colore piatto. Spaziatura precisa per look premium.</p>
-        </article>
-        <article class="card">
-          <h3>Titoli Pro</h3>
-          <p>Titolo con <b>ombra</b> e <b>foil indipendente</b> dalla cornice. Font Cinzel, Spectral o caricamento TTF/OTF.</p>
-        </article>
-        <article class="card">
-          <h3>Symbol & Icon</h3>
-          <p>Set fantasy integrato + upload del tuo simbolo. Trascina per riposizionare, ridimensiona al volo.</p>
-        </article>
-        <article class="card">
-          <h3>Export Stampa</h3>
-          <p>PNG alta qualità e PDF A4 3×3 (fronte/retro o entrambi). Margini perfetti per stampa casalinga.</p>
-        </article>
-        <article class="card">
-          <h3>Cloud Realtime</h3>
-          <p>Login e libreria Cloud (Firebase). Salvataggio, anteprime, caricamento ed eliminazione in tempo reale.</p>
-        </article>
-        <article class="card">
-          <h3>Gratis</h3>
-          <p>Usalo gratis. Niente paywall per creare ed esportare. In arrivo funzioni “Pro” opzionali.</p>
-        </article>
-      </div>
+  <!-- Gallery -->
+  <section id="gallery">
+    <h2>Risultati reali</h2>
+    <div class="gallery-grid">
+      <img src="Gallery/card-1.png" alt="Esempio carta 1" />
+      <img src="Gallery/card-2.png" alt="Esempio carta 2" />
+      <img src="Gallery/card-3.png" alt="Esempio carta 3" />
+      <img src="Gallery/card-4.png" alt="Esempio carta 4" />
     </div>
-  </section>
-
-  <!-- GALLERY -->
-  <section id="gallery" class="section alt">
-    <div class="wrap">
-      <h2>Risultati reali</h2>
-      <div class="gallery">
-        <img src="/landing/gallery/card-1.png" alt="Esempio carta 1">
-        <img src="/landing/gallery/card-2.png" alt="Esempio carta 2">
-        <img src="/landing/gallery/card-3.png" alt="Esempio carta 3">
-        <img src="/landing/gallery/card-4.png" alt="Esempio carta 4">
-      </div>
-      <p class="center"><a class="btn" href="/app">Prova subito</a></p>
+    <div class="cta">
+      <a class="btn primary" href="/app/">Prova subito</a>
     </div>
   </section>
 
   <!-- FAQ -->
-  <section id="faq" class="section">
-    <div class="wrap">
-      <h2>Domande frequenti</h2>
-      <details>
-        <summary>Posso caricare i miei font?</summary>
-        <p>Sì. Carica TTF/OTF per titolo o descrizione: appariranno nell’app e nei PDF/PNG export.</p>
-      </details>
-      <details>
-        <summary>Il foil funziona anche sul titolo?</summary>
-        <p>Sì, titolo e cornice hanno foil indipendenti. Puoi anche aggiungere ombra al titolo.</p>
-      </details>
-      <details>
-        <summary>Serve un account?</summary>
-        <p>No per usare l’app. L’account serve solo per la libreria Cloud realtime.</p>
-      </details>
-      <details>
-        <summary>Posso usare i miei simboli?</summary>
-        <p>Certo. Il pannello consente l’upload dell’icona e il posizionamento con drag & drop.</p>
-      </details>
-    </div>
+  <section id="faq">
+    <h2>Domande frequenti</h2>
+    <ul class="faq">
+      <li>▶ Posso caricare i miei font?</li>
+      <li>▶ Il foil funziona anche sul titolo?</li>
+      <li>▶ Serve un account?</li>
+      <li>▶ Posso usare i miei simboli?</li>
+    </ul>
   </section>
 
-  <!-- CTA FINALE -->
-  <section class="cta-final">
-    <div class="wrap center">
-      <h2>Pronto a creare il tuo mazzo?</h2>
-      <a class="btn primary lg" href="/app">Apri l’app</a>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="wrap fgrid">
-      <div>
-        <div class="brand small">
-          <img class="logo" src="/landing/logo.svg" alt="">
-          <span>Arcane CardMaker</span>
-        </div>
-        <p class="muted">© <span id="y"></span> Arcane Studio — Tutti i diritti riservati.</p>
-      </div>
-      <nav class="footlinks">
-        <a href="#features">Funzioni</a>
-        <a href="#gallery">Gallery</a>
-        <a href="#faq">FAQ</a>
-        <a href="/app">Apri l’app</a>
-      </nav>
-    </div>
+  <!-- Footer -->
+  <footer>
+    <p><strong>Arcane CardMaker</strong><br>© 2025 Arcane Studio — Tutti i diritti riservati.</p>
+    <nav>
+      <a href="#funzioni">Funzioni</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#faq">FAQ</a>
+      <a href="/app/">Apri l’app</a>
+    </nav>
   </footer>
-
-  <script>
-    document.getElementById('y').textContent = new Date().getFullYear();
-    const btn = document.querySelector('.nav-toggle');
-    const nav = document.querySelector('.navlinks');
-    btn?.addEventListener('click',()=>nav.classList.toggle('open'));
-  </script>
 </body>
 </html>
