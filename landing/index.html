@@ -1,111 +1,132 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Arcane CardMaker</title>
-  <meta name="description" content="Crea carte TCG in stile fantasy in pochi secondi. Foil oro/argento/arcobaleno, font custom, esportazione PNG/PDF e libreria Cloud." />
-  <meta name="theme-color" content="#111" />
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="Arcane CardMaker" />
-  <meta property="og:description" content="Crea carte TCG in stile fantasy in pochi secondi." />
-  <meta property="og:image" content="/landing/og-preview.jpg" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://arcane-cardmaker.vercel.app/" />
-
-  <!-- Favicon e CSS (percorsi assoluti verso /landing/ ) -->
+  <!-- Favicon -->
   <link rel="icon" href="/landing/favicon.ico" />
+
+  <!-- Stile principale -->
   <link rel="stylesheet" href="/landing/style.css" />
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Arcane CardMaker" />
+  <meta property="og:description" content="Crea carte TCG in pochi secondi — Foil oro, cornici eleganti, esportazione PNG/PDF." />
+  <meta property="og:image" content="https://arcane-cardmaker.vercel.app/landing/og-preview.jpg" />
 </head>
 <body>
-  <header class="site-header">
-    <img src="/landing/logo.png" alt="Arcane CardMaker" class="logo" />
-    <nav>
-      <a href="#funzioni">Funzioni</a>
-      <a href="#gallery">Gallery</a>
-      <a href="#faq">FAQ</a>
-      <a href="/app/">Apri l’app</a>
-    </nav>
+  <!-- Navbar sticky -->
+  <header class="nav">
+    <div class="wrap fgrid">
+      <div class="brand">
+        <img class="logo" src="/landing/logo.svg" alt="Arcane CardMaker Logo">
+        <span>Arcane CardMaker</span>
+      </div>
+      <nav class="links">
+        <a href="#features">Funzioni</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#faq">FAQ</a>
+        <a href="/app/">Apri l’app</a>
+      </nav>
+    </div>
   </header>
 
   <!-- Hero -->
   <section class="hero">
-    <div class="hero-text">
-      <h1>Crea carte in stile TCG in <span class="accent">60 secondi</span></h1>
+    <div class="wrap center">
+      <h1>Crea carte in stile TCG in 60 secondi</h1>
       <p>Foil oro/argento/arcobaleno, titoli con ombra, cornici eleganti, font custom, esportazione PNG/PDF e libreria Cloud realtime.</p>
-      <div class="cta">
+      <div class="actions">
         <a class="btn primary" href="/app/">Inizia ora — Gratis</a>
-        <a class="btn ghost" href="#funzioni">Guarda le funzioni</a>
+        <a class="btn ghost" href="#features">Guarda le funzioni</a>
       </div>
-      <ul class="hero-points">
+      <ul class="highlights">
         <li>⚡ Nessuna installazione</li>
         <li>🔒 Dati salvati nel tuo Cloud</li>
-        <li>🖨 Export pronto per la stampa</li>
+        <li>🖨️ Export pronto per la stampa</li>
       </ul>
-    </div>
-    <div class="hero-image">
-      <img src="/landing/hero-shot.png" alt="Esempio carte create" />
+      <img class="hero-shot" src="/landing/hero-shot.png" alt="Anteprima Arcane CardMaker">
     </div>
   </section>
 
   <!-- Funzioni -->
-  <section id="funzioni">
-    <h2>Funzioni principali</h2>
-    <div class="features">
-      <div>
-        <h3>Foil & Cornici</h3>
-        <p>Cornici foil oro/argento/arcobaleno o colore piatto. Spaziatura precisa per look premium.</p>
-      </div>
-      <div>
-        <h3>Titoli Pro</h3>
-        <p>Titolo con ombra e foil indipendente dalla cornice. Font Cinzel, Spectral o caricamento TTF/OTF.</p>
-      </div>
-      <div>
-        <h3>Symbol & Icon</h3>
-        <p>Simboli di classe D&D, icone personalizzate o caricamento da file.</p>
-      </div>
-      <div>
-        <h3>Cloud & Export</h3>
-        <p>Libreria locale e cloud realtime. Export PNG singolo o PDF multiplo pronto per la stampa.</p>
+  <section id="features" class="features">
+    <div class="wrap">
+      <h2>Funzioni principali</h2>
+      <div class="fgrid">
+        <div>
+          <h3>Foil & Cornici</h3>
+          <p>Cornici foil oro/argento/arcobaleno o colore piatto. Spaziatura precisa per look premium.</p>
+        </div>
+        <div>
+          <h3>Titoli Pro</h3>
+          <p>Titolo con ombra e foil indipendente dalla cornice. Font Cinzel, Spectral o caricamento TTF/OTF.</p>
+        </div>
+        <div>
+          <h3>Simboli & Icone</h3>
+          <p>Simboli classici o caricamento personalizzato (es. icone D&D, set Magic-like).</p>
+        </div>
+        <div>
+          <h3>Esportazione</h3>
+          <p>Download PNG/PDF ad alta risoluzione, pronto per stampa o condivisione digitale.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Gallery -->
-  <section id="gallery">
-    <h2>Risultati reali</h2>
-    <div class="gallery-grid">
-      <img src="/landing/Gallery/card-1.png" alt="Esempio carta 1" />
-      <img src="/landing/Gallery/card-2.png" alt="Esempio carta 2" />
-      <img src="/landing/Gallery/card-3.png" alt="Esempio carta 3" />
-      <img src="/landing/Gallery/card-4.png" alt="Esempio carta 4" />
-    </div>
-    <div class="cta">
-      <a class="btn primary" href="/app/">Prova subito</a>
+  <section id="gallery" class="gallery">
+    <div class="wrap">
+      <h2>Risultati reali</h2>
+      <div class="grid">
+        <img src="/landing/Gallery/card-1.png" alt="Esempio carta 1">
+        <img src="/landing/Gallery/card-2.png" alt="Esempio carta 2">
+        <img src="/landing/Gallery/card-3.png" alt="Esempio carta 3">
+        <img src="/landing/Gallery/card-4.png" alt="Esempio carta 4">
+      </div>
+      <div class="center">
+        <a class="btn primary" href="/app/">Prova subito</a>
+      </div>
     </div>
   </section>
 
   <!-- FAQ -->
-  <section id="faq">
-    <h2>Domande frequenti</h2>
-    <ul class="faq">
-      <li>▶ Posso caricare i miei font?</li>
-      <li>▶ Il foil funziona anche sul titolo?</li>
-      <li>▶ Serve un account?</li>
-      <li>▶ Posso usare i miei simboli?</li>
-    </ul>
+  <section id="faq" class="faq">
+    <div class="wrap">
+      <h2>Domande frequenti</h2>
+      <ul>
+        <li>▶ Posso caricare i miei font?</li>
+        <li>▶ Il foil funziona anche sul titolo?</li>
+        <li>▶ Serve un account?</li>
+        <li>▶ Posso usare i miei simboli?</li>
+      </ul>
+    </div>
   </section>
 
   <!-- Footer -->
-  <footer>
-    <p><strong>Arcane CardMaker</strong><br>© 2025 Arcane Studio — Tutti i diritti riservati.</p>
-    <nav>
-      <a href="#funzioni">Funzioni</a>
-      <a href="#gallery">Gallery</a>
-      <a href="#faq">FAQ</a>
-      <a href="/app/">Apri l’app</a>
-    </nav>
+  <footer class="footer">
+    <div class="wrap fgrid">
+      <div>
+        <div class="brand small">
+          <img class="logo" src="/landing/logo.svg" alt="">
+          <span>Arcane CardMaker</span>
+        </div>
+        <p class="muted">© <span id="y"></span> Arcane Studio — Tutti i diritti riservati.</p>
+      </div>
+      <nav class="footlinks">
+        <a href="#features">Funzioni</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#faq">FAQ</a>
+        <a href="/app/">Apri l’app</a>
+      </nav>
+    </div>
   </footer>
+
+  <script>
+    // anno dinamico footer
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
