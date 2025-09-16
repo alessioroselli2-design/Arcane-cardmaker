@@ -102,7 +102,7 @@ const ICONS = {
     <circle cx='50' cy='50' r='24' fill='none' stroke='#90c9ff' stroke-width='4'/>
     <path d='M50 26 v10 M50 64 v10 M26 50 h10 M64 50 h10' stroke='#90c9ff' stroke-width='3'/>
     <circle cx='50' cy='50' r='6' fill='#90c9ff'/></svg>`,
-  warlock: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+  warlock: `<svg xmlns='http://www.w3.org/200svg' viewBox='0 0 100 100'>
     <path d='M50 14 l16 22 -16 48 -16 -48 z' fill='#7d4bb3' stroke='#3e2560' stroke-width='3'/>
     <circle cx='50' cy='40' r='7' fill='#c7a3ff' stroke='#3e2560' stroke-width='2'/></svg>`,
   artificiere: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
@@ -193,13 +193,7 @@ export function drawFront(){
   paintFrame(ctxF);
 
   // === Titolo ===
-  const t = {
-    x: INNER.x + P,
-    y: INNER.y + P,
-    w: INNER.w - P*2,
-    h: TITLE_H,
-    r: 16
-  };
+  const t = { x: INNER.x + P, y: INNER.y + P, w: INNER.w - P*2, h: TITLE_H, r: 16 };
   rr(ctxF, t.x, t.y, t.w, t.h, t.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
   ctxF.lineWidth = 2; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
@@ -210,7 +204,7 @@ export function drawFront(){
   ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
   // === Immagine ===
-  const ax = INNER.x + P + 16;        // piccolo rientro per armonia
+  const ax = INNER.x + P + 16;
   const ay = t.y + t.h + GAP;
   const aw = INNER.w - (P+16)*2;
   const ah = IMG_H;
@@ -244,7 +238,6 @@ export function drawFront(){
   } else {
     ctxF.fillStyle = state.titleColor || '#ffffff';
   }
-  // testo titolo
   ctxF.fillText(state.title || '', t.x + 16, t.y + t.h/2, t.w - 140);
 
   // === Simbolo di classe ===
@@ -280,7 +273,6 @@ export function drawBack(){
   ctxB.clearRect(0,0,W,H);
   paintFrame(ctxB);
   if(state.imgBack){
-    // riempi tutto l'INNER (fino alla cornice interna), con angoli coerenti
     cover(ctxB,state.imgBack,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   } else {
     ctxB.save(); rr(ctxB,INNER.x+12,INNER.y+12,INNER.w-24,INNER.h-24,INNER.r-6);
@@ -380,6 +372,16 @@ function bind(){
   $id('titleFont')?.addEventListener('change',e=>{state.titleFont=e.target.value;drawFront();});
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
+
+  // 👉 Aggiunte: listener mancanti per foil e ombra del titolo
+  $id('titleFoil')?.addEventListener('change', e => {
+    state.titleFoil = e.target.value;
+    drawFront();
+  });
+  $id('titleShadow')?.addEventListener('change', e => {
+    state.titleShadow = e.target.checked;
+    drawFront();
+  });
 
   $id('descFont')?.addEventListener('change',e=>{state.descFont=e.target.value;drawFront();});
   $id('descSize')?.addEventListener('input',e=>{state.descSize=+e.target.value;drawFront();});
