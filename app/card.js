@@ -1,6 +1,6 @@
-// card.js — motore di disegno carte (fronte/retro) + stato + bind UI
+// app/card.js — motore di disegno carte (fronte/retro) + stato + bind UI
+// Layout aggiornato: margine interno (“spazio verde”) uniforme + retro full-bleed.
 
-// ======== STATO ========
 export let state = {
   // titolo / mana
   title: '',
@@ -28,7 +28,7 @@ export let state = {
 
   // riquadri / linee
   panelColor: '#cdbb7d',
-  panelAlpha: 0.85,       // (0..1) tenuto per compatibilità
+  panelAlpha: 0.85,
 
   // immagini
   imgFront: null,
@@ -47,118 +47,76 @@ const frontCanvas = document.getElementById('cardFront');
 const backCanvas  = document.getElementById('cardBack');
 const ctxF = frontCanvas?.getContext('2d') || null;
 const ctxB = backCanvas?.getContext('2d') || null;
+if (!ctxF || !ctxB) console.warn('[card.js] canvas non trovati, salto init');
 
-if (!ctxF || !ctxB) {
-  console.warn('[card.js] canvas non trovati, salto init');
-}
-
-// ======== ICONE DB (FANTASY) ========
+// ======== ICONE DB ========
 const ICONS = {
-  guerriero: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <defs>
-    <linearGradient id='gSword' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0' stop-color='#f7f7f7'/><stop offset='1' stop-color='#c9c9c9'/>
-    </linearGradient>
-  </defs>
-  <rect x='20' y='20' width='60' height='60' rx='10' fill='none' stroke='#2b2b2b' stroke-width='3'/>
-  <path d='M28 64 l20 -20 l4 4 l-20 20 z' fill='#8c6b3c' stroke='#2b2b2b' stroke-width='2'/>
-  <path d='M52 28 l20 20 l-18 18 l-20 -20 z' fill='url(#gSword)' stroke='#2b2b2b' stroke-width='2'/>
-  <circle cx='62' cy='38' r='3' fill='#2b2b2b'/>
-</svg>`,
-  druido: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <defs>
-    <radialGradient id='gLeaf' cx='0.5' cy='0.3' r='0.8'>
-      <stop offset='0' stop-color='#9fe29f'/><stop offset='1' stop-color='#4f8b4f'/>
-    </radialGradient>
-  </defs>
-  <path d='M50 12 C26 36,24 62,50 90 C76 62,74 36,50 12 Z' fill='url(#gLeaf)' stroke='#1f4a1c' stroke-width='3'/>
-  <path d='M50 90 C48 66,46 46,48 28' stroke='#1f4a1c' stroke-width='3' fill='none'/>
-  <path d='M36 42 c10 2 18 -2 24 -8' stroke='#1f4a1c' stroke-width='2' fill='none'/>
-</svg>`,
-  monaco: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <circle cx='50' cy='50' r='30' fill='none' stroke='#caa96b' stroke-width='6'/>
-  <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
-  <path d='M35 42 h30' stroke='#caa96b' stroke-width='4' opacity='.7'/>
-</svg>`,
-  mago: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <defs>
-    <linearGradient id='gHat' x1='0' y1='0' x2='0' y2='1'>
-      <stop offset='0' stop-color='#6fb7ff'/><stop offset='1' stop-color='#2a69d1'/>
-    </linearGradient>
-  </defs>
-  <path d='M50 16 l24 44 h-48 z' fill='url(#gHat)' stroke='#173b75' stroke-width='3'/>
-  <circle cx='50' cy='64' r='5' fill='#fff' stroke='#173b75' stroke-width='2'/>
-  <path d='M22 66 h56' stroke='#173b75' stroke-width='3'/>
-</svg>`,
-  ladro: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <rect x='20' y='34' width='60' height='28' rx='6' fill='#1e1e1e' stroke='#333' stroke-width='3'/>
-  <path d='M20 45 h60' stroke='#666' stroke-width='3'/>
-  <circle cx='36' cy='48' r='5' fill='#ddd'/><circle cx='64' cy='48' r='5' fill='#ddd'/>
-  <path d='M72 70 l8 8' stroke='#1e1e1e' stroke-width='6' stroke-linecap='round'/>
-</svg>`,
-  barbaro: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <path d='M24 24 h18 v52 h-18 z' fill='#8c3f22' stroke='#3e1f10' stroke-width='3'/>
-  <path d='M58 24 h18 v52 h-18 z' fill='#8c3f22' stroke='#3e1f10' stroke-width='3'/>
-  <rect x='46' y='18' width='8' height='64' fill='#5b371f' stroke='#2c170c' stroke-width='2'/>
-  <path d='M28 30 l10 0 0 12 -10 0 z M62 30 l10 0 0 12 -10 0 z' fill='#c89b72' opacity='.35'/>
-</svg>`,
-  paladino: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <path d='M20 20 h60 v26 c0 26 -30 38 -30 38 s-30 -12 -30 -38 z'
-        fill='#e6dfb8' stroke='#8a7b45' stroke-width='3'/>
-  <path d='M50 26 v40' stroke='#8a7b45' stroke-width='3'/>
-  <path d='M38 46 h24' stroke='#8a7b45' stroke-width='3'/>
-</svg>`,
-  chierico: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <circle cx='50' cy='50' r='28' fill='#efe8d8' stroke='#876' stroke-width='3'/>
-  <path d='M48 28 h4 v18 h18 v4 h-18 v18 h-4 v-18 h-18 v-4 h18 z' fill='#876'/>
-</svg>`,
-  bardo: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <path d='M32 20 c40 0 40 60 0 60' fill='none' stroke='#b46ec9' stroke-width='6'/>
-  <circle cx='56' cy='48' r='6' fill='#fff' stroke='#7c3a93' stroke-width='2'/>
-  <path d='M58 30 q10 6 14 0' stroke='#b46ec9' stroke-width='3' fill='none'/>
-</svg>`,
-  ranger: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <path d='M22 78 l56 -56' stroke='#2f7d2b' stroke-width='6' stroke-linecap='round'/>
-  <path d='M70 22 l12 -6 -6 12 z' fill='#2f7d2b'/>
-  <path d='M26 70 q12 -8 20 -2' stroke='#5aa34f' stroke-width='3' fill='none'/>
-</svg>`,
-  stregone: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <circle cx='50' cy='50' r='24' fill='none' stroke='#90c9ff' stroke-width='4'/>
-  <path d='M50 26 v10 M50 64 v10 M26 50 h10 M64 50 h10' stroke='#90c9ff' stroke-width='3'/>
-  <circle cx='50' cy='50' r='6' fill='#90c9ff'/>
-</svg>`,
-  warlock: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <path d='M50 14 l16 22 -16 48 -16 -48 z' fill='#7d4bb3' stroke='#3e2560' stroke-width='3'/>
-  <circle cx='50' cy='40' r='7' fill='#c7a3ff' stroke='#3e2560' stroke-width='2'/>
-</svg>`,
-  artificiere: `
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-  <circle cx='50' cy='50' r='26' fill='#b9c3ce' stroke='#3a4a5a' stroke-width='3'/>
-  <path d='M50 22 v10 M50 68 v10 M22 50 h10 M68 50 h10 M33 33 l7 7 M67 67 l7 7 M33 67 l7 -7 M67 33 l7 -7'
-        stroke='#3a4a5a' stroke-width='3'/>
-  <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/>
-</svg>`
+  guerriero: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='gSword' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0' stop-color='#f7f7f7'/><stop offset='1' stop-color='#c9c9c9'/></linearGradient></defs>
+    <rect x='20' y='20' width='60' height='60' rx='10' fill='none' stroke='#2b2b2b' stroke-width='3'/>
+    <path d='M28 64 l20 -20 l4 4 l-20 20 z' fill='#8c6b3c' stroke='#2b2b2b' stroke-width='2'/>
+    <path d='M52 28 l20 20 l-18 18 l-20 -20 z' fill='url(#gSword)' stroke='#2b2b2b' stroke-width='2'/>
+    <circle cx='62' cy='38' r='3' fill='#2b2b2b'/></svg>`,
+  druido: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><radialGradient id='gLeaf' cx='0.5' cy='0.3' r='0.8'>
+      <stop offset='0' stop-color='#9fe29f'/><stop offset='1' stop-color='#4f8b4f'/></radialGradient></defs>
+    <path d='M50 12 C26 36,24 62,50 90 C76 62,74 36,50 12 Z' fill='url(#gLeaf)' stroke='#1f4a1c' stroke-width='3'/>
+    <path d='M50 90 C48 66,46 46,48 28' stroke='#1f4a1c' stroke-width='3' fill='none'/>
+    <path d='M36 42 c10 2 18 -2 24 -8' stroke='#1f4a1c' stroke-width='2' fill='none'/></svg>`,
+  monaco: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='30' fill='none' stroke='#caa96b' stroke-width='6'/>
+    <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
+    <path d='M35 42 h30' stroke='#caa96b' stroke-width='4' opacity='.7'/></svg>`,
+  mago: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='gHat' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0' stop-color='#6fb7ff'/><stop offset='1' stop-color='#2a69d1'/></linearGradient></defs>
+    <path d='M50 16 l24 44 h-48 z' fill='url(#gHat)' stroke='#173b75' stroke-width='3'/>
+    <circle cx='50' cy='64' r='5' fill='#fff' stroke='#173b75' stroke-width='2'/>
+    <path d='M22 66 h56' stroke='#173b75' stroke-width='3'/></svg>`,
+  ladro: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <rect x='20' y='34' width='60' height='28' rx='6' fill='#1e1e1e' stroke='#333' stroke-width='3'/>
+    <path d='M20 45 h60' stroke='#666' stroke-width='3'/>
+    <circle cx='36' cy='48' r='5' fill='#ddd'/><circle cx='64' cy='48' r='5' fill='#ddd'/>
+    <path d='M72 70 l8 8' stroke='#1e1e1e' stroke-width='6' stroke-linecap='round'/></svg>`,
+  barbaro: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M24 24 h18 v52 h-18 z' fill='#8c3f22' stroke='#3e1f10' stroke-width='3'/>
+    <path d='M58 24 h18 v52 h-18 z' fill='#8c3f22' stroke='#3e1f10' stroke-width='3'/>
+    <rect x='46' y='18' width='8' height='64' fill='#5b371f' stroke='#2c170c' stroke-width='2'/>
+    <path d='M28 30 l10 0 0 12 -10 0 z M62 30 l10 0 0 12 -10 0 z' fill='#c89b72' opacity='.35'/></svg>`,
+  paladino: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M20 20 h60 v26 c0 26 -30 38 -30 38 s-30 -12 -30 -38 z' fill='#e6dfb8' stroke='#8a7b45' stroke-width='3'/>
+    <path d='M50 26 v40' stroke='#8a7b45' stroke-width='3'/><path d='M38 46 h24' stroke='#8a7b45' stroke-width='3'/></svg>`,
+  chierico: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='28' fill='#efe8d8' stroke='#876' stroke-width='3'/>
+    <path d='M48 28 h4 v18 h18 v4 h-18 v18 h-4 v-18 h-18 v-4 h18 z' fill='#876'/></svg>`,
+  bardo: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M32 20 c40 0 40 60 0 60' fill='none' stroke='#b46ec9' stroke-width='6'/>
+    <circle cx='56' cy='48' r='6' fill='#fff' stroke='#7c3a93' stroke-width='2'/>
+    <path d='M58 30 q10 6 14 0' stroke='#b46ec9' stroke-width='3' fill='none'/></svg>`,
+  ranger: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M22 78 l56 -56' stroke='#2f7d2b' stroke-width='6' stroke-linecap='round'/>
+    <path d='M70 22 l12 -6 -6 12 z' fill='#2f7d2b'/>
+    <path d='M26 70 q12 -8 20 -2' stroke='#5aa34f' stroke-width='3' fill='none'/></svg>`,
+  stregone: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='24' fill='none' stroke='#90c9ff' stroke-width='4'/>
+    <path d='M50 26 v10 M50 64 v10 M26 50 h10 M64 50 h10' stroke='#90c9ff' stroke-width='3'/>
+    <circle cx='50' cy='50' r='6' fill='#90c9ff'/></svg>`,
+  warlock: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M50 14 l16 22 -16 48 -16 -48 z' fill='#7d4bb3' stroke='#3e2560' stroke-width='3'/>
+    <circle cx='50' cy='40' r='7' fill='#c7a3ff' stroke='#3e2560' stroke-width='2'/></svg>`,
+  artificiere: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='26' fill='#b9c3ce' stroke='#3a4a5a' stroke-width='3'/>
+    <path d='M50 22 v10 M50 68 v10 M22 50 h10 M68 50 h10 M33 33 l7 7 M67 67 l7 7 M33 67 l7 -7 M67 33 l7 -7'
+          stroke='#3a4a5a' stroke-width='3'/>
+    <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/></svg>`
 };
 window.ICONS = ICONS;
 
 // ======== HELPERS ========
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-  const img=new Image();
-  img.onload=()=>cb(img);
-  img.src=url;
+  const img=new Image(); img.onload=()=>cb(img); img.src=url;
 }
 function rr(c,x,y,w,h,r){
   r=Math.min(r,w/2,h/2);
@@ -194,88 +152,84 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
   }
   return g;
 }
-function paintFrame(c,W,H){
-  // cornice esterna
+
+// ======== GEOMETRIA ========
+const W=750, H=1050;
+const FRAME = { x:12, y:12, w:W-24, h:H-24, r:22 };     // cornice esterna
+const INNER = { x:28, y:28, w:W-56, h:H-56, r:18 };      // bordo interno (colore “carta”)
+const P = 22;                                            // padding uniforme dallo screenshot
+const TITLE_H = 86;
+const GAP = 18;                                          // spazio fra riquadri
+const IMG_H = 460;                                       // area immagine
+
+function paintFrame(c){
+  // Esterno (cornice)
   c.save();
-  rr(c,12,12,W-24,H-24,22);
+  rr(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h,FRAME.r);
   if (state.frameStyle?.startsWith('foil-')){
     const kind = state.frameStyle.replace('foil-','');
-    c.fillStyle = makeFoilGradient(c,12,12,W-24,H-24, kind);
+    c.fillStyle = makeFoilGradient(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h, kind);
   } else {
     c.fillStyle = state.frameColor;
   }
   c.fill();
   c.restore();
-  // interno
-  rr(c,28,28,W-56,H-56,18);
+  // Interno (campo chiaro)
+  rr(c,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   c.fillStyle = state.innerColor;
   c.fill();
 }
-
-// 👉 default pos del simbolo centrato verticalmente al titolo (coerente con nuovo layout)
 function defaultSymbolPos(){
-  const s = state.classSize;
-  const titleTop = 28 + 20;     // inner.y + CONTENT_PAD
-  const titleH   = 86;          // TITLE_H
-  const yCenter  = titleTop + titleH/2;
-  const yTop     = yCenter - s/2;
-  const right    = 750 - 44;
+  const s=state.classSize, right=W-(INNER.x+P);
+  const cy = INNER.y + P + TITLE_H/2;
   state.classX = right - s;
-  state.classY = yTop;
+  state.classY = cy - s/2;
 }
 
 // ======== FRONT ========
 export function drawFront(){
   if(!ctxF) return;
-  const W=750, H=1050;
   ctxF.clearRect(0,0,W,H);
-  paintFrame(ctxF,W,H);
+  paintFrame(ctxF);
 
-  // ---- LAYOUT con padding e gap
-  const inner = { x:28, y:28, w:W-56, h:H-56 };   // area interna alla cornice
-  const CONTENT_PAD = 20;                         // spazio dalla cornice ai box
-  const GAP = 16;                                 // spazio tra i box
-  const TITLE_H = 86;
-  const DESC_H  = 412;
-
-  const content = {
-    x: inner.x + CONTENT_PAD,
-    y: inner.y + CONTENT_PAD,
-    w: inner.w - 2*CONTENT_PAD,
-    h: inner.h - 2*CONTENT_PAD
+  // === Titolo ===
+  const t = {
+    x: INNER.x + P,
+    y: INNER.y + P,
+    w: INNER.w - P*2,
+    h: TITLE_H,
+    r: 16
   };
-
-  const titleRect = { x: content.x, y: content.y, w: content.w, h: TITLE_H, r: 16 };
-  const descRect  = { x: content.x, y: content.y + content.h - DESC_H, w: content.w, h: DESC_H, r: 18 };
-  const artRect   = {
-    x: content.x, y: titleRect.y + titleRect.h + GAP,
-    w: content.w, h: (descRect.y - GAP) - (titleRect.y + titleRect.h)
-  };
-
-  // ---- BOX TITOLO (più leggero e con highlight soft)
-  rr(ctxF, titleRect.x, titleRect.y, titleRect.w, titleRect.h, titleRect.r);
+  rr(ctxF, t.x, t.y, t.w, t.h, t.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
-  ctxF.lineWidth = 1.6; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
+  ctxF.lineWidth = 2; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
+  // highlight superiore
+  const gTop = ctxF.createLinearGradient(0,t.y,0,t.y+t.h*0.6);
+  gTop.addColorStop(0,'rgba(255,255,255,.65)'); gTop.addColorStop(1,'rgba(255,255,255,0)');
+  ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, Math.max(0,t.r-4)); ctxF.clip();
+  ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
-  const gTop = ctxF.createLinearGradient(0,titleRect.y,0,titleRect.y+titleRect.h*0.6);
-  gTop.addColorStop(0,'rgba(255,255,255,.55)');
-  gTop.addColorStop(1,'rgba(255,255,255,0)');
-  ctxF.save();
-  rr(ctxF, titleRect.x+2, titleRect.y+2, titleRect.w-4, titleRect.h*0.45, titleRect.r-4);
-  ctxF.clip(); ctxF.fillStyle = gTop;
-  ctxF.fillRect(titleRect.x, titleRect.y, titleRect.w, titleRect.h*0.6);
-  ctxF.restore();
+  // === Immagine ===
+  const ax = INNER.x + P + 16;        // piccolo rientro per armonia
+  const ay = t.y + t.h + GAP;
+  const aw = INNER.w - (P+16)*2;
+  const ah = IMG_H;
+  if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
+  else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
-  // ---- IMMAGINE
-  if(state.imgFront) cover(ctxF,state.imgFront,artRect.x,artRect.y,artRect.w,artRect.h,12);
-  else { ctxF.fillStyle='#d8dbe2'; rr(ctxF,artRect.x,artRect.y,artRect.w,artRect.h,12); ctxF.fill(); }
-
-  // ---- BOX DESCRIZIONE (crema + bordo tenue)
-  rr(ctxF, descRect.x, descRect.y, descRect.w, descRect.h, descRect.r);
+  // === Descrizione ===
+  const b = {
+    x: INNER.x + P,
+    y: ay + ah + GAP,
+    w: INNER.w - P*2,
+    h: (INNER.y + INNER.h) - (ay + ah + GAP) - P,
+    r: 18
+  };
+  rr(ctxF, b.x, b.y, b.w, b.h, b.r);
   ctxF.fillStyle = '#fcfcf8'; ctxF.fill();
-  ctxF.lineWidth = 1.6; ctxF.strokeStyle = 'rgba(52,64,90,.35)'; ctxF.stroke();
+  ctxF.lineWidth = 2; ctxF.strokeStyle = 'rgba(122,177,114,.7)'; ctxF.stroke();
 
-  // ---- TITOLO (ombra + foil) centrato verticalmente nel box
+  // === Titolo (testo) ===
   ctxF.textBaseline='middle';
   ctxF.textAlign='left';
   ctxF.font = `700 ${state.titleSize}px ${state.titleFont}`;
@@ -286,52 +240,53 @@ export function drawFront(){
   }
   if (state.titleFoil && state.titleFoil!=='none'){
     const kind = state.titleFoil.replace('foil-','');
-    ctxF.fillStyle = makeFoilGradient(ctxF, titleRect.x, titleRect.y, titleRect.w, titleRect.h, kind);
+    ctxF.fillStyle = makeFoilGradient(ctxF, t.x, t.y, t.w, t.h, kind);
   } else {
     ctxF.fillStyle = state.titleColor || '#ffffff';
   }
-  const titleY = titleRect.y + titleRect.h/2;
-  ctxF.fillText(state.title || '', titleRect.x + 16, titleY, titleRect.w - 120);
+  // testo titolo
+  ctxF.fillText(state.title || '', t.x + 16, t.y + t.h/2, t.w - 140);
 
-  // ---- SIMBOLO DI CLASSE
+  // === Simbolo di classe ===
   if(state.imgClass){
     if(state.classX==null || state.classY==null) defaultSymbolPos();
     cover(ctxF,state.imgClass,state.classX,state.classY,state.classSize,state.classSize,10);
   }
 
-  // ---- MANA
+  // === Mana ===
   if(state.showMana && (state.mana||'').trim()){
     ctxF.shadowColor='transparent';
     ctxF.fillStyle='#222';
     ctxF.font=`600 ${Math.max(18,state.titleSize-2)}px Inter,sans-serif`;
     ctxF.textAlign='right';
-    const right=750-44;
+    const right = INNER.x + INNER.w - P;
     const x = state.imgClass ? Math.min(right-8,(state.classX??(right-40))-10) : right;
-    ctxF.fillText(state.mana, x, titleY);
+    ctxF.fillText(state.mana, x, t.y + t.h/2);
     ctxF.textAlign='left';
   }
 
-  // ---- DESCRIZIONE (padding interno)
-  const PAD = 16;
+  // === Descrizione (wrap con **grassetto**) ===
+  const bx=b.x+14, by=b.y+18, bw=b.w-28;
   ctxF.save();
   ctxF.fillStyle=state.descColor;
   ctxF.font=`${state.descSize}px ${state.descFont}`;
-  wrapText(ctxF,state.rulesText||'',descRect.x+PAD,descRect.y+PAD,descRect.w-2*PAD,state.descSize*1.3);
+  wrapText(ctxF,state.rulesText||'',bx,by,bw,state.descSize*1.3);
   ctxF.restore();
 }
 
-// ======== BACK ========
+// ======== BACK (full-bleed entro la cornice interna) ========
 export function drawBack(){
   if(!ctxB) return;
-  const W=750,H=1050;
   ctxB.clearRect(0,0,W,H);
-  paintFrame(ctxB,W,H);
-  if(state.imgBack) cover(ctxB,state.imgBack,28+20,28+20,W-56-40,H-56-40,14); // stesso padding
-  else{
-    ctxB.save(); rr(ctxB,40,40,W-80,H-80,14);
+  paintFrame(ctxB);
+  if(state.imgBack){
+    // riempi tutto l'INNER (fino alla cornice interna), con angoli coerenti
+    cover(ctxB,state.imgBack,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
+  } else {
+    ctxB.save(); rr(ctxB,INNER.x+12,INNER.y+12,INNER.w-24,INNER.h-24,INNER.r-6);
     ctxB.fillStyle='#d5d5d5'; ctxB.globalAlpha=.35; ctxB.fill(); ctxB.restore();
     ctxB.fillStyle='#6b7280'; ctxB.font='16px Inter,sans-serif';
-    ctxB.fillText('Carica immagine retro (full-bleed)',48,62);
+    ctxB.fillText('Carica immagine retro (full-bleed)',INNER.x+20,INNER.y+22);
   }
 }
 
@@ -425,8 +380,6 @@ function bind(){
   $id('titleFont')?.addEventListener('change',e=>{state.titleFont=e.target.value;drawFront();});
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
-  $id('titleFoil')?.addEventListener('change',e=>{state.titleFoil=e.target.value;drawFront();});
-  $id('titleShadow')?.addEventListener('change',e=>{state.titleShadow=e.target.checked;drawFront();});
 
   $id('descFont')?.addEventListener('change',e=>{state.descFont=e.target.value;drawFront();});
   $id('descSize')?.addEventListener('input',e=>{state.descSize=+e.target.value;drawFront();});
