@@ -48,7 +48,6 @@ const backCanvas  = document.getElementById('cardBack');
 const ctxF = frontCanvas?.getContext('2d') || null;
 const ctxB = backCanvas?.getContext('2d') || null;
 
-// se per qualche motivo non ci sono i canvas, esco silenziosamente (evita “anteprima sparita”)
 if (!ctxF || !ctxB) {
   console.warn('[card.js] canvas non trovati, salto init');
 }
@@ -212,10 +211,17 @@ function paintFrame(c,W,H){
   c.fillStyle = state.innerColor;
   c.fill();
 }
+
+// 👉 default pos del simbolo centrato verticalmente al titolo (coerente con nuovo layout)
 function defaultSymbolPos(){
-  const W=750, s=state.classSize, right=W-44, y=71 - s/2;
+  const s = state.classSize;
+  const titleTop = 28 + 20;     // inner.y + CONTENT_PAD
+  const titleH   = 86;          // TITLE_H
+  const yCenter  = titleTop + titleH/2;
+  const yTop     = yCenter - s/2;
+  const right    = 750 - 44;
   state.classX = right - s;
-  state.classY = y;
+  state.classY = yTop;
 }
 
 // ======== FRONT ========
@@ -225,28 +231,51 @@ export function drawFront(){
   ctxF.clearRect(0,0,W,H);
   paintFrame(ctxF,W,H);
 
-  // Riquadro TITOLO
-  const t = {x:28, y:28, w:W-56, h:86, r:16};
-  rr(ctxF, t.x, t.y, t.w, t.h, t.r);
+  // ---- LAYOUT con padding e gap
+  const inner = { x:28, y:28, w:W-56, h:H-56 };   // area interna alla cornice
+  const CONTENT_PAD = 20;                         // spazio dalla cornice ai box
+  const GAP = 16;                                 // spazio tra i box
+  const TITLE_H = 86;
+  const DESC_H  = 412;
+
+  const content = {
+    x: inner.x + CONTENT_PAD,
+    y: inner.y + CONTENT_PAD,
+    w: inner.w - 2*CONTENT_PAD,
+    h: inner.h - 2*CONTENT_PAD
+  };
+
+  const titleRect = { x: content.x, y: content.y, w: content.w, h: TITLE_H, r: 16 };
+  const descRect  = { x: content.x, y: content.y + content.h - DESC_H, w: content.w, h: DESC_H, r: 18 };
+  const artRect   = {
+    x: content.x, y: titleRect.y + titleRect.h + GAP,
+    w: content.w, h: (descRect.y - GAP) - (titleRect.y + titleRect.h)
+  };
+
+  // ---- BOX TITOLO (più leggero e con highlight soft)
+  rr(ctxF, titleRect.x, titleRect.y, titleRect.w, titleRect.h, titleRect.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
-  ctxF.lineWidth = 2; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
-  const gTop = ctxF.createLinearGradient(0,t.y,0,t.y+t.h*0.6);
-  gTop.addColorStop(0,'rgba(255,255,255,.65)'); gTop.addColorStop(1,'rgba(255,255,255,0)');
-  ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, t.r-4); ctxF.clip();
-  ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
+  ctxF.lineWidth = 1.6; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
 
-  // Immagine
-  const ax=44, ay=132, aw=W-88, ah=460;
-  if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
-  else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
+  const gTop = ctxF.createLinearGradient(0,titleRect.y,0,titleRect.y+titleRect.h*0.6);
+  gTop.addColorStop(0,'rgba(255,255,255,.55)');
+  gTop.addColorStop(1,'rgba(255,255,255,0)');
+  ctxF.save();
+  rr(ctxF, titleRect.x+2, titleRect.y+2, titleRect.w-4, titleRect.h*0.45, titleRect.r-4);
+  ctxF.clip(); ctxF.fillStyle = gTop;
+  ctxF.fillRect(titleRect.x, titleRect.y, titleRect.w, titleRect.h*0.6);
+  ctxF.restore();
 
-  // Riquadro DESCRIZIONE
-  const b = {x:28, y:610, w:W-56, h:412, r:18};
-  rr(ctxF, b.x, b.y, b.w, b.h, b.r);
+  // ---- IMMAGINE
+  if(state.imgFront) cover(ctxF,state.imgFront,artRect.x,artRect.y,artRect.w,artRect.h,12);
+  else { ctxF.fillStyle='#d8dbe2'; rr(ctxF,artRect.x,artRect.y,artRect.w,artRect.h,12); ctxF.fill(); }
+
+  // ---- BOX DESCRIZIONE (crema + bordo tenue)
+  rr(ctxF, descRect.x, descRect.y, descRect.w, descRect.h, descRect.r);
   ctxF.fillStyle = '#fcfcf8'; ctxF.fill();
-  ctxF.lineWidth = 2; ctxF.strokeStyle = 'rgba(122,177,114,.7)'; ctxF.stroke();
+  ctxF.lineWidth = 1.6; ctxF.strokeStyle = 'rgba(52,64,90,.35)'; ctxF.stroke();
 
-  // Titolo (ombra + foil)
+  // ---- TITOLO (ombra + foil) centrato verticalmente nel box
   ctxF.textBaseline='middle';
   ctxF.textAlign='left';
   ctxF.font = `700 ${state.titleSize}px ${state.titleFont}`;
@@ -257,19 +286,20 @@ export function drawFront(){
   }
   if (state.titleFoil && state.titleFoil!=='none'){
     const kind = state.titleFoil.replace('foil-','');
-    ctxF.fillStyle = makeFoilGradient(ctxF, t.x, t.y, t.w, t.h, kind);
+    ctxF.fillStyle = makeFoilGradient(ctxF, titleRect.x, titleRect.y, titleRect.w, titleRect.h, kind);
   } else {
     ctxF.fillStyle = state.titleColor || '#ffffff';
   }
-  ctxF.fillText(state.title || '', 44, 71, 520);
+  const titleY = titleRect.y + titleRect.h/2;
+  ctxF.fillText(state.title || '', titleRect.x + 16, titleY, titleRect.w - 120);
 
-  // Simbolo di classe
+  // ---- SIMBOLO DI CLASSE
   if(state.imgClass){
     if(state.classX==null || state.classY==null) defaultSymbolPos();
     cover(ctxF,state.imgClass,state.classX,state.classY,state.classSize,state.classSize,10);
   }
 
-  // Mana
+  // ---- MANA
   if(state.showMana && (state.mana||'').trim()){
     ctxF.shadowColor='transparent';
     ctxF.fillStyle='#222';
@@ -277,16 +307,16 @@ export function drawFront(){
     ctxF.textAlign='right';
     const right=750-44;
     const x = state.imgClass ? Math.min(right-8,(state.classX??(right-40))-10) : right;
-    ctxF.fillText(state.mana, x, 71);
+    ctxF.fillText(state.mana, x, titleY);
     ctxF.textAlign='left';
   }
 
-  // Descrizione
-  const bx=b.x+12, by=b.y+18, bw=b.w-24;
+  // ---- DESCRIZIONE (padding interno)
+  const PAD = 16;
   ctxF.save();
   ctxF.fillStyle=state.descColor;
   ctxF.font=`${state.descSize}px ${state.descFont}`;
-  wrapText(ctxF,state.rulesText||'',bx,by,bw,state.descSize*1.3);
+  wrapText(ctxF,state.rulesText||'',descRect.x+PAD,descRect.y+PAD,descRect.w-2*PAD,state.descSize*1.3);
   ctxF.restore();
 }
 
@@ -296,7 +326,7 @@ export function drawBack(){
   const W=750,H=1050;
   ctxB.clearRect(0,0,W,H);
   paintFrame(ctxB,W,H);
-  if(state.imgBack) cover(ctxB,state.imgBack,28,28,W-56,H-56,18);
+  if(state.imgBack) cover(ctxB,state.imgBack,28+20,28+20,W-56-40,H-56-40,14); // stesso padding
   else{
     ctxB.save(); rr(ctxB,40,40,W-80,H-80,14);
     ctxB.fillStyle='#d5d5d5'; ctxB.globalAlpha=.35; ctxB.fill(); ctxB.restore();
@@ -395,8 +425,6 @@ function bind(){
   $id('titleFont')?.addEventListener('change',e=>{state.titleFont=e.target.value;drawFront();});
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
-
-  // ✅ FIX: mancavano questi due
   $id('titleFoil')?.addEventListener('change',e=>{state.titleFoil=e.target.value;drawFront();});
   $id('titleShadow')?.addEventListener('change',e=>{state.titleShadow=e.target.checked;drawFront();});
 
