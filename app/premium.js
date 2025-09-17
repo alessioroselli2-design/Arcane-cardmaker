@@ -13,9 +13,9 @@
     { value:'chronos',   label:'Chronos (Premium)'   }
   ];
 
-  // 👉 Metti qui la TUA email (quella con cui fai login)
+  // 👉 La tua email
   const OWNER_EMAILS = [
-    'tuo@email.com'
+    'ale.rose90@hotmail.it'
   ];
 
   const LS_KEY = 'acm_pro';
