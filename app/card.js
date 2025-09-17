@@ -25,7 +25,7 @@ export let state = {
 
   // cornice (standard + premium)
   // standard: 'flat' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | 'wood' | 'stone' | 'arcane' | 'nature'
-  // premium:  'frame-celestial' | 'frame-infernal' | 'frame-obsidian' | 'frame-royal' | 'frame-starlight'
+  // premium:  'frame-celestial' | 'frame-infernal' | 'frame-obsidian' | 'frame-royal' | 'frame-starlight' | 'frame-frost' | 'frame-bloom' | 'frame-storm' | 'frame-vampiric' | 'frame-chronos'
   frameStyle: 'flat',
   frameColor: '#d8cfae',
   innerColor: '#f7f5ef',
@@ -159,7 +159,12 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
 
 // === Premium gating & NORMALIZZAZIONE =================================
 function isPremiumUnlocked(){
+  // 1) Se premium.js è caricato, chiediamo a lui
+  if (window.premium?.isPro && window.premium.isPro()) return true;
+  // 2) User premium da auth
   if (window.user && window.user.isPremium) return true;
+  // 3) Local device flag (supporta entrambe le chiavi storiche)
+  if (localStorage.getItem('acm_pro') === '1') return true;
   if (localStorage.getItem('acm_premium') === '1') return true;
   return false;
 }
@@ -186,18 +191,23 @@ function normalizeEffect(val=''){
   return val;
 }
 
-// Mappa etichette cornice → chiavi canoniche
+// Mappa etichette cornice → chiavi canoniche (incluse nuove premium)
 function normalizeFrameStyle(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('frame-')) return v;
 
   // premium
   const mapP = [
-    [/^celest/,  'frame-celestial'],
-    [/^infer/,   'frame-infernal'],
-    [/^obsid/,   'frame-obsidian'],
-    [/^royal|reale/, 'frame-royal'],
+    [/^celest/,      'frame-celestial'],
+    [/^infer/,       'frame-infernal'],
+    [/^obsid/,       'frame-obsidian'],
+    [/^royal|reale/,'frame-royal'],
     [/^star|stell/,  'frame-starlight'],
+    [/^frost/,       'frame-frost'],
+    [/^bloom/,       'frame-bloom'],
+    [/^storm/,       'frame-storm'],
+    [/^vamp/,        'frame-vampiric'],
+    [/^chrono/,      'frame-chronos'],
   ];
   for (const [re,out] of mapP) if (re.test(v)) return out;
 
@@ -319,6 +329,8 @@ function paintFrame(c){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
     g.addColorStop(0,'#7bb077'); g.addColorStop(1,'#3d6b38');
     c.fillStyle=g; c.fill();
+
+  // --- PREMIUM ---
   } else if (fs === 'frame-celestial'){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
     g.addColorStop(0,'#b08cff'); g.addColorStop(0.5,'#83a6ff'); g.addColorStop(1,'#a38bff');
@@ -335,12 +347,33 @@ function paintFrame(c){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
     g.addColorStop(0,'#6a2bb8'); g.addColorStop(1,'#9a66ff');
     c.fillStyle=g; c.fill();
-    // sottile filetto dorato interno
     c.lineWidth=3; c.strokeStyle='#d4af37'; c.stroke();
   } else if (fs === 'frame-starlight'){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
     g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#cfe3ff');
     c.fillStyle=g; c.fill();
+
+  } else if (fs === 'frame-frost'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#e8f6ff'); g.addColorStop(0.5,'#b8d9ff'); g.addColorStop(1,'#7fb2ff');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-bloom'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#f7e8ff'); g.addColorStop(0.5,'#c1f2c7'); g.addColorStop(1,'#7ad67a');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-storm'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#0f1a2b'); g.addColorStop(1,'#254a7a');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-vampiric'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#3b0a0a'); g.addColorStop(1,'#b80f2e');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-chronos'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#fff3c4'); g.addColorStop(0.5,'#d6b65a'); g.addColorStop(1,'#a8802a');
+    c.fillStyle=g; c.fill();
+
   } else {
     // flat
     c.fillStyle = state.frameColor;
