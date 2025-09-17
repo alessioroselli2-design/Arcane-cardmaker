@@ -1,7 +1,7 @@
 // app-i18n.js – applica le traduzioni a tutti gli elementi con data-i18n / data-i18n-ph
 import * as intl from './intl.js';
 
-/* ===================== DIZIONARI ===================== */
+// ========= Dizionari =========
 const it = {
   welcome_title: 'Benvenuto in Card Maker',
   welcome_text: 'Crea carte in stile Magic. Accedi per salvare nella tua Libreria Cloud, oppure entra come Ospite.',
@@ -28,6 +28,18 @@ const it = {
   opt_foil_gold: 'Foil oro',
   opt_foil_silver: 'Foil argento',
   opt_foil_rainbow: 'Foil arcobaleno',
+
+  // --- Nuovi effetti PRO titolo ---
+  opt_foil_celestial: 'Celestial (premium)',
+  opt_foil_infernal:  'Infernal (premium)',
+  opt_foil_obsidian:  'Obsidian (premium)',
+  opt_foil_royal:     'Royal (premium)',
+  opt_foil_starlight: 'Starlight (premium)',
+
+  // Messaggi Premium
+  msg_premium_title: 'Effetto Premium. Disponibile con abbonamento.',
+  msg_premium_frame: 'Cornice Premium. Disponibile con abbonamento.',
+
   lbl_title_shadow: 'Ombra titolo',
   lbl_show_mana: 'Mostra mana',
   ph_mana: '{G}{U} o 2G',
@@ -62,11 +74,6 @@ const it = {
   style_stone: 'Pietra',
   style_arcane: 'Arcano',
   style_nature: 'Natura',
-  // Premium
-  style_celestial: 'Celestiale',
-  style_infernal: 'Infernale',
-  style_oceanic: 'Oceanico',
-  style_obsidian: 'Ossidiana',
   lbl_frame_inner: 'Colore cornice (piatto) & interno',
 
   lbl_front_image: 'Immagine fronte',
@@ -135,6 +142,16 @@ const en = {
   opt_foil_gold: 'Gold foil',
   opt_foil_silver: 'Silver foil',
   opt_foil_rainbow: 'Rainbow foil',
+
+  opt_foil_celestial: 'Celestial (premium)',
+  opt_foil_infernal:  'Infernal (premium)',
+  opt_foil_obsidian:  'Obsidian (premium)',
+  opt_foil_royal:     'Royal (premium)',
+  opt_foil_starlight: 'Starlight (premium)',
+
+  msg_premium_title: 'Premium effect. Available with subscription.',
+  msg_premium_frame: 'Premium frame. Available with subscription.',
+
   lbl_title_shadow: 'Title shadow',
   lbl_show_mana: 'Show mana',
   ph_mana: '{G}{U} or 2G',
@@ -169,11 +186,6 @@ const en = {
   style_stone: 'Stone',
   style_arcane: 'Arcane',
   style_nature: 'Nature',
-  // Premium
-  style_celestial: 'Celestial',
-  style_infernal: 'Infernal',
-  style_oceanic: 'Oceanic',
-  style_obsidian: 'Obsidian',
   lbl_frame_inner: 'Frame (flat) & inner color',
 
   lbl_front_image: 'Front image',
@@ -218,7 +230,7 @@ const en = {
 
 const es = {
   welcome_title: 'Bienvenido a Card Maker',
-  welcome_text: 'Crea cartas al estilo Magic. Inicia sesión para guardar en tu Biblioteca en la Nube o entra como invitado.',
+  welcome_text: 'Crea cartas estilo Magic. Inicia sesión para guardar en tu Biblioteca en la Nube, o entra como invitado.',
   welcome_dontshow: 'No mostrar de nuevo',
   ph_email: 'Correo',
   ph_password: 'Contraseña',
@@ -227,14 +239,14 @@ const es = {
   btn_guest: 'Entrar como invitado',
 
   user_guest: 'Invitado',
-  btn_logout: 'Salir',
+  btn_logout: 'Cerrar sesión',
 
   front_title: 'Frente',
   lbl_title: 'Título',
-  ph_title: 'Nombre del hechizo',
+  ph_title: 'Spell name', // placeholder resta in EN per coerenza con esempio
   lbl_title_font: 'Fuente del título',
-  opt_custom_font: 'Personalizada (subir)',
-  lbl_upload_font: 'Subir fuente TTF/OTF',
+  opt_custom_font: 'Custom (upload)',
+  lbl_upload_font: 'Subir TTF/OTF',
   lbl_title_color: 'Color del título',
   lbl_title_size: 'Tamaño del título',
   lbl_title_effect: 'Efecto del título',
@@ -242,6 +254,16 @@ const es = {
   opt_foil_gold: 'Foil dorado',
   opt_foil_silver: 'Foil plateado',
   opt_foil_rainbow: 'Foil arcoíris',
+
+  opt_foil_celestial: 'Celestial (premium)',
+  opt_foil_infernal:  'Infernal (premium)',
+  opt_foil_obsidian:  'Obsidian (premium)',
+  opt_foil_royal:     'Royal (premium)',
+  opt_foil_starlight: 'Starlight (premium)',
+
+  msg_premium_title: 'Efecto premium. Disponible con suscripción.',
+  msg_premium_frame: 'Marco premium. Disponible con suscripción.',
+
   lbl_title_shadow: 'Sombra del título',
   lbl_show_mana: 'Mostrar maná',
   ph_mana: '{G}{U} o 2G',
@@ -263,7 +285,7 @@ const es = {
   cls_ranger: 'Explorador',
   cls_sorcerer: 'Hechicero',
   cls_warlock: 'Brujo',
-  cls_artificer: 'Artificiero',
+  cls_artificer: 'Artífice',
 
   lbl_symbol_size: 'Tamaño del símbolo',
   hint_drag_symbol: 'Arrastra el símbolo en la vista previa para moverlo.',
@@ -276,36 +298,31 @@ const es = {
   style_stone: 'Piedra',
   style_arcane: 'Arcano',
   style_nature: 'Naturaleza',
-  // Premium
-  style_celestial: 'Celestial',
-  style_infernal: 'Infernal',
-  style_oceanic: 'Oceánico',
-  style_obsidian: 'Obsidiana',
   lbl_frame_inner: 'Color del marco (plano) e interior',
 
   lbl_front_image: 'Imagen frontal',
 
-  lbl_desc_title: 'Descripción (caja inferior)',
-  ph_rules: 'Texto/reglas… **palabras clave** en negrita.',
+  lbl_desc_title: 'Descripción (recuadro inferior)',
+  ph_rules: 'Texto de reglas… **palabras clave** en negrita.',
   lbl_desc_font: 'Fuente de descripción',
   lbl_upload_desc_font: 'Subir fuente de descripción (TTF/OTF)',
   lbl_desc_size: 'Tamaño de descripción',
   lbl_desc_color: 'Color de descripción',
 
   back_title: 'Reverso',
-  lbl_back_image: 'Imagen trasera (full-bleed)',
-  hint_back_image: 'Llena toda el área interna; mismo marco que el frente.',
+  lbl_back_image: 'Imagen reverso (full-bleed)',
+  hint_back_image: 'Rellena el área interior; mismo marco que el frente.',
 
   saves_title: 'Guardados',
   lbl_card_name: 'Nombre de la carta',
-  ph_card: 'Ej. Espadas del Bosque',
-  lbl_deck_name: 'Mazo (carpeta nube, opc.)',
-  ph_deck: 'Ej. Hechizos de Druida',
+  ph_card: 'p. ej. Forest Blades',
+  lbl_deck_name: 'Mazo (carpeta cloud, opc.)',
+  ph_deck: 'p. ej. Druid Spells',
 
-  btn_save_local: 'Guardar local',
+  btn_save_local: 'Guardar localmente',
   btn_load_local: 'Abrir biblioteca local',
 
-  cloud_title: 'Cuenta & Nube',
+  cloud_title: 'Cuenta y Nube',
   btn_cloud_save: 'Guardar en la nube',
   btn_cloud_pull: 'Abrir biblioteca en la nube',
   btn_cloud_clear: 'Vaciar nube',
@@ -313,19 +330,19 @@ const es = {
   export_title: 'Exportar',
   btn_png_front: 'PNG (frente)',
   btn_png_back: 'PNG (reverso)',
-  btn_pdf_single_f: 'PDF único (frente)',
-  btn_pdf_single_b: 'PDF único (reverso)',
+  btn_pdf_single_f: 'PDF individual (frente)',
+  btn_pdf_single_b: 'PDF individual (reverso)',
   btn_pdf_a4_f: 'PDF A4 3×3 (frentes)',
   btn_pdf_a4_b: 'PDF A4 3×3 (reversos)',
   btn_pdf_a4_both: 'PDF A4 3×3 (frente+reverso)',
-  hint_print: 'Imprimir en A4 vertical, márgenes mínimos, escala 100%.',
+  hint_print: 'Imprime en A4 vertical, márgenes mínimos, escala 100%.',
 
   preview_title: 'Vista previa'
 };
 
 const de = {
   welcome_title: 'Willkommen bei Card Maker',
-  welcome_text: 'Erstelle Karten im Magic-Stil. Melde dich an, um in deiner Cloud-Bibliothek zu speichern, oder fahre als Gast fort.',
+  welcome_text: 'Erstelle Karten im Magic-Stil. Melde dich an, um in der Cloud-Bibliothek zu speichern, oder nutze den Gastmodus.',
   welcome_dontshow: 'Nicht mehr anzeigen',
   ph_email: 'E-Mail',
   ph_password: 'Passwort',
@@ -338,17 +355,27 @@ const de = {
 
   front_title: 'Vorderseite',
   lbl_title: 'Titel',
-  ph_title: 'Zaubername',
+  ph_title: 'Spell name',
   lbl_title_font: 'Titelschrift',
-  opt_custom_font: 'Benutzerdefiniert (Upload)',
+  opt_custom_font: 'Custom (upload)',
   lbl_upload_font: 'TTF/OTF hochladen',
   lbl_title_color: 'Titelfarbe',
   lbl_title_size: 'Titelgröße',
   lbl_title_effect: 'Titel-Effekt',
-  opt_none: 'Keine',
-  opt_foil_gold: 'Goldfolie',
-  opt_foil_silver: 'Silberfolie',
-  opt_foil_rainbow: 'Regenbogenfolie',
+  opt_none: 'Keiner',
+  opt_foil_gold: 'Gold-Foil',
+  opt_foil_silver: 'Silber-Foil',
+  opt_foil_rainbow: 'Regenbogen-Foil',
+
+  opt_foil_celestial: 'Celestial (Premium)',
+  opt_foil_infernal:  'Infernal (Premium)',
+  opt_foil_obsidian:  'Obsidian (Premium)',
+  opt_foil_royal:     'Royal (Premium)',
+  opt_foil_starlight: 'Starlight (Premium)',
+
+  msg_premium_title: 'Premium-Effekt. Mit Abonnement verfügbar.',
+  msg_premium_frame: 'Premium-Rahmen. Mit Abonnement verfügbar.',
+
   lbl_title_shadow: 'Titelschatten',
   lbl_show_mana: 'Mana anzeigen',
   ph_mana: '{G}{U} oder 2G',
@@ -368,46 +395,41 @@ const de = {
   cls_cleric: 'Kleriker',
   cls_bard: 'Barde',
   cls_ranger: 'Waldläufer',
-  cls_sorcerer: 'Zauberer',
-  cls_warlock: 'Hexenmeister',
+  cls_sorcerer: 'Hexenmeister',
+  cls_warlock: 'Warlock',
   cls_artificer: 'Artificer',
 
   lbl_symbol_size: 'Symbolgröße',
-  hint_drag_symbol: 'Ziehe das Symbol in der Vorschau, um es zu verschieben.',
-  lbl_panel_color: 'Farbe von Linien/Feldern',
-  lbl_panel_alpha: 'Feld-Deckkraft',
+  hint_drag_symbol: 'Symbol in der Vorschau ziehen, um es zu verschieben.',
+  lbl_panel_color: 'Linien/Paneele-Farbe',
+  lbl_panel_alpha: 'Paneele-Deckkraft',
 
   lbl_frame_style: 'Rahmenstil',
-  style_flat: 'Flache Farbe',
+  style_flat: 'Volltonfarbe',
   style_wood: 'Holz',
   style_stone: 'Stein',
   style_arcane: 'Arkan',
   style_nature: 'Natur',
-  // Premium
-  style_celestial: 'Himmlisch',
-  style_infernal: 'Höllisch',
-  style_oceanic: 'Ozeanisch',
-  style_obsidian: 'Obsidian',
-  lbl_frame_inner: 'Rahmen (flach) & Innenfarbe',
+  lbl_frame_inner: 'Rahmen (Vollton) & Innenfarbe',
 
-  lbl_front_image: 'Vorderseitenbild',
+  lbl_front_image: 'Vorderseiten-Bild',
 
   lbl_desc_title: 'Beschreibung (unteres Feld)',
-  ph_rules: 'Regeltext… **Schlüsselwörter** in Fett.',
+  ph_rules: 'Regeltext… **Schlüsselwörter** fett.',
   lbl_desc_font: 'Beschreibungsschrift',
   lbl_upload_desc_font: 'Beschreibungsschrift hochladen (TTF/OTF)',
-  lbl_desc_size: 'Beschreibungstext-Größe',
-  lbl_desc_color: 'Beschreibungstext-Farbe',
+  lbl_desc_size: 'Beschreibung-Größe',
+  lbl_desc_color: 'Beschreibung-Farbe',
 
   back_title: 'Rückseite',
-  lbl_back_image: 'Rückseitenbild (full-bleed)',
+  lbl_back_image: 'Rückseiten-Bild (randlos)',
   hint_back_image: 'Füllt den Innenbereich; gleicher Rahmen wie vorne.',
 
-  saves_title: 'Speicherungen',
+  saves_title: 'Speichern',
   lbl_card_name: 'Kartenname',
-  ph_card: 'z. B. Waldklingen',
-  lbl_deck_name: 'Deck (Cloud-Ordner, optional)',
-  ph_deck: 'z. B. Druidenzauber',
+  ph_card: 'z. B. Forest Blades',
+  lbl_deck_name: 'Deck (Cloud-Ordner, opt.)',
+  ph_deck: 'z. B. Druid Spells',
 
   btn_save_local: 'Lokal speichern',
   btn_load_local: 'Lokale Bibliothek öffnen',
@@ -418,31 +440,36 @@ const de = {
   btn_cloud_clear: 'Cloud leeren',
 
   export_title: 'Export',
-  btn_png_front: 'PNG (Vorderseite)',
-  btn_png_back: 'PNG (Rückseite)',
-  btn_pdf_single_f: 'Einzel-PDF (Vorderseite)',
-  btn_pdf_single_b: 'Einzel-PDF (Rückseite)',
+  btn_png_front: 'PNG (vorne)',
+  btn_png_back: 'PNG (hinten)',
+  btn_pdf_single_f: 'Einzel-PDF (vorne)',
+  btn_pdf_single_b: 'Einzel-PDF (hinten)',
   btn_pdf_a4_f: 'A4-PDF 3×3 (Vorderseiten)',
   btn_pdf_a4_b: 'A4-PDF 3×3 (Rückseiten)',
   btn_pdf_a4_both: 'A4-PDF 3×3 (vorne+hinten)',
-  hint_print: 'Auf A4 Hochformat drucken, minimale Ränder, Skalierung 100 %.',
+  hint_print: 'Auf A4 Hochformat drucken, minimale Ränder, 100 % Skalierung.',
 
   preview_title: 'Vorschau'
 };
 
-/* ===================== REGISTRAZIONE ===================== */
 intl.addLocale('it', it);
 intl.addLocale('en', en);
 intl.addLocale('es', es);
 intl.addLocale('de', de);
 
-/* ===================== APPLICAZIONE ===================== */
-// Usiamo la traduzione DOM nativa del tuo intl.js (supporta data-i18n e data-i18n-ph)
-function apply() {
-  intl.translateDom(document);
+// Applica traduzioni ai nodi marcati
+function apply(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.dataset.i18n;
+    el.textContent = intl.t(k);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const k = el.dataset.i18nPh;
+    el.setAttribute('placeholder', intl.t(k));
+  });
 }
 
-// Inietto il selettore lingua nell'header (IT / EN / ES / DE)
+// Selettore lingua nel header (a destra)
 (function injectLangSelector(){
   const hdr = document.querySelector('header .row') || document.querySelector('header');
   if (!hdr || document.getElementById('lang')) return;
@@ -451,17 +478,14 @@ function apply() {
   sel.style.marginLeft = '10px';
   sel.style.padding = '4px 6px';
   sel.style.borderRadius = '8px';
-  sel.innerHTML = `
-    <option value="it">IT</option>
-    <option value="en">EN</option>
-    <option value="es">ES</option>
-    <option value="de">DE</option>
-  `;
+  sel.innerHTML = `<option value="it">IT</option><option value="en">EN</option><option value="es">ES</option><option value="de">DE</option>`;
   sel.value = intl.getLocale();
   sel.addEventListener('change', ()=> intl.setLocale(sel.value));
   hdr.appendChild(sel);
 })();
 
-// Applica subito e ascolta i cambi
 apply();
 intl.onChange(apply);
+
+// wrapper globale per alert localizzati
+window.__t = (k, f) => intl.t(k, f);
