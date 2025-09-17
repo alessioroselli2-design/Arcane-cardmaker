@@ -9,35 +9,35 @@
   <!-- IMPORTANT: fa risolvere tutti i percorsi sotto /app/ -->
   <base href="/app/">
 
-  <!-- CSS (nome corretto: stile.css) -->
+  <!-- CSS -->
   <link rel="stylesheet" href="stile.css" />
 
   <!-- jsPDF per i PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
 
-  <!-- Google Fonts (preset) -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
-  <!-- Manifest PWA (nome corretto) -->
+  <!-- Manifest PWA -->
   <link rel="manifest" href="manifesto.webmanifest">
 </head>
 <body>
   <!-- Welcome / Accesso -->
   <div id="welcome" class="modal-mask" style="display:none">
     <div class="modal-card">
-      <h2>Benvenuto in Card Maker</h2>
-      <p>Crea carte in stile Magic. Accedi per salvare nella tua Libreria Cloud, oppure entra come Ospite.</p>
+      <h2 data-i18n="welcome_title">Benvenuto in Card Maker</h2>
+      <p data-i18n="welcome_text">Crea carte in stile Magic. Accedi per salvare nella tua Libreria Cloud, oppure entra come Ospite.</p>
       <div class="stack">
         <div class="row">
-          <input id="email" type="email" placeholder="Email" />
-          <input id="password" type="password" placeholder="Password" />
+          <input id="email" type="email" data-i18n-ph="ph_email" placeholder="Email" />
+          <input id="password" type="password" data-i18n-ph="ph_password" placeholder="Password" />
         </div>
         <div class="row">
-          <button class="btn primary" id="btnLogin">Accedi</button>
-          <button class="btn" id="btnSignup">Registrati</button>
-          <button class="btn ghost" id="btnGuest">Entra come ospite</button>
+          <button class="btn primary" id="btnLogin"  data-i18n="btn_login">Accedi</button>
+          <button class="btn" id="btnSignup"       data-i18n="btn_signup">Registrati</button>
+          <button class="btn ghost" id="btnGuest"  data-i18n="btn_guest">Entra come ospite</button>
         </div>
-        <label class="muted"><input type="checkbox" id="dontShow" /> Non mostrare più</label>
+        <label class="muted"><input type="checkbox" id="dontShow" /> <span data-i18n="welcome_dontshow">Non mostrare più</span></label>
       </div>
     </div>
   </div>
@@ -45,92 +45,92 @@
   <header>
     <strong>Arcane CardMaker</strong>
     <div class="row">
-      <span id="userStatus" class="muted">Ospite</span>
-      <button id="btnLogout" class="btn" style="display:none">Esci</button>
+      <span id="userStatus" class="muted" data-i18n="user_guest">Ospite</span>
+      <button id="btnLogout" class="btn" style="display:none" data-i18n="btn_logout">Esci</button>
+      <!-- Il selettore lingua viene inserito da app-i18n.js -->
     </div>
   </header>
 
   <div class="wrap">
     <!-- ===================== PANNELLO COMANDI ===================== -->
     <aside class="panel" id="controls">
-      <h3>Fronte</h3>
+      <h3 data-i18n="front_title">Fronte</h3>
 
       <div class="row2">
         <div>
-          <label>Titolo</label>
-          <input id="title" placeholder="Nome incantesimo" />
+          <label data-i18n="lbl_title">Titolo</label>
+          <input id="title" data-i18n-ph="ph_title" placeholder="Nome incantesimo" />
         </div>
         <div>
-          <label>Font titolo</label>
+          <label data-i18n="lbl_title_font">Font titolo</label>
           <select id="titleFont">
             <option value='"Cinzel",serif'>Cinzel</option>
             <option value='"Spectral",serif'>Spectral</option>
             <option value='Inter,sans-serif'>Inter</option>
-            <option value='CardCustom'>Custom (upload)</option>
+            <option value='CardCustom' data-i18n="opt_custom_font">Custom (upload)</option>
           </select>
-          <label class="muted">Carica font TTF/OTF</label>
+          <label class="muted" data-i18n="lbl_upload_font">Carica font TTF/OTF</label>
           <input id="titleFontFile" type="file" accept=".ttf,.otf" />
         </div>
       </div>
 
       <div class="row2">
         <div>
-          <label>Colore titolo</label>
+          <label data-i18n="lbl_title_color">Colore titolo</label>
           <input id="titleColor" type="color" value="#ffffff" />
         </div>
         <div>
-          <label>Dimensione titolo</label>
+          <label data-i18n="lbl_title_size">Dimensione titolo</label>
           <input id="titleSize" type="range" min="24" max="56" value="42" />
         </div>
       </div>
 
-      <!-- NOVITÀ: effetto e ombra del titolo -->
       <div class="row2">
         <div>
-          <label>Effetto titolo</label>
+          <label data-i18n="lbl_title_effect">Effetto titolo</label>
           <select id="titleFoil">
-            <option value="none" selected>Nessuno</option>
-            <option value="foil-gold">Foil oro</option>
-            <option value="foil-silver">Foil argento</option>
-            <option value="foil-rainbow">Foil arcobaleno</option>
+            <option value="none" selected data-i18n="opt_none">Nessuno</option>
+            <option value="foil-gold"    data-i18n="opt_foil_gold">Foil oro</option>
+            <option value="foil-silver"  data-i18n="opt_foil_silver">Foil argento</option>
+            <option value="foil-rainbow" data-i18n="opt_foil_rainbow">Foil arcobaleno</option>
           </select>
         </div>
         <div>
-          <label><input id="titleShadow" type="checkbox" /> Ombra titolo</label>
+          <label><input id="titleShadow" type="checkbox" /> <span data-i18n="lbl_title_shadow">Ombra titolo</span></label>
         </div>
       </div>
 
       <div class="row2">
         <div>
-          <label><input id="showMana" type="checkbox" checked /> Mostra mana</label>
-          <input id="mana" placeholder="{G}{U} o 2G" />
+          <label><input id="showMana" type="checkbox" checked /> <span data-i18n="lbl_show_mana">Mostra mana</span></label>
+          <input id="mana" data-i18n-ph="ph_mana" placeholder="{G}{U} o 2G" />
         </div>
         <div>
-          <label>Simbolo di classe</label>
+          <label data-i18n="lbl_class_symbol">Simbolo di classe</label>
           <select id="classSource">
-            <option value="none">Nessuno</option>
-            <option value="db" selected>Database</option>
-            <option value="upload">Carica immagine…</option>
+            <option value="none"   data-i18n="opt_none">Nessuno</option>
+            <option value="db"     data-i18n="opt_database" selected>Database</option>
+            <option value="upload" data-i18n="opt_upload_img">Carica immagine…</option>
           </select>
 
           <div id="dbClassRow" class="stack" style="margin-top:6px">
             <select id="clazz">
-              <optgroup label="Base">
-                <option value="guerriero">Guerriero</option>
-                <option value="druido">Druido</option>
-                <option value="monaco">Monaco</option>
-                <option value="mago">Mago</option>
-                <option value="ladro">Ladro</option>
+              <optgroup label="Base" data-i18n="optgroup_base">
+                <option value="guerriero" data-i18n="cls_warrior">Guerriero</option>
+                <option value="druido"    data-i18n="cls_druid">Druido</option>
+                <option value="monaco"    data-i18n="cls_monk">Monaco</option>
+                <option value="mago"      data-i18n="cls_wizard">Mago</option>
+                <option value="ladro"     data-i18n="cls_rogue">Ladro</option>
               </optgroup>
-              <optgroup label="Espansione">
-                <option value="barbaro">Barbaro</option>
-                <option value="paladino">Paladino</option>
-                <option value="chierico">Chierico</option>
-                <option value="bardo">Bardo</option>
-                <option value="ranger">Ranger</option>
-                <option value="stregone">Stregone</option>
-                <option value="warlock">Warlock</option>
-                <option value="artificiere">Artificiere</option>
+              <optgroup label="Espansione" data-i18n="optgroup_expansion">
+                <option value="barbaro"     data-i18n="cls_barbarian">Barbaro</option>
+                <option value="paladino"    data-i18n="cls_paladin">Paladino</option>
+                <option value="chierico"    data-i18n="cls_cleric">Chierico</option>
+                <option value="bardo"       data-i18n="cls_bard">Bardo</option>
+                <option value="ranger"      data-i18n="cls_ranger">Ranger</option>
+                <option value="stregone"    data-i18n="cls_sorcerer">Stregone</option>
+                <option value="warlock"     data-i18n="cls_warlock">Warlock</option>
+                <option value="artificiere" data-i18n="cls_artificer">Artificiere</option>
               </optgroup>
             </select>
           </div>
@@ -143,34 +143,34 @@
 
       <div class="row2">
         <div>
-          <label>Dimensione simbolo</label>
+          <label data-i18n="lbl_symbol_size">Dimensione simbolo</label>
           <input id="classSize" type="range" min="24" max="160" value="64" />
-          <small class="muted">Trascina il simbolo sull’anteprima per spostarlo.</small>
+          <small class="muted" data-i18n="hint_drag_symbol">Trascina il simbolo sull’anteprima per spostarlo.</small>
         </div>
         <div>
-          <label>Colore linee/riquadri</label>
+          <label data-i18n="lbl_panel_color">Colore linee/riquadri</label>
           <input id="panelColor" type="color" value="#cdbb7d" />
-          <label>Opacità riquadri</label>
+          <label data-i18n="lbl_panel_alpha">Opacità riquadri</label>
           <input id="panelAlpha" type="range" min="0" max="100" value="85" />
         </div>
       </div>
 
       <div class="row2">
         <div>
-          <label>Stile cornice</label>
+          <label data-i18n="lbl_frame_style">Stile cornice</label>
           <select id="frameStyle">
-            <option value="flat">Colore piatto</option>
-            <option value="foil-gold">Foil oro</option>
-            <option value="foil-silver">Foil argento</option>
-            <option value="foil-rainbow">Foil arcobaleno</option>
-            <option value="wood">Legno</option>
-            <option value="stone">Pietra</option>
-            <option value="arcane">Arcano</option>
-            <option value="nature">Natura</option>
+            <option value="flat"          data-i18n="style_flat">Colore piatto</option>
+            <option value="foil-gold"     data-i18n="opt_foil_gold">Foil oro</option>
+            <option value="foil-silver"   data-i18n="opt_foil_silver">Foil argento</option>
+            <option value="foil-rainbow"  data-i18n="opt_foil_rainbow">Foil arcobaleno</option>
+            <option value="wood"          data-i18n="style_wood">Legno</option>
+            <option value="stone"         data-i18n="style_stone">Pietra</option>
+            <option value="arcane"        data-i18n="style_arcane">Arcano</option>
+            <option value="nature"        data-i18n="style_nature">Natura</option>
           </select>
         </div>
         <div>
-          <label>Colore cornice (piatto) & interno</label>
+          <label data-i18n="lbl_frame_inner">Colore cornice (piatto) & interno</label>
           <div class="row2 tight">
             <input id="frameColor" type="color" value="#d8cfae" />
             <input id="innerColor" type="color" value="#f7f5ef" />
@@ -179,85 +179,85 @@
       </div>
 
       <div class="group">
-        <label>Immagine fronte</label>
+        <label data-i18n="lbl_front_image">Immagine fronte</label>
         <input id="artFront" type="file" accept="image/*" />
       </div>
 
       <div class="group">
-        <label>Descrizione (riquadro basso)</label>
-        <textarea id="rulesText" placeholder="Testo/incantesimo… **parole chiave** in grassetto."></textarea>
+        <label data-i18n="lbl_desc_title">Descrizione (riquadro basso)</label>
+        <textarea id="rulesText" data-i18n-ph="ph_rules" placeholder="Testo/incantesimo… **parole chiave** in grassetto."></textarea>
         <div class="row2">
           <div>
-            <label>Font descrizione</label>
+            <label data-i18n="lbl_desc_font">Font descrizione</label>
             <select id="descFont">
               <option value='"Spectral",serif'>Spectral</option>
               <option value='"Cinzel",serif'>Cinzel</option>
               <option value='Inter,sans-serif'>Inter</option>
-              <option value='CardCustom'>Custom (upload)</option>
+              <option value='CardCustom' data-i18n="opt_custom_font">Custom (upload)</option>
             </select>
-            <label class="muted">Carica font descrizione (TTF/OTF)</label>
+            <label class="muted" data-i18n="lbl_upload_desc_font">Carica font descrizione (TTF/OTF)</label>
             <input id="descFontFile" type="file" accept=".ttf,.otf" />
           </div>
           <div>
-            <label>Dimensione descrizione</label>
+            <label data-i18n="lbl_desc_size">Dimensione descrizione</label>
             <input id="descSize" type="range" min="14" max="26" value="18" />
-            <label>Colore descrizione</label>
+            <label data-i18n="lbl_desc_color">Colore descrizione</label>
             <input id="descColor" type="color" value="#111111" />
           </div>
         </div>
       </div>
 
-      <h3>Retro</h3>
+      <h3 data-i18n="back_title">Retro</h3>
       <div class="group">
-        <label>Immagine retro (full-bleed)</label>
+        <label data-i18n="lbl_back_image">Immagine retro (full-bleed)</label>
         <input id="artBack" type="file" accept="image/*" />
-        <small class="muted">Riempie tutta l’area interna; cornice uguale al fronte.</small>
+        <small class="muted" data-i18n="hint_back_image">Riempie tutta l’area interna; cornice uguale al fronte.</small>
       </div>
 
-      <h3>Salvataggi</h3>
+      <h3 data-i18n="saves_title">Salvataggi</h3>
       <div class="row2">
         <div>
-          <label>Nome carta</label>
-          <input id="cardName" placeholder="Es. Lame del Bosco" />
+          <label data-i18n="lbl_card_name">Nome carta</label>
+          <input id="cardName" data-i18n-ph="ph_card" placeholder="Es. Lame del Bosco" />
         </div>
         <div>
-          <label>Mazzo (cartella cloud, opz.)</label>
-          <input id="deckName" placeholder="Es. Incantesimi Druido" />
+          <label data-i18n="lbl_deck_name">Mazzo (cartella cloud, opz.)</label>
+          <input id="deckName" data-i18n-ph="ph_deck" placeholder="Es. Incantesimi Druido" />
         </div>
       </div>
 
       <div class="btnbar">
-        <button class="btn" id="saveLocal">Salva locale</button>
-        <button class="btn" id="loadLocal">Apri libreria locale</button>
+        <button class="btn" id="saveLocal" data-i18n="btn_save_local">Salva locale</button>
+        <button class="btn" id="loadLocal" data-i18n="btn_load_local">Apri libreria locale</button>
       </div>
       <div id="localLibrary" class="library" style="display:none"></div>
 
       <div class="group" data-auth="only" style="display:none">
-        <h4>Account & Cloud</h4>
+        <h4 data-i18n="cloud_title">Account & Cloud</h4>
         <div class="row2">
-          <button class="btn" id="btnCloudSave">Salva su cloud</button>
-          <button class="btn" id="btnCloudPull">Apri libreria cloud</button>
-          <button class="btn danger" id="btnCloudClear">Svuota cloud</button>
+          <button class="btn" id="btnCloudSave"  data-i18n="btn_cloud_save">Salva su cloud</button>
+          <button class="btn" id="btnCloudPull"  data-i18n="btn_cloud_pull">Apri libreria cloud</button>
+          <button class="btn danger" id="btnCloudClear" data-i18n="btn_cloud_clear">Svuota cloud</button>
         </div>
         <div id="cloudLibrary" class="library" style="display:none"></div>
       </div>
 
-      <h3>Export</h3>
+      <h3 data-i18n="export_title">Export</h3>
       <div class="btnbar">
-        <button class="btn" id="pngFront">PNG (fronte)</button>
-        <button class="btn" id="pngBack">PNG (retro)</button>
-        <button class="btn" id="pdfSingleFront">PDF singola (fronte)</button>
-        <button class="btn" id="pdfSingleBack">PDF singola (retro)</button>
-        <button class="btn" id="pdfA4Front">PDF A4 3×3 (fronti)</button>
-        <button class="btn" id="pdfA4Back">PDF A4 3×3 (retro)</button>
-        <button class="btn" id="pdfA4Both">PDF A4 3×3 (fronte+retro)</button>
+        <button class="btn" id="pngFront"       data-i18n="btn_png_front">PNG (fronte)</button>
+        <button class="btn" id="pngBack"        data-i18n="btn_png_back">PNG (retro)</button>
+        <button class="btn" id="pdfSingleFront" data-i18n="btn_pdf_single_f">PDF singola (fronte)</button>
+        <button class="btn" id="pdfSingleBack"  data-i18n="btn_pdf_single_b">PDF singola (retro)</button>
+        <button class="btn" id="pdfA4Front"     data-i18n="btn_pdf_a4_f">PDF A4 3×3 (fronti)</button>
+        <button class="btn" id="pdfA4Back"      data-i18n="btn_pdf_a4_b">PDF A4 3×3 (retro)</button>
+        <button class="btn" id="pdfA4Both"      data-i18n="btn_pdf_a4_both">PDF A4 3×3 (fronte+retro)</button>
       </div>
-      <small class="muted">Stampa A4 verticale, margini minimi, scala 100%.</small>
+      <small class="muted" data-i18n="hint_print">Stampa A4 verticale, margini minimi, scala 100%.</small>
     </aside>
 
     <!-- ===================== ANTEPRIME ===================== -->
     <section class="panel preview">
-      <div class="previewHead"><h3>Anteprima</h3></div>
+      <div class="previewHead"><h3 data-i18n="preview_title">Anteprima</h3></div>
       <div class="grid2">
         <div><canvas id="cardFront" width="750" height="1050" aria-label="Fronte"></canvas></div>
         <div><canvas id="cardBack"  width="750" height="1050" aria-label="Retro"></canvas></div>
@@ -266,12 +266,17 @@
   </div>
 
   <!-- ===================== SCRIPT ===================== -->
-  <!-- attenzione ai nomi: rispecchiano i file che hai in /app -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
     }
   </script>
+
+  <!-- i18n -->
+  <script type="module" src="intl.js"></script>
+  <script type="module" src="app-i18n.js"></script>
+
+  <!-- La tua app -->
   <script type="module" src="Firebase.js"></script>
   <script type="module" src="card.js"></script>
   <script type="module" src="carta-locale.js"></script>
