@@ -159,6 +159,7 @@
         <div>
           <label data-i18n="lbl_frame_style">Stile cornice</label>
           <select id="frameStyle">
+            <!-- Base / gratis -->
             <option value="flat"          data-i18n="style_flat">Colore piatto</option>
             <option value="foil-gold"     data-i18n="opt_foil_gold">Foil oro</option>
             <option value="foil-silver"   data-i18n="opt_foil_silver">Foil argento</option>
@@ -167,6 +168,12 @@
             <option value="stone"         data-i18n="style_stone">Pietra</option>
             <option value="arcane"        data-i18n="style_arcane">Arcano</option>
             <option value="nature"        data-i18n="style_nature">Natura</option>
+
+            <!-- Premium -->
+            <option value="celestial" data-premium="1" data-i18n="style_celestial">Celestial</option>
+            <option value="infernal"  data-premium="1" data-i18n="style_infernal">Infernal</option>
+            <option value="oceanic"   data-premium="1" data-i18n="style_oceanic">Oceanic</option>
+            <option value="obsidian"  data-premium="1" data-i18n="style_obsidian">Obsidian</option>
           </select>
         </div>
         <div>
@@ -270,6 +277,44 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
     }
+  </script>
+
+  <!-- Blocco premium delle cornici (🔒 se non premium) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sei premium se: auth lo indica, oppure hai il flag in localStorage
+      const isPremium =
+        (window.__isPremiumUser === true) ||
+        (localStorage.getItem('acm_premium') === '1');
+
+      const sel = document.getElementById('frameStyle');
+      if (!sel) return;
+
+      const opts = Array.from(sel.options);
+      opts.forEach(opt => {
+        const locked = opt.dataset.premium === '1';
+        if (locked && !isPremium) {
+          // Mostra 🔒 e marca come bloccata
+          if (!opt.textContent.includes('🔒')) opt.textContent += ' 🔒';
+          opt.dataset.locked = '1';
+        }
+      });
+
+      if (!isPremium) {
+        let lastFree = opts.find(o => o.dataset.locked !== '1')?.value || 'flat';
+        sel.addEventListener('change', () => {
+          const o = sel.selectedOptions[0];
+          if (o && o.dataset.locked === '1') {
+            alert('Cornice Premium. Disponibile con abbonamento.');
+            sel.value = lastFree;
+            // Notifica eventuali listener (card.js) che usano change/input
+            sel.dispatchEvent(new Event('input', { bubbles: true }));
+          } else {
+            lastFree = sel.value;
+          }
+        });
+      }
+    });
   </script>
 
   <!-- i18n -->
