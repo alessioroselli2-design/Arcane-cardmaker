@@ -238,3 +238,40 @@ function apply(){
 
 apply();
 intl.onChange(apply);
+intl.addLocale('es', es);
+intl.addLocale('de', de);
+
+// Applica traduzioni iniziali
+function apply() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    el.textContent = intl.t(k);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.dataset.i18nPh;
+    el.setAttribute('placeholder', intl.t(k));
+  });
+}
+
+// Selettore lingua nel header
+(function injectLangSelector() {
+  const hdr = document.querySelector('header .row') || document.querySelector('header');
+  if (!hdr || document.getElementById('lang')) return;
+  const sel = document.createElement('select');
+  sel.id = 'lang';
+  sel.style.marginLeft = '10px';
+  sel.style.padding = '4px 6px';
+  sel.style.borderRadius = '8px';
+  sel.innerHTML = `
+    <option value="it">IT</option>
+    <option value="en">EN</option>
+    <option value="es">ES</option>
+    <option value="de">DE</option>
+  `;
+  sel.value = intl.getLocale();
+  sel.addEventListener('change', () => intl.setLocale(sel.value));
+  hdr.appendChild(sel);
+})();
+
+apply();
+intl.onChange(apply);
