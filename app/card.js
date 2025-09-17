@@ -386,3 +386,81 @@ function init(){
 }
 
 try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
+// --- Multilingua "soft" (IT/EN) senza cambiare l'HTML --- //
+(async () => {
+  try{
+    const intl = await import('./intl.js');
+
+    // 1) inserisco un mini selettore lingua nel header (non rompe layout)
+    const hdr = document.querySelector('header');
+    if (hdr && !document.getElementById('lang')) {
+      const sel = document.createElement('select');
+      sel.id = 'lang';
+      sel.style.marginLeft = '10px';
+      sel.style.padding = '4px 6px';
+      sel.style.borderRadius = '8px';
+      sel.innerHTML = `
+        <option value="it">IT</option>
+        <option value="en">EN</option>
+      `;
+      // mettilo a destra, nella <div class="row"> se presente
+      const row = hdr.querySelector('.row') || hdr;
+      row.appendChild(sel);
+      sel.value = intl.getLocale();
+      sel.addEventListener('change', () => intl.setLocale(sel.value));
+    }
+
+    // 2) mappa elementi → chiavi traduzione (placeholders + bottoni)
+    const map = () => ([
+      // placeholders campi
+      { type:'ph', el: document.getElementById('title'),      key:'ph_title',      it:'Nome incantesimo', en:'Spell name' },
+      { type:'ph', el: document.getElementById('mana'),       key:'ph_mana',       it:'{G}{U} o 2G',      en:'{G}{U} or 2G' },
+      { type:'ph', el: document.getElementById('rulesText'),  key:'ph_rules',      it:'Testo/incantesimo… **parole chiave** in grassetto.', en:'Rules text… **keywords** in bold.' },
+      { type:'ph', el: document.getElementById('cardName'),   key:'ph_card',       it:'Es. Lame del Bosco', en:'e.g. Forest Blades' },
+      { type:'ph', el: document.getElementById('deckName'),   key:'ph_deck',       it:'Es. Incantesimi Druido', en:'e.g. Druid Spells' },
+
+      // bottoni principali
+      { type:'txt', el: document.getElementById('saveLocal'),   key:'btn_save_local',   it:'Salva locale',           en:'Save locally' },
+      { type:'txt', el: document.getElementById('loadLocal'),   key:'btn_load_local',   it:'Apri libreria locale',   en:'Open local library' },
+
+      // cloud (se visibili)
+      { type:'txt', el: document.getElementById('btnCloudSave'),  key:'btn_cloud_save',  it:'Salva su cloud',   en:'Save to cloud' },
+      { type:'txt', el: document.getElementById('btnCloudPull'),  key:'btn_cloud_pull',  it:'Apri libreria cloud', en:'Open cloud library' },
+      { type:'txt', el: document.getElementById('btnCloudClear'), key:'btn_cloud_clear', it:'Svuota cloud',     en:'Clear cloud' },
+
+      // export
+      { type:'txt', el: document.getElementById('pngFront'),       key:'btn_png_front',      it:'PNG (fronte)',           en:'PNG (front)' },
+      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',       it:'PNG (retro)',            en:'PNG (back)' },
+      { type:'txt', el: document.getElementById('pdfSingleFront'), key:'btn_pdf_single_f',   it:'PDF singola (fronte)',   en:'Single PDF (front)' },
+      { type:'txt', el: document.getElementById('pdfSingleBack'),  key:'btn_pdf_single_b',   it:'PDF singola (retro)',    en:'Single PDF (back)' },
+      { type:'txt', el: document.getElementById('pdfA4Front'),     key:'btn_pdf_a4_f',       it:'PDF A4 3×3 (fronti)',    en:'A4 PDF 3×3 (fronts)' },
+      { type:'txt', el: document.getElementById('pdfA4Back'),      key:'btn_pdf_a4_b',       it:'PDF A4 3×3 (retro)',     en:'A4 PDF 3×3 (backs)' },
+      { type:'txt', el: document.getElementById('pdfA4Both'),      key:'btn_pdf_a4_both',    it:'PDF A4 3×3 (fronte+retro)', en:'A4 PDF 3×3 (front+back)' },
+    ]);
+
+    // 3) registro stringhe nello stub
+    const asDict = (loc) =>
+      Object.fromEntries(map().map(({key, it, en}) => [key, loc==='it'?it:en]));
+
+    intl.addLocale('it', asDict('it'));
+    intl.addLocale('en', asDict('en'));
+
+    // 4) applico le traduzioni
+    function applyLocale(){
+      map().forEach(({type, el, key})=>{
+        if(!el) return;
+        const txt = intl.t(key);
+        if(type==='ph'){ el.setAttribute('placeholder', txt); }
+        else { el.textContent = txt; }
+      });
+    }
+
+    // 5) init + listen
+    applyLocale();
+    intl.onChange(applyLocale);
+
+  }catch(e){
+    // se intl.js non c'è o errore, ignoriamo senza rompere
+    console.warn('[intl] non attivo:', e?.message||e);
+  }
+})();
