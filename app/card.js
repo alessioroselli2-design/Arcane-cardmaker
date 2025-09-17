@@ -1,9 +1,6 @@
 // app/card.js — motore di disegno carte (fronte/retro) + stato + bind UI
-// Split: cornici in frames.js, icone in icons.js. Resto invariato.
-// Mantiene: margini, retro full-bleed, foil/ombra, listener completi.
-
-import { paintOuterFrame, makeFoilGradient } from './frames.js';
-import { ICONS } from './icons.js';
+// Layout aggiornato: margine interno (“spazio verde”) uniforme + retro full-bleed.
+// + Effetti Premium del titolo con gating (fx-celestial/infernal/obsidian/royal/starlight)
 
 export let state = {
   // titolo / mana
@@ -11,6 +8,7 @@ export let state = {
   titleFont: '"Cinzel",serif',
   titleSize: 42,
   titleColor: '#ffffff',
+  // 'none' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | 'fx-celestial' | 'fx-infernal' | 'fx-obsidian' | 'fx-royal' | 'fx-starlight'
   titleFoil: 'none',
   titleShadow: false,
 
@@ -18,7 +16,7 @@ export let state = {
   showMana: true,
 
   // simbolo classe
-  classSource: 'db',
+  classSource: 'db',      // 'db' | 'upload' | 'none'
   clazz: 'druido',
   imgClass: null,
   classX: null,
@@ -26,7 +24,7 @@ export let state = {
   classSize: 64,
 
   // cornice
-  frameStyle: 'flat',  // 'flat' | 'foil-*' | 'wood' | 'stone' | 'arcane' | 'nature'
+  frameStyle: 'flat',     // 'flat' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | altri skin
   frameColor: '#d8cfae',
   innerColor: '#f7f5ef',
 
@@ -53,8 +51,72 @@ const ctxF = frontCanvas?.getContext('2d') || null;
 const ctxB = backCanvas?.getContext('2d') || null;
 if (!ctxF || !ctxB) console.warn('[card.js] canvas non trovati, salto init');
 
-// ======== HELPERS LOCALI ========
-function svgToImage(svg, cb){
+// ======== ICONE DB ========
+const ICONS = {
+  guerriero: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='gSword' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0' stop-color='#f7f7f7'/><stop offset='1' stop-color='#c9c9c9'/></linearGradient></defs>
+    <rect x='20' y='20' width='60' height='60' rx='10' fill='none' stroke='#2b2b2b' stroke-width='3'/>
+    <path d='M28 64 l20 -20 l4 4 l-20 20 z' fill='#8c6b3c' stroke='#2b2b2b' stroke-width='2'/>
+    <path d='M52 28 l20 20 l-18 18 l-20 -20 z' fill='url(#gSword)' stroke='#2b2b2b' stroke-width='2'/>
+    <circle cx='62' cy='38' r='3' fill='#2b2b2b'/></svg>`,
+  druido: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><radialGradient id='gLeaf' cx='0.5' cy='0.3' r='0.8'>
+      <stop offset='0' stop-color='#9fe29f'/><stop offset='1' stop-color='#4f8b4f'/></radialGradient></defs>
+    <path d='M50 12 C26 36,24 62,50 90 C76 62,74 36,50 12 Z' fill='url(#gLeaf)' stroke='#1f4a1c' stroke-width='3'/>
+    <path d='M50 90 C48 66,46 46,48 28' stroke='#1f4a1c' stroke-width='3' fill='none'/>
+    <path d='M36 42 c10 2 18 -2 24 -8' stroke='#1f4a1c' stroke-width='2' fill='none'/></svg>`,
+  monaco: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='30' fill='none' stroke='#caa96b' stroke-width='6'/>
+    <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
+    <path d='M35 42 h30' stroke='#caa96b' stroke-width='4' opacity='.7'/></svg>`,
+  mago: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <defs><linearGradient id='gHat' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0' stop-color='#6fb7ff'/><stop offset='1' stop-color='#2a69d1'/></linearGradient></defs>
+    <path d='M50 16 l24 44 h-48 z' fill='url(#gHat)' stroke='#173b75' stroke-width='3'/>
+    <circle cx='50' cy='64' r='5' fill='#fff' stroke='#173b75' stroke-width='2'/>
+    <path d='M22 66 h56' stroke='#173b75' stroke-width='3'/></svg>`,
+  ladro: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <rect x='20' y='34' width='60' height='28' rx='6' fill='#1e1e1e' stroke='#333' stroke-width='3'/>
+    <path d='M20 45 h60' stroke='#666' stroke-width='3'/>
+    <circle cx='36' cy='48' r='5' fill='#ddd'/><circle cx='64' cy='48' r='5' fill='#ddd'/>
+    <path d='M72 70 l8 8' stroke='#1e1e1e' stroke-width='6' stroke-linecap='round'/></svg>`,
+  barbaro: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M24 24 h18 v52 h-18 z' fill='#8c3f22' stroke='#3e1f10' stroke-width='3'/>
+    <path d='M58 24 h18 v52 h-18 z' fill='#8c3f22' stroke='#3e1f10' stroke-width='3'/>
+    <rect x='46' y='18' width='8' height='64' fill='#5b371f' stroke='#2c170c' stroke-width='2'/>
+    <path d='M28 30 l10 0 0 12 -10 0 z M62 30 l10 0 0 12 -10 0 z' fill='#c89b72' opacity='.35'/></svg>`,
+  paladino: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M20 20 h60 v26 c0 26 -30 38 -30 38 s-30 -12 -30 -38 z' fill='#e6dfb8' stroke='#8a7b45' stroke-width='3'/>
+    <path d='M50 26 v40' stroke='#8a7b45' stroke-width='3'/><path d='M38 46 h24' stroke='#8a7b45' stroke-width='3'/></svg>`,
+  chierico: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='28' fill='#efe8d8' stroke='#876' stroke-width='3'/>
+    <path d='M48 28 h4 v18 h18 v4 h-18 v18 h-4 v-18 h-18 v-4 h18 z' fill='#876'/></svg>`,
+  bardo: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M32 20 c40 0 40 60 0 60' fill='none' stroke='#b46ec9' stroke-width='6'/>
+    <circle cx='56' cy='48' r='6' fill='#fff' stroke='#7c3a93' stroke-width='2'/>
+    <path d='M58 30 q10 6 14 0' stroke='#b46ec9' stroke-width='3' fill='none'/></svg>`,
+  ranger: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M22 78 l56 -56' stroke='#2f7d2b' stroke-width='6' stroke-linecap='round'/>
+    <path d='M70 22 l12 -6 -6 12 z' fill='#2f7d2b'/>
+    <path d='M26 70 q12 -8 20 -2' stroke='#5aa34f' stroke-width='3' fill='none'/></svg>`,
+  stregone: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='24' fill='none' stroke='#90c9ff' stroke-width='4'/>
+    <path d='M50 26 v10 M50 64 v10 M26 50 h10 M64 50 h10' stroke='#90c9ff' stroke-width='3'/>
+    <circle cx='50' cy='50' r='6' fill='#90c9ff'/></svg>`,
+  warlock: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <path d='M50 14 l16 22 -16 48 -16 -48 z' fill='#7d4bb3' stroke='#3e2560' stroke-width='3'/>
+    <circle cx='50' cy='40' r='7' fill='#c7a3ff' stroke='#3e2560' stroke-width='2'/></svg>`,
+  artificiere: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <circle cx='50' cy='50' r='26' fill='#b9c3ce' stroke='#3a4a5a' stroke-width='3'/>
+    <path d='M50 22 v10 M50 68 v10 M22 50 h10 M68 50 h10 M33 33 l7 7 M67 67 l7 7 M33 67 l7 -7 M67 33 l7 -7'
+          stroke='#3a4a5a' stroke-width='3'/>
+    <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/></svg>`
+};
+window.ICONS = ICONS;
+
+// ======== HELPERS ========
+function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
   const img=new Image(); img.onload=()=>cb(img); img.src=url;
 }
@@ -78,22 +140,121 @@ function cover(c,img,dx,dy,dw,dh,r=0){
   c.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
   c.restore();
 }
+function makeFoilGradient(ctx,x,y,w,h,kind){
+  const g = ctx.createLinearGradient(x,y,x+w,y+h);
+  if (kind==='gold'){
+    g.addColorStop(0,'#fff8d0'); g.addColorStop(.5,'#d4af37'); g.addColorStop(1,'#fff8d0');
+  } else if (kind==='silver'){
+    g.addColorStop(0,'#ffffff'); g.addColorStop(.5,'#c0c0c0'); g.addColorStop(1,'#ffffff');
+  } else if (kind==='rainbow'){
+    g.addColorStop(0,'#ff0000'); g.addColorStop(.2,'#ffa500'); g.addColorStop(.4,'#ffff00');
+    g.addColorStop(.6,'#00ff00'); g.addColorStop(.8,'#0000ff'); g.addColorStop(1,'#8b00ff');
+  } else {
+    g.addColorStop(0,state.frameColor); g.addColorStop(1,state.frameColor);
+  }
+  return g;
+}
+
+// === Premium gating & effetti titolo ===
+function isPremiumUnlocked(){
+  if (window.user && window.user.isPremium) return true;
+  if (localStorage.getItem('acm_premium') === '1') return true;
+  return false;
+}
+function isPremiumEffect(val){ return /^fx-/.test(val||''); }
+
+function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
+  ctx.save();
+  ctx.textAlign='left';
+  ctx.textBaseline='middle';
+
+  switch(effectKey){
+    case 'fx-celestial': {
+      const g = ctx.createLinearGradient(x, y-h*0.6, x+w, y+h*0.6);
+      g.addColorStop(0, '#b08cff'); g.addColorStop(0.5, '#83a6ff'); g.addColorStop(1, '#a38bff');
+      ctx.fillStyle = g;
+      ctx.shadowColor = 'rgba(120,90,255,0.55)'; ctx.shadowBlur = 12;
+      ctx.fillText(text, x, y, w);
+      ctx.shadowBlur = 0; ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1;
+      ctx.strokeText(text, x, y, w);
+      break;
+    }
+    case 'fx-infernal': {
+      const g = ctx.createLinearGradient(x, y-h*0.5, x, y+h*0.5);
+      g.addColorStop(0, '#ffeb9a'); g.addColorStop(0.5, '#ff7a00'); g.addColorStop(1, '#d01414');
+      ctx.fillStyle = g;
+      ctx.shadowColor='rgba(255,80,0,.65)'; ctx.shadowBlur=14;
+      ctx.fillText(text, x, y, w);
+      ctx.shadowBlur=0; ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=1.5;
+      ctx.strokeText(text, x, y, w);
+      break;
+    }
+    case 'fx-obsidian': {
+      const g = ctx.createLinearGradient(x, y-h*0.6, x+w, y+h*0.6);
+      g.addColorStop(0, '#1b1b1d'); g.addColorStop(0.5, '#3a3a43'); g.addColorStop(1, '#0f0f12');
+      ctx.fillStyle = g;
+      ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=10;
+      ctx.fillText(text, x, y, w);
+      ctx.shadowBlur=0; ctx.strokeStyle='rgba(200,200,220,.35)'; ctx.lineWidth=1;
+      ctx.strokeText(text, x, y, w);
+      break;
+    }
+    case 'fx-royal': {
+      const g = ctx.createLinearGradient(x, y-h*0.5, x, y+h*0.5);
+      g.addColorStop(0, '#6a2bb8'); g.addColorStop(1, '#9a66ff');
+      ctx.fillStyle = g;
+      ctx.shadowColor='rgba(140,90,255,.45)'; ctx.shadowBlur=10;
+      ctx.fillText(text, x, y, w);
+      ctx.shadowBlur=0; ctx.strokeStyle='#d4af37'; ctx.lineWidth=1.4;
+      ctx.strokeText(text, x, y, w);
+      break;
+    }
+    case 'fx-starlight': {
+      const g = ctx.createLinearGradient(x, y-h*0.6, x+w, y+h*0.6);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#cfe3ff');
+      ctx.fillStyle=g;
+      ctx.shadowColor='rgba(255,255,255,.55)'; ctx.shadowBlur=8;
+      ctx.fillText(text, x, y, w);
+      ctx.shadowBlur=0;
+      // stelline leggere
+      const dots = 10; ctx.fillStyle='rgba(255,255,255,.9)';
+      for(let i=0;i<dots;i++){
+        const rx = x + Math.random()*Math.min(w,520);
+        const ry = y + (Math.random()*h - h/2) * 0.6;
+        ctx.beginPath(); ctx.arc(rx, ry, Math.random()*1.6+0.6, 0, Math.PI*2); ctx.fill();
+      }
+      break;
+    }
+    default:
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, x, y, w);
+  }
+  ctx.restore();
+}
 
 // ======== GEOMETRIA ========
 const W=750, H=1050;
 const FRAME = { x:12, y:12, w:W-24, h:H-24, r:22 };     // cornice esterna
 const INNER = { x:28, y:28, w:W-56, h:H-56, r:18 };      // bordo interno (colore “carta”)
-const P = 22;                                            // padding interno
+const P = 22;                                            // padding uniforme dallo screenshot
 const TITLE_H = 86;
-const GAP = 18;
-const IMG_H = 460;
+const GAP = 18;                                          // spazio fra riquadri
+const IMG_H = 460;                                       // area immagine
 
-// ======== FRAME PAINT ========
 function paintFrame(c){
-  // esterno
-  paintOuterFrame(c, FRAME, state.frameStyle, state.frameColor);
-  // interno
-  rr(c, INNER.x, INNER.y, INNER.w, INNER.h, INNER.r);
+  // Esterno (cornice)
+  c.save();
+  rr(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h,FRAME.r);
+  if (state.frameStyle?.startsWith('foil-')){
+    const kind = state.frameStyle.replace('foil-','');
+    c.fillStyle = makeFoilGradient(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h, kind);
+  } else {
+    c.fillStyle = state.frameColor;
+  }
+  c.fill();
+  c.restore();
+  // Interno (campo chiaro)
+  rr(c,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   c.fillStyle = state.innerColor;
   c.fill();
 }
@@ -110,26 +271,32 @@ export function drawFront(){
   ctxF.clearRect(0,0,W,H);
   paintFrame(ctxF);
 
-  // Titolo (box)
-  const t = { x: INNER.x + P, y: INNER.y + P, w: INNER.w - P*2, h: TITLE_H, r: 16 };
+  // === Titolo (riquadro) ===
+  const t = {
+    x: INNER.x + P,
+    y: INNER.y + P,
+    w: INNER.w - P*2,
+    h: TITLE_H,
+    r: 16
+  };
   rr(ctxF, t.x, t.y, t.w, t.h, t.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
   ctxF.lineWidth = 2; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
-  // highlight
+  // highlight superiore
   const gTop = ctxF.createLinearGradient(0,t.y,0,t.y+t.h*0.6);
   gTop.addColorStop(0,'rgba(255,255,255,.65)'); gTop.addColorStop(1,'rgba(255,255,255,0)');
   ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, Math.max(0,t.r-4)); ctxF.clip();
   ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
-  // Immagine
-  const ax = INNER.x + P + 16;
+  // === Immagine ===
+  const ax = INNER.x + P + 16;        // piccolo rientro per armonia
   const ay = t.y + t.h + GAP;
   const aw = INNER.w - (P+16)*2;
   const ah = IMG_H;
   if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
   else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
-  // Descrizione (box)
+  // === Descrizione (riquadro) ===
   const b = {
     x: INNER.x + P,
     y: ay + ah + GAP,
@@ -141,30 +308,40 @@ export function drawFront(){
   ctxF.fillStyle = '#fcfcf8'; ctxF.fill();
   ctxF.lineWidth = 2; ctxF.strokeStyle = 'rgba(122,177,114,.7)'; ctxF.stroke();
 
-  // Titolo (testo)
+  // === Titolo (testo) ===
   ctxF.textBaseline='middle';
   ctxF.textAlign='left';
   ctxF.font = `700 ${state.titleSize}px ${state.titleFont}`;
+
   if(state.titleShadow){
     ctxF.shadowColor='rgba(0,0,0,.55)'; ctxF.shadowBlur=8; ctxF.shadowOffsetX=0; ctxF.shadowOffsetY=2;
   } else {
     ctxF.shadowColor='transparent'; ctxF.shadowBlur=0; ctxF.shadowOffsetX=0; ctxF.shadowOffsetY=0;
   }
-  if (state.titleFoil && state.titleFoil!=='none'){
-    const kind = state.titleFoil.replace('foil-','');
+
+  const titleX = t.x + 16;
+  const titleY = t.y + t.h/2;
+  const titleW = t.w - 140;
+  const eff = state.titleFoil || 'none';
+
+  if (isPremiumEffect(eff)) {
+    paintTitleWithEffect(ctxF, state.title || '', titleX, titleY, titleW, t.h, eff);
+  } else if (eff !== 'none') {
+    const kind = eff.replace('foil-','');
     ctxF.fillStyle = makeFoilGradient(ctxF, t.x, t.y, t.w, t.h, kind);
+    ctxF.fillText(state.title || '', titleX, titleY, titleW);
   } else {
     ctxF.fillStyle = state.titleColor || '#ffffff';
+    ctxF.fillText(state.title || '', titleX, titleY, titleW);
   }
-  ctxF.fillText(state.title || '', t.x + 16, t.y + t.h/2, t.w - 140);
 
-  // Simbolo di classe
+  // === Simbolo di classe ===
   if(state.imgClass){
     if(state.classX==null || state.classY==null) defaultSymbolPos();
     cover(ctxF,state.imgClass,state.classX,state.classY,state.classSize,state.classSize,10);
   }
 
-  // Mana
+  // === Mana ===
   if(state.showMana && (state.mana||'').trim()){
     ctxF.shadowColor='transparent';
     ctxF.fillStyle='#222';
@@ -176,7 +353,7 @@ export function drawFront(){
     ctxF.textAlign='left';
   }
 
-  // Descrizione testo (wrap con **grassetto**)
+  // === Descrizione (wrap con **grassetto**) ===
   const bx=b.x+14, by=b.y+18, bw=b.w-28;
   ctxF.save();
   ctxF.fillStyle=state.descColor;
@@ -185,14 +362,13 @@ export function drawFront(){
   ctxF.restore();
 }
 
-// ======== BACK (full-bleed nell’INNER) ========
+// ======== BACK (full-bleed entro la cornice interna) ========
 export function drawBack(){
   if(!ctxB) return;
   ctxB.clearRect(0,0,W,H);
-  // cornice esterna
-  paintOuterFrame(ctxB, FRAME, state.frameStyle, state.frameColor);
-  // immagine piena entro l'INNER
+  paintFrame(ctxB);
   if(state.imgBack){
+    // riempi tutto l'INNER (fino alla cornice interna), con angoli coerenti
     cover(ctxB,state.imgBack,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   } else {
     ctxB.save(); rr(ctxB,INNER.x+12,INNER.y+12,INNER.w-24,INNER.h-24,INNER.r-6);
@@ -292,8 +468,22 @@ function bind(){
   $id('titleFont')?.addEventListener('change',e=>{state.titleFont=e.target.value;drawFront();});
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
-  $id('titleFoil')?.addEventListener('change', e => { state.titleFoil = e.target.value; drawFront(); });
-  $id('titleShadow')?.addEventListener('change', e => { state.titleShadow = e.target.checked; drawFront(); });
+
+  // Nuovi: effetto titolo + ombra con gating premium
+  $id('titleFoil')?.addEventListener('change',e=>{
+    const val = e.target.value;
+    if (isPremiumEffect(val) && !isPremiumUnlocked()){
+      // ripristina al precedente non-premium o a 'none'
+      e.target.value = (state.titleFoil && !isPremiumEffect(state.titleFoil)) ? state.titleFoil : 'none';
+      const msg = (window.intl?.t && window.intl.t('premium_title_msg')) ||
+                  'Effetto Premium disponibile con abbonamento.';
+      alert(msg);
+      return;
+    }
+    state.titleFoil = val;
+    drawFront();
+  });
+  $id('titleShadow')?.addEventListener('change',e=>{state.titleShadow=e.target.checked;drawFront();});
 
   $id('descFont')?.addEventListener('change',e=>{state.descFont=e.target.value;drawFront();});
   $id('descSize')?.addEventListener('input',e=>{state.descSize=+e.target.value;drawFront();});
@@ -369,7 +559,7 @@ function init(){
   drawFront();
   drawBack();
 
-  // welcome coerente con index
+  // welcome coerente con index (non blocca canvas)
   const el = document.getElementById('welcome');
   const p = new URLSearchParams(location.search);
   const force = p.get('welcome') === '1';
@@ -386,6 +576,7 @@ function init(){
 }
 
 try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
+
 // --- Multilingua "soft" (IT/EN) senza cambiare l'HTML --- //
 (async () => {
   try{
@@ -403,7 +594,6 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
         <option value="it">IT</option>
         <option value="en">EN</option>
       `;
-      // mettilo a destra, nella <div class="row"> se presente
       const row = hdr.querySelector('.row') || hdr;
       row.appendChild(sel);
       sel.value = intl.getLocale();
@@ -438,14 +628,12 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
       { type:'txt', el: document.getElementById('pdfA4Both'),      key:'btn_pdf_a4_both',    it:'PDF A4 3×3 (fronte+retro)', en:'A4 PDF 3×3 (front+back)' },
     ]);
 
-    // 3) registro stringhe nello stub
     const asDict = (loc) =>
       Object.fromEntries(map().map(({key, it, en}) => [key, loc==='it'?it:en]));
 
     intl.addLocale('it', asDict('it'));
     intl.addLocale('en', asDict('en'));
 
-    // 4) applico le traduzioni
     function applyLocale(){
       map().forEach(({type, el, key})=>{
         if(!el) return;
@@ -455,12 +643,10 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
       });
     }
 
-    // 5) init + listen
     applyLocale();
     intl.onChange(applyLocale);
 
   }catch(e){
-    // se intl.js non c'è o errore, ignoriamo senza rompere
     console.warn('[intl] non attivo:', e?.message||e);
   }
 })();
