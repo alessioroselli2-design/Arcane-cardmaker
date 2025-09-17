@@ -71,7 +71,7 @@ const ICONS = {
     <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
     <path d='M35 42 h30' stroke='#caa96b' stroke-width='4' opacity='.7'/></svg>`,
   mago: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='gHat' x1='0' y1='0' x2='0' y2='1'>
+    <defs><linearGradient id='gHat' x1='0' y='0' x2='0' y2='1'>
       <stop offset='0' stop-color='#6fb7ff'/><stop offset='1' stop-color='#2a69d1'/></linearGradient></defs>
     <path d='M50 16 l24 44 h-48 z' fill='url(#gHat)' stroke='#173b75' stroke-width='3'/>
     <circle cx='50' cy='64' r='5' fill='#fff' stroke='#173b75' stroke-width='2'/>
@@ -155,7 +155,7 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
   return g;
 }
 
-// === Premium gating & effetti titolo ===
+// === Premium gating & NORMALIZZAZIONE selezione effetti ===============
 function isPremiumUnlocked(){
   if (window.user && window.user.isPremium) return true;
   if (localStorage.getItem('acm_premium') === '1') return true;
@@ -163,6 +163,45 @@ function isPremiumUnlocked(){
 }
 function isPremiumEffect(val){ return /^fx-/.test(val||''); }
 
+// Mappa le etichette (in qualsiasi lingua) alle chiavi fx-*
+function normalizeEffect(val=''){
+  const v = (val||'').toString().trim().toLowerCase();
+
+  // valori già corretti
+  if (v.startsWith('fx-')) return v;
+
+  // sinonimi premium (IT/EN/ES/DE)
+  const map = [
+    [/^celestial/, 'fx-celestial'],
+    [/^infernal/,  'fx-infernal'],
+    [/^obsidian/,  'fx-obsidian'],
+    [/^royal/,     'fx-royal'],
+    [/^starlight|stellar|estrella|stern/, 'fx-starlight'],
+
+    [/^celestiale/, 'fx-celestial'],
+    [/^infern(al|o)/, 'fx-infernal'],
+    [/^ossidiana/,  'fx-obsidian'],
+    [/^reale|royal/, 'fx-royal'],
+    [/^luce stell|starlight/, 'fx-starlight'],
+
+    [/^celestial \(premium\)/, 'fx-celestial'],
+    [/^infernal \(premium\)/,  'fx-infernal'],
+    [/^obsidian \(premium\)/,  'fx-obsidian'],
+    [/^royal \(premium\)/,     'fx-royal'],
+    [/^starlight \(premium\)/, 'fx-starlight'],
+  ];
+  for (const [re, out] of map) if (re.test(v)) return out;
+
+  // foil standard
+  if (v.includes('foil') && v.includes('gold'))   return 'foil-gold';
+  if (v.includes('foil') && v.includes('silver')) return 'foil-silver';
+  if (v.includes('foil') && (v.includes('rainbow') || v.includes('arcobal') || v.includes('regenbogen'))) return 'foil-rainbow';
+
+  if (v === 'none' || v === 'nessuno' || v === 'ninguno' || v === 'keiner') return 'none';
+  return val; // fallback: restituisce la stringa originale
+}
+
+// Effetti premium: disegno del titolo
 function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
   ctx.save();
   ctx.textAlign='left';
@@ -272,27 +311,18 @@ export function drawFront(){
   paintFrame(ctxF);
 
   // === Titolo (riquadro) ===
-  const t = {
-    x: INNER.x + P,
-    y: INNER.y + P,
-    w: INNER.w - P*2,
-    h: TITLE_H,
-    r: 16
-  };
+  const t = { x: INNER.x + P, y: INNER.y + P, w: INNER.w - P*2, h: TITLE_H, r: 16 };
   rr(ctxF, t.x, t.y, t.w, t.h, t.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
   ctxF.lineWidth = 2; ctxF.strokeStyle = '#89b97f'; ctxF.stroke();
-  // highlight superiore
   const gTop = ctxF.createLinearGradient(0,t.y,0,t.y+t.h*0.6);
   gTop.addColorStop(0,'rgba(255,255,255,.65)'); gTop.addColorStop(1,'rgba(255,255,255,0)');
   ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, Math.max(0,t.r-4)); ctxF.clip();
   ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
   // === Immagine ===
-  const ax = INNER.x + P + 16;        // piccolo rientro per armonia
-  const ay = t.y + t.h + GAP;
-  const aw = INNER.w - (P+16)*2;
-  const ah = IMG_H;
+  const ax = INNER.x + P + 16, ay = t.y + t.h + GAP;
+  const aw = INNER.w - (P+16)*2, ah = IMG_H;
   if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
   else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
@@ -322,7 +352,11 @@ export function drawFront(){
   const titleX = t.x + 16;
   const titleY = t.y + t.h/2;
   const titleW = t.w - 140;
-  const eff = state.titleFoil || 'none';
+
+  // normalizza l'effetto (gestisce valori testuali dal <select>)
+  let eff = normalizeEffect(state.titleFoil || 'none');
+  // se non premium, blocca effetti premium anche a runtime
+  if (isPremiumEffect(eff) && !isPremiumUnlocked()) eff = 'none';
 
   if (isPremiumEffect(eff)) {
     paintTitleWithEffect(ctxF, state.title || '', titleX, titleY, titleW, t.h, eff);
@@ -368,7 +402,6 @@ export function drawBack(){
   ctxB.clearRect(0,0,W,H);
   paintFrame(ctxB);
   if(state.imgBack){
-    // riempi tutto l'INNER (fino alla cornice interna), con angoli coerenti
     cover(ctxB,state.imgBack,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   } else {
     ctxB.save(); rr(ctxB,INNER.x+12,INNER.y+12,INNER.w-24,INNER.h-24,INNER.r-6);
@@ -471,18 +504,28 @@ function bind(){
 
   // Nuovi: effetto titolo + ombra con gating premium
   $id('titleFoil')?.addEventListener('change',e=>{
-    const val = e.target.value;
+    const raw = e.target.value;
+    const val = normalizeEffect(raw);
+
     if (isPremiumEffect(val) && !isPremiumUnlocked()){
       // ripristina al precedente non-premium o a 'none'
-      e.target.value = (state.titleFoil && !isPremiumEffect(state.titleFoil)) ? state.titleFoil : 'none';
+      const fallback = (state.titleFoil && !isPremiumEffect(normalizeEffect(state.titleFoil)))
+        ? normalizeEffect(state.titleFoil)
+        : 'none';
+      state.titleFoil = fallback;
+      e.target.value = fallback; // sincronizza la select
       const msg = (window.intl?.t && window.intl.t('premium_title_msg')) ||
                   'Effetto Premium disponibile con abbonamento.';
       alert(msg);
+      drawFront();
       return;
     }
+
     state.titleFoil = val;
+    e.target.value = val; // normalizza visivamente
     drawFront();
   });
+
   $id('titleShadow')?.addEventListener('change',e=>{state.titleShadow=e.target.checked;drawFront();});
 
   $id('descFont')?.addEventListener('change',e=>{state.descFont=e.target.value;drawFront();});
@@ -625,7 +668,7 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
       { type:'txt', el: document.getElementById('pdfSingleBack'),  key:'btn_pdf_single_b',   it:'PDF singola (retro)',    en:'Single PDF (back)' },
       { type:'txt', el: document.getElementById('pdfA4Front'),     key:'btn_pdf_a4_f',       it:'PDF A4 3×3 (fronti)',    en:'A4 PDF 3×3 (fronts)' },
       { type:'txt', el: document.getElementById('pdfA4Back'),      key:'btn_pdf_a4_b',       it:'PDF A4 3×3 (retro)',     en:'A4 PDF 3×3 (backs)' },
-      { type:'txt', el: document.getElementById('pdfA4Both'),      key:'btn_pdf_a4_both',    it:'PDF A4 3×3 (fronte+retro)', en:'A4 PDF 3×3 (front+back)' },
+      { type:'txt', el: document.getElementById('pdfA4Both'),      key:'btn_pdf_a4_both',    it:'A4 PDF 3×3 (fronte+retro)', en:'A4 PDF 3×3 (front+back)' },
     ]);
 
     const asDict = (loc) =>
