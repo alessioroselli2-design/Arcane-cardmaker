@@ -1,6 +1,6 @@
 // app/card.js — motore di disegno carte (fronte/retro) + stato + bind UI
-// Layout aggiornato: margine interno (“spazio verde”) uniforme + retro full-bleed.
-// + Effetti Premium del titolo con gating (fx-celestial/infernal/obsidian/royal/starlight)
+// Layout aggiornato: margine interno uniforme + retro full-bleed.
+// Effetti Premium: titolo (fx-*) e cornici (frame-*) con gating.
 
 export let state = {
   // titolo / mana
@@ -23,8 +23,10 @@ export let state = {
   classY: null,
   classSize: 64,
 
-  // cornice
-  frameStyle: 'flat',     // 'flat' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | altri skin
+  // cornice (standard + premium)
+  // standard: 'flat' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | 'wood' | 'stone' | 'arcane' | 'nature'
+  // premium:  'frame-celestial' | 'frame-infernal' | 'frame-obsidian' | 'frame-royal' | 'frame-starlight'
+  frameStyle: 'flat',
   frameColor: '#d8cfae',
   innerColor: '#f7f5ef',
 
@@ -71,7 +73,7 @@ const ICONS = {
     <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
     <path d='M35 42 h30' stroke='#caa96b' stroke-width='4' opacity='.7'/></svg>`,
   mago: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='gHat' x1='0' y='0' x2='0' y2='1'>
+    <defs><linearGradient id='gHat' x1='0' y1='0' x2='0' y2='1'>
       <stop offset='0' stop-color='#6fb7ff'/><stop offset='1' stop-color='#2a69d1'/></linearGradient></defs>
     <path d='M50 16 l24 44 h-48 z' fill='url(#gHat)' stroke='#173b75' stroke-width='3'/>
     <circle cx='50' cy='64' r='5' fill='#fff' stroke='#173b75' stroke-width='2'/>
@@ -155,58 +157,67 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
   return g;
 }
 
-// === Premium gating & NORMALIZZAZIONE selezione effetti ===============
+// === Premium gating & NORMALIZZAZIONE =================================
 function isPremiumUnlocked(){
   if (window.user && window.user.isPremium) return true;
   if (localStorage.getItem('acm_premium') === '1') return true;
   return false;
 }
 function isPremiumEffect(val){ return /^fx-/.test(val||''); }
+function isPremiumFrame(val){ return /^frame-/.test(val||''); }
 
-// Mappa le etichette (in qualsiasi lingua) alle chiavi fx-*
+// Mappa le etichette (in qualsiasi lingua) alle chiavi fx-* (titolo)
 function normalizeEffect(val=''){
   const v = (val||'').toString().trim().toLowerCase();
-
-  // valori già corretti
   if (v.startsWith('fx-')) return v;
-
-  // sinonimi premium (IT/EN/ES/DE)
   const map = [
-    [/^celestial/, 'fx-celestial'],
-    [/^infernal/,  'fx-infernal'],
-    [/^obsidian/,  'fx-obsidian'],
-    [/^royal/,     'fx-royal'],
-    [/^starlight|stellar|estrella|stern/, 'fx-starlight'],
-
-    [/^celestiale/, 'fx-celestial'],
-    [/^infern(al|o)/, 'fx-infernal'],
-    [/^ossidiana/,  'fx-obsidian'],
-    [/^reale|royal/, 'fx-royal'],
-    [/^luce stell|starlight/, 'fx-starlight'],
-
-    [/^celestial \(premium\)/, 'fx-celestial'],
-    [/^infernal \(premium\)/,  'fx-infernal'],
-    [/^obsidian \(premium\)/,  'fx-obsidian'],
-    [/^royal \(premium\)/,     'fx-royal'],
-    [/^starlight \(premium\)/, 'fx-starlight'],
+    [/^celest/, 'fx-celestial'],
+    [/^infer/,  'fx-infernal'],
+    [/^obsid/,  'fx-obsidian'],
+    [/^royal|reale/, 'fx-royal'],
+    [/^star|stell/,  'fx-starlight'],
   ];
-  for (const [re, out] of map) if (re.test(v)) return out;
+  for (const [re,out] of map) if (re.test(v)) return out;
 
-  // foil standard
   if (v.includes('foil') && v.includes('gold'))   return 'foil-gold';
   if (v.includes('foil') && v.includes('silver')) return 'foil-silver';
-  if (v.includes('foil') && (v.includes('rainbow') || v.includes('arcobal') || v.includes('regenbogen'))) return 'foil-rainbow';
-
-  if (v === 'none' || v === 'nessuno' || v === 'ninguno' || v === 'keiner') return 'none';
-  return val; // fallback: restituisce la stringa originale
+  if (v.includes('foil') && (v.includes('rainbow')||v.includes('arcobal')||v.includes('regenbogen'))) return 'foil-rainbow';
+  if (['none','nessuno','ninguno','keiner'].includes(v)) return 'none';
+  return val;
 }
 
-// Effetti premium: disegno del titolo
+// Mappa etichette cornice → chiavi canoniche
+function normalizeFrameStyle(val=''){
+  const v = (val||'').toString().trim().toLowerCase();
+  if (v.startsWith('frame-')) return v;
+
+  // premium
+  const mapP = [
+    [/^celest/,  'frame-celestial'],
+    [/^infer/,   'frame-infernal'],
+    [/^obsid/,   'frame-obsidian'],
+    [/^royal|reale/, 'frame-royal'],
+    [/^star|stell/,  'frame-starlight'],
+  ];
+  for (const [re,out] of mapP) if (re.test(v)) return out;
+
+  // standard
+  if (v.includes('foil') && v.includes('gold'))   return 'foil-gold';
+  if (v.includes('foil') && v.includes('silver')) return 'foil-silver';
+  if (v.includes('foil') && (v.includes('rainbow')||v.includes('arcobal')||v.includes('regenbogen'))) return 'foil-rainbow';
+  if (v.includes('wood') || v.includes('legno'))  return 'wood';
+  if (v.includes('stone')|| v.includes('pietra')) return 'stone';
+  if (v.includes('arcane')||v.includes('arcano')) return 'arcane';
+  if (v.includes('nature')||v.includes('natura')) return 'nature';
+  if (['flat','colore piatto','color plano','farbe'].some(k=>v.includes(k))) return 'flat';
+  return val;
+}
+
+// Effetti premium: disegno del TITOLO
 function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
   ctx.save();
   ctx.textAlign='left';
   ctx.textBaseline='middle';
-
   switch(effectKey){
     case 'fx-celestial': {
       const g = ctx.createLinearGradient(x, y-h*0.6, x+w, y+h*0.6);
@@ -255,7 +266,6 @@ function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
       ctx.shadowColor='rgba(255,255,255,.55)'; ctx.shadowBlur=8;
       ctx.fillText(text, x, y, w);
       ctx.shadowBlur=0;
-      // stelline leggere
       const dots = 10; ctx.fillStyle='rgba(255,255,255,.9)';
       for(let i=0;i<dots;i++){
         const rx = x + Math.random()*Math.min(w,520);
@@ -275,28 +285,75 @@ function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
 const W=750, H=1050;
 const FRAME = { x:12, y:12, w:W-24, h:H-24, r:22 };     // cornice esterna
 const INNER = { x:28, y:28, w:W-56, h:H-56, r:18 };      // bordo interno (colore “carta”)
-const P = 22;                                            // padding uniforme dallo screenshot
+const P = 22;                                            // padding
 const TITLE_H = 86;
-const GAP = 18;                                          // spazio fra riquadri
-const IMG_H = 460;                                       // area immagine
+const GAP = 18;
+const IMG_H = 460;
 
+// ======== CORNICE (include premium) ========
 function paintFrame(c){
-  // Esterno (cornice)
   c.save();
   rr(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h,FRAME.r);
-  if (state.frameStyle?.startsWith('foil-')){
-    const kind = state.frameStyle.replace('foil-','');
+
+  // normalizza e (se non premium) ripiega a flat
+  let fs = normalizeFrameStyle(state.frameStyle || 'flat');
+  if (isPremiumFrame(fs) && !isPremiumUnlocked()) fs = 'flat';
+
+  if (fs.startsWith('foil-')){
+    const kind = fs.replace('foil-','');
     c.fillStyle = makeFoilGradient(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h, kind);
+    c.fill();
+  } else if (fs === 'wood'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#8a6a3b'); g.addColorStop(1,'#5d4525');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'stone'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#cfcfd4'); g.addColorStop(1,'#a8a8ad');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'arcane'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#3a2a58'); g.addColorStop(1,'#6a4fb3');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'nature'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#7bb077'); g.addColorStop(1,'#3d6b38');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-celestial'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#b08cff'); g.addColorStop(0.5,'#83a6ff'); g.addColorStop(1,'#a38bff');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-infernal'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#ffeb9a'); g.addColorStop(0.5,'#ff7a00'); g.addColorStop(1,'#d01414');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-obsidian'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#1b1b1d'); g.addColorStop(0.5,'#3a3a43'); g.addColorStop(1,'#0f0f12');
+    c.fillStyle=g; c.fill();
+  } else if (fs === 'frame-royal'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#6a2bb8'); g.addColorStop(1,'#9a66ff');
+    c.fillStyle=g; c.fill();
+    // sottile filetto dorato interno
+    c.lineWidth=3; c.strokeStyle='#d4af37'; c.stroke();
+  } else if (fs === 'frame-starlight'){
+    const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#cfe3ff');
+    c.fillStyle=g; c.fill();
   } else {
+    // flat
     c.fillStyle = state.frameColor;
+    c.fill();
   }
-  c.fill();
   c.restore();
+
   // Interno (campo chiaro)
   rr(c,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   c.fillStyle = state.innerColor;
   c.fill();
 }
+
 function defaultSymbolPos(){
   const s=state.classSize, right=W-(INNER.x+P);
   const cy = INNER.y + P + TITLE_H/2;
@@ -353,9 +410,8 @@ export function drawFront(){
   const titleY = t.y + t.h/2;
   const titleW = t.w - 140;
 
-  // normalizza l'effetto (gestisce valori testuali dal <select>)
+  // normalizza effetto titolo e applica gating runtime
   let eff = normalizeEffect(state.titleFoil || 'none');
-  // se non premium, blocca effetti premium anche a runtime
   if (isPremiumEffect(eff) && !isPremiumUnlocked()) eff = 'none';
 
   if (isPremiumEffect(eff)) {
@@ -502,30 +558,21 @@ function bind(){
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
 
-  // Nuovi: effetto titolo + ombra con gating premium
+  // Effetto titolo con gating
   $id('titleFoil')?.addEventListener('change',e=>{
     const raw = e.target.value;
     const val = normalizeEffect(raw);
 
     if (isPremiumEffect(val) && !isPremiumUnlocked()){
-      // ripristina al precedente non-premium o a 'none'
-      const fallback = (state.titleFoil && !isPremiumEffect(normalizeEffect(state.titleFoil)))
-        ? normalizeEffect(state.titleFoil)
-        : 'none';
-      state.titleFoil = fallback;
-      e.target.value = fallback; // sincronizza la select
+      const fb = (state.titleFoil && !isPremiumEffect(normalizeEffect(state.titleFoil)))
+        ? normalizeEffect(state.titleFoil) : 'none';
+      state.titleFoil = fb; e.target.value = fb;
       const msg = (window.intl?.t && window.intl.t('premium_title_msg')) ||
                   'Effetto Premium disponibile con abbonamento.';
-      alert(msg);
-      drawFront();
-      return;
+      alert(msg); drawFront(); return;
     }
-
-    state.titleFoil = val;
-    e.target.value = val; // normalizza visivamente
-    drawFront();
+    state.titleFoil = val; e.target.value = val; drawFront();
   });
-
   $id('titleShadow')?.addEventListener('change',e=>{state.titleShadow=e.target.checked;drawFront();});
 
   $id('descFont')?.addEventListener('change',e=>{state.descFont=e.target.value;drawFront();});
@@ -533,7 +580,23 @@ function bind(){
   $id('descColor')?.addEventListener('input',e=>{state.descColor=e.target.value;drawFront();});
   $id('rulesText')?.addEventListener('input',e=>{state.rulesText=e.target.value;drawFront();});
 
-  $id('frameStyle')?.addEventListener('change',e=>{state.frameStyle=e.target.value;drawFront();drawBack();});
+  // Cornice con normalizzazione + gating
+  $id('frameStyle')?.addEventListener('change',e=>{
+    const raw = e.target.value;
+    const val = normalizeFrameStyle(raw);
+    if (isPremiumFrame(val) && !isPremiumUnlocked()){
+      const fb = normalizeFrameStyle(state.frameStyle);
+      const backTo = (fb && !isPremiumFrame(fb)) ? fb : 'flat';
+      state.frameStyle = backTo; e.target.value = backTo;
+      const msg = (window.intl?.t && window.intl.t('premium_frame_msg')) ||
+                  'Cornice Premium. Disponibile con abbonamento.';
+      alert(msg);
+      drawFront(); drawBack(); return;
+    }
+    state.frameStyle = val; e.target.value = val;
+    drawFront(); drawBack();
+  });
+
   $id('frameColor')?.addEventListener('input',e=>{state.frameColor=e.target.value;drawFront();drawBack();});
   $id('innerColor')?.addEventListener('input',e=>{state.innerColor=e.target.value;drawFront();drawBack();});
 
@@ -625,7 +688,6 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
   try{
     const intl = await import('./intl.js');
 
-    // 1) inserisco un mini selettore lingua nel header (non rompe layout)
     const hdr = document.querySelector('header');
     if (hdr && !document.getElementById('lang')) {
       const sel = document.createElement('select');
@@ -633,42 +695,31 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
       sel.style.marginLeft = '10px';
       sel.style.padding = '4px 6px';
       sel.style.borderRadius = '8px';
-      sel.innerHTML = `
-        <option value="it">IT</option>
-        <option value="en">EN</option>
-      `;
+      sel.innerHTML = `<option value="it">IT</option><option value="en">EN</option>`;
       const row = hdr.querySelector('.row') || hdr;
       row.appendChild(sel);
       sel.value = intl.getLocale();
       sel.addEventListener('change', () => intl.setLocale(sel.value));
     }
 
-    // 2) mappa elementi → chiavi traduzione (placeholders + bottoni)
     const map = () => ([
-      // placeholders campi
       { type:'ph', el: document.getElementById('title'),      key:'ph_title',      it:'Nome incantesimo', en:'Spell name' },
       { type:'ph', el: document.getElementById('mana'),       key:'ph_mana',       it:'{G}{U} o 2G',      en:'{G}{U} or 2G' },
       { type:'ph', el: document.getElementById('rulesText'),  key:'ph_rules',      it:'Testo/incantesimo… **parole chiave** in grassetto.', en:'Rules text… **keywords** in bold.' },
       { type:'ph', el: document.getElementById('cardName'),   key:'ph_card',       it:'Es. Lame del Bosco', en:'e.g. Forest Blades' },
       { type:'ph', el: document.getElementById('deckName'),   key:'ph_deck',       it:'Es. Incantesimi Druido', en:'e.g. Druid Spells' },
-
-      // bottoni principali
-      { type:'txt', el: document.getElementById('saveLocal'),   key:'btn_save_local',   it:'Salva locale',           en:'Save locally' },
-      { type:'txt', el: document.getElementById('loadLocal'),   key:'btn_load_local',   it:'Apri libreria locale',   en:'Open local library' },
-
-      // cloud (se visibili)
-      { type:'txt', el: document.getElementById('btnCloudSave'),  key:'btn_cloud_save',  it:'Salva su cloud',   en:'Save to cloud' },
+      { type:'txt', el: document.getElementById('saveLocal'),   key:'btn_save_local', it:'Salva locale', en:'Save locally' },
+      { type:'txt', el: document.getElementById('loadLocal'),   key:'btn_load_local', it:'Apri libreria locale', en:'Open local library' },
+      { type:'txt', el: document.getElementById('btnCloudSave'),  key:'btn_cloud_save',  it:'Salva su cloud', en:'Save to cloud' },
       { type:'txt', el: document.getElementById('btnCloudPull'),  key:'btn_cloud_pull',  it:'Apri libreria cloud', en:'Open cloud library' },
-      { type:'txt', el: document.getElementById('btnCloudClear'), key:'btn_cloud_clear', it:'Svuota cloud',     en:'Clear cloud' },
-
-      // export
-      { type:'txt', el: document.getElementById('pngFront'),       key:'btn_png_front',      it:'PNG (fronte)',           en:'PNG (front)' },
-      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',       it:'PNG (retro)',            en:'PNG (back)' },
-      { type:'txt', el: document.getElementById('pdfSingleFront'), key:'btn_pdf_single_f',   it:'PDF singola (fronte)',   en:'Single PDF (front)' },
-      { type:'txt', el: document.getElementById('pdfSingleBack'),  key:'btn_pdf_single_b',   it:'PDF singola (retro)',    en:'Single PDF (back)' },
-      { type:'txt', el: document.getElementById('pdfA4Front'),     key:'btn_pdf_a4_f',       it:'PDF A4 3×3 (fronti)',    en:'A4 PDF 3×3 (fronts)' },
-      { type:'txt', el: document.getElementById('pdfA4Back'),      key:'btn_pdf_a4_b',       it:'PDF A4 3×3 (retro)',     en:'A4 PDF 3×3 (backs)' },
-      { type:'txt', el: document.getElementById('pdfA4Both'),      key:'btn_pdf_a4_both',    it:'A4 PDF 3×3 (fronte+retro)', en:'A4 PDF 3×3 (front+back)' },
+      { type:'txt', el: document.getElementById('btnCloudClear'), key:'btn_cloud_clear', it:'Svuota cloud', en:'Clear cloud' },
+      { type:'txt', el: document.getElementById('pngFront'),       key:'btn_png_front', it:'PNG (fronte)', en:'PNG (front)' },
+      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',  it:'PNG (retro)',  en:'PNG (back)' },
+      { type:'txt', el: document.getElementById('pdfSingleFront'), key:'btn_pdf_single_f', it:'PDF singola (fronte)', en:'Single PDF (front)' },
+      { type:'txt', el: document.getElementById('pdfSingleBack'),  key:'btn_pdf_single_b', it:'PDF singola (retro)',  en:'Single PDF (back)' },
+      { type:'txt', el: document.getElementById('pdfA4Front'),     key:'btn_pdf_a4_f',  it:'PDF A4 3×3 (fronti)',  en:'A4 PDF 3×3 (fronts)' },
+      { type:'txt', el: document.getElementById('pdfA4Back'),      key:'btn_pdf_a4_b',  it:'PDF A4 3×3 (retro)',   en:'A4 PDF 3×3 (backs)' },
+      { type:'txt', el: document.getElementById('pdfA4Both'),      key:'btn_pdf_a4_both', it:'PDF A4 3×3 (fronte+retro)', en:'A4 PDF 3×3 (front+back)' },
     ]);
 
     const asDict = (loc) =>
@@ -685,7 +736,6 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
         else { el.textContent = txt; }
       });
     }
-
     applyLocale();
     intl.onChange(applyLocale);
 
