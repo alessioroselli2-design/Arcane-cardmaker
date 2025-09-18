@@ -117,46 +117,6 @@ const ICONS = {
 };
 window.ICONS = ICONS;
 
-// ============ FALLBACK ETICHETTE SELECT (solo se vuote) ============ // <<< Fallback classi
-const UI_FALLBACK = {
-  it: {
-    classSource: { none:'Nessuno', db:'Database', upload:'Carica immagine…' },
-    clazz: {
-      guerriero:'Guerriero', druido:'Druido', monaco:'Monaco', mago:'Mago', ladro:'Ladro',
-      barbaro:'Barbaro', paladino:'Paladino', chierico:'Chierico', bardo:'Bardo',
-      ranger:'Ranger', stregone:'Stregone', warlock:'Warlock', artificiere:'Artificiere'
-    }
-  },
-  en: {
-    classSource: { none:'None', db:'Database', upload:'Upload image…' },
-    clazz: {
-      guerriero:'Warrior', druido:'Druid', monaco:'Monk', mago:'Wizard', ladro:'Rogue',
-      barbaro:'Barbarian', paladino:'Paladin', chierico:'Cleric', bardo:'Bard',
-      ranger:'Ranger', stregone:'Sorcerer', warlock:'Warlock', artificiere:'Artificer'
-    }
-  }
-};
-function getLocale(){
-  const l = (window.intl?.getLocale?.() || document.documentElement.lang || 'it').toLowerCase();
-  return l.startsWith('en') ? 'en' : 'it';
-}
-function ensureOptionText(selectId, map){
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  Array.from(sel.options || []).forEach(opt=>{
-    const v = opt.value;
-    if ((!opt.textContent || !opt.textContent.trim()) && map[v]){
-      opt.textContent = map[v]; // scrive SOLO se vuoto
-    }
-  });
-}
-function fixClassMenus(){
-  const L = UI_FALLBACK[getLocale()] || UI_FALLBACK.it;
-  ensureOptionText('classSource', L.classSource);
-  ensureOptionText('clazz',       L.clazz);
-}
-// ======================= FINE FALLBACK =============================== // <<< Fallback classi
-
 // ======== HELPERS ========
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -199,11 +159,8 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
 
 // === Premium gating & NORMALIZZAZIONE =================================
 function isPremiumUnlocked(){
-  // 1) Se premium.js è caricato, chiediamo a lui
   if (window.premium?.isPro && window.premium.isPro()) return true;
-  // 2) User premium da auth
   if (window.user && window.user.isPremium) return true;
-  // 3) Local device flag (supporta entrambe le chiavi storiche)
   if (localStorage.getItem('acm_pro') === '1') return true;
   if (localStorage.getItem('acm_premium') === '1') return true;
   return false;
@@ -622,6 +579,52 @@ frontCanvas?.addEventListener('pointercancel',()=>dragging=false);
 
 // ======== BIND UI ========
 const $id = (x)=>document.getElementById(x);
+
+// -- autoriparazione/sync per menu classi (iOS) --
+function ensureClassSelect() {
+  const sel = $id('clazz');
+  if (!sel) return;
+
+  // Se non ha opzioni o il testo è vuoto, ripopola dalle chiavi ICONS
+  const needsRebuild =
+    !sel.options.length ||
+    Array.from(sel.options).every(o => !o.textContent || !o.textContent.trim());
+
+  if (needsRebuild) {
+    sel.innerHTML = '';
+    const groups = {
+      base: ['guerriero','druido','monaco','mago','ladro'],
+      extra: ['barbaro','paladino','chierico','bardo','ranger','stregone','warlock','artificiere']
+    };
+    const makeLabel = (k)=>({
+      guerriero:'Guerriero', druido:'Druido', monaco:'Monaco', mago:'Mago', ladro:'Ladro',
+      barbaro:'Barbaro', paladino:'Paladino', chierico:'Chierico', bardo:'Bardo',
+      ranger:'Ranger', stregone:'Stregone', warlock:'Warlock', artificiere:'Artificiere'
+    }[k] || (k.charAt(0).toUpperCase()+k.slice(1)));
+
+    const og1 = document.createElement('optgroup'); og1.label='Base';
+    groups.base.forEach(k=>{
+      if (!ICONS[k]) return;
+      const o=document.createElement('option'); o.value=k; o.textContent=makeLabel(k); og1.appendChild(o);
+    });
+    const og2 = document.createElement('optgroup'); og2.label='Espansione';
+    groups.extra.forEach(k=>{
+      if (!ICONS[k]) return;
+      const o=document.createElement('option'); o.value=k; o.textContent=makeLabel(k); og2.appendChild(o);
+    });
+    sel.appendChild(og1); sel.appendChild(og2);
+  }
+
+  // Imposta il valore coerente con lo stato; se mancante, fallback a 'druido'
+  if (!ICONS[state.clazz]) state.clazz = 'druido';
+  sel.value = state.clazz;
+  // Se per qualche motivo non riesce a selezionare (iOS), forza il primo valido
+  if (sel.value !== state.clazz) {
+    const first = Array.from(sel.options).find(o=>o.value && ICONS[o.value]);
+    if (first) { sel.value = first.value; state.clazz = first.value; }
+  }
+}
+
 function bind(){
   $id('title')?.addEventListener('input',e=>{state.title=e.target.value;drawFront();});
   $id('showMana')?.addEventListener('change',e=>{state.showMana=e.target.checked;drawFront();});
@@ -683,18 +686,37 @@ function bind(){
     if(dbRow) dbRow.style.display=(state.classSource==='db')?'block':'none';
     if(upRow) upRow.style.display=(state.classSource==='upload')?'block':'none';
     if(state.classSource==='none') state.imgClass=null;
-    if(state.classSource==='db') loadDbIcon($id('clazz')?.value||'druido');
+    if(state.classSource==='db'){
+      ensureClassSelect();
+      loadDbIcon($id('clazz')?.value||state.clazz||'druido');
+    }
     if(state.classSource!=='upload') $id('classImg') && ($id('classImg').value='');
     drawFront();
   });
-  $id('clazz')?.addEventListener('change',e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); });
-  $id('classSize')?.addEventListener('input',e=>{state.classSize=+e.target.value; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();});
+
+  $id('clazz')?.addEventListener('change',e=>{
+    if(state.classSource==='db'){
+      state.clazz = e.target.value;
+      loadDbIcon(state.clazz);
+    }
+  });
+
+  $id('classSize')?.addEventListener('input',e=>{
+    state.classSize=+e.target.value;
+    if(state.classX==null||state.classY==null) defaultSymbolPos();
+    drawFront();
+  });
 
   $id('classImg')?.addEventListener('change',e=>{
     if(state.classSource!=='upload')return;
     const f=e.target.files?.[0]; if(!f) return;
     const r=new FileReader();
-    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);
+    r.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();};
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
   });
 
   $id('artFront')?.addEventListener('change',e=>{
@@ -735,9 +757,14 @@ function loadDbIcon(key){
 function init(){
   bind();
 
-  // Ripristina etichette se vuote (iOS/Safari + i18n) // <<< Fallback classi
-  fixClassMenus();
-  setTimeout(fixClassMenus, 0);
+  // --- sincronizza visibilità & menù classi all'avvio ---
+  ensureClassSelect();
+  const dbRow=document.getElementById('dbClassRow');
+  const upRow=document.getElementById('uploadClassRow');
+  if(dbRow) dbRow.style.display=(state.classSource==='db')?'block':'none';
+  if(upRow) upRow.style.display=(state.classSource==='upload')?'block':'none';
+  const selClazz = document.getElementById('clazz');
+  if (selClazz) selClazz.value = state.clazz || 'druido';
 
   loadDbIcon(state.clazz);
   drawFront();
@@ -770,9 +797,15 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
     if (hdr && !document.getElementById('lang')) {
       const sel = document.createElement('select');
       sel.id = 'lang';
+      // visibilità migliore su tema scuro (solo per questo select)
       sel.style.marginLeft = '10px';
       sel.style.padding = '4px 6px';
       sel.style.borderRadius = '8px';
+      sel.style.background = 'rgba(255,255,255,0.06)';
+      sel.style.border = '1px solid rgba(255,255,255,0.18)';
+      sel.style.color = 'rgba(255,255,255,0.92)';
+      sel.style.font = '14px Inter, system-ui, sans-serif';
+
       sel.innerHTML = `<option value="it">IT</option><option value="en">EN</option>`;
       const row = hdr.querySelector('.row') || hdr;
       row.appendChild(sel);
@@ -792,7 +825,7 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
       { type:'txt', el: document.getElementById('btnCloudPull'),  key:'btn_cloud_pull',  it:'Apri libreria cloud', en:'Open cloud library' },
       { type:'txt', el: document.getElementById('btnCloudClear'), key:'btn_cloud_clear', it:'Svuota cloud', en:'Clear cloud' },
       { type:'txt', el: document.getElementById('pngFront'),       key:'btn_png_front', it:'PNG (fronte)', en:'PNG (front)' },
-      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',  key2:'', it:'PNG (retro)',  en:'PNG (back)' },
+      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',  it:'PNG (retro)',  en:'PNG (back)' },
       { type:'txt', el: document.getElementById('pdfSingleFront'), key:'btn_pdf_single_f', it:'PDF singola (fronte)', en:'Single PDF (front)' },
       { type:'txt', el: document.getElementById('pdfSingleBack'),  key:'btn_pdf_single_b', it:'PDF singola (retro)',  en:'Single PDF (back)' },
       { type:'txt', el: document.getElementById('pdfA4Front'),     key:'btn_pdf_a4_f',  it:'PDF A4 3×3 (fronti)',  en:'A4 PDF 3×3 (fronts)' },
@@ -813,11 +846,9 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
         if(type==='ph'){ el.setAttribute('placeholder', txt); }
         else { el.textContent = txt; }
       });
-      // Assicurati che i menu Classi non restino vuoti in nessuna lingua // <<< Fallback classi
-      fixClassMenus();
     }
     applyLocale();
-    intl.onChange(() => { applyLocale(); fixClassMenus(); }); // <<< Fallback classi
+    intl.onChange(applyLocale);
 
   }catch(e){
     console.warn('[intl] non attivo:', e?.message||e);
