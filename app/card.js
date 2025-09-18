@@ -175,6 +175,11 @@ function isPremiumFrame(val){ return /^frame-/.test(val||''); }
 function normalizeEffect(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('fx-')) return v;
+
+  // compatibilità con vecchi value tipo "foil-celestial", ecc.
+  const m = v.match(/^foil-(celestial|infernal|obsidian|royal|starlight)$/);
+  if (m) return `fx-${m[1]}`;
+
   const map = [
     [/^celest/, 'fx-celestial'],
     [/^infer/,  'fx-infernal'],
@@ -591,12 +596,15 @@ function bind(){
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
 
-  // Effetto titolo con gating
+  // Effetto titolo con gating robusto
   $id('titleFoil')?.addEventListener('change',e=>{
     const raw = e.target.value;
     const val = normalizeEffect(raw);
+    const opt = e.target.selectedOptions?.[0];
+    const isUiPremium = opt?.getAttribute('data-premium') === '1';
+    const looksPremium = isUiPremium || isPremiumEffect(val);
 
-    if (isPremiumEffect(val) && !isPremiumUnlocked()){
+    if (looksPremium && !isPremiumUnlocked()){
       const fb = (state.titleFoil && !isPremiumEffect(normalizeEffect(state.titleFoil)))
         ? normalizeEffect(state.titleFoil) : 'none';
       state.titleFoil = fb; e.target.value = fb;
@@ -679,6 +687,20 @@ function bind(){
     const buf=await f.arrayBuffer(); const ff=new FontFace('CardCustom',buf);
     await ff.load(); document.fonts.add(ff); drawFront();
   });
+
+  // Stato iniziale visibilità righe classi + valore select (fix iOS)
+  {
+    const dbRow=$id('dbClassRow');
+    const upRow=$id('uploadClassRow');
+    if (dbRow) dbRow.style.display=(state.classSource==='db')?'block':'none';
+    if (upRow) upRow.style.display=(state.classSource==='upload')?'block':'none';
+
+    const selClazz = $id('clazz');
+    if (selClazz) {
+      selClazz.value = state.clazz || selClazz.value || 'druido';
+      selClazz.addEventListener('touchend', ()=> { try{ selClazz.blur(); selClazz.focus(); }catch{} });
+    }
+  }
 }
 
 function loadDbIcon(key){
