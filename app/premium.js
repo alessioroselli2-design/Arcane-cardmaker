@@ -58,6 +58,9 @@
     const sel = document.getElementById('frameStyle');
     if (!sel) return;
 
+    // 🔹 salviamo la selezione corrente per ripristinarla dopo il reinject
+    const prevValue = sel.value; // può già essere 'frame-*' impostato da card.js
+
     // crea/aggiorna optgroup Premium
     let og = sel.querySelector('optgroup[data-premium="1"]');
     if (!og){
@@ -72,9 +75,13 @@
     const pro = isProUser();
 
     PREMIUM_FRAMES.forEach(({value,label})=>{
+      // 🔸 usiamo SEMPRE value="frame-..." per combaciare con card.js
+      const canon = value.startsWith('frame-') ? value : ('frame-' + value);
+
       const opt = document.createElement('option');
-      opt.value = value;
+      opt.value = canon;
       opt.textContent = pro ? label : (label + ' 🔒');
+
       if (!pro) {
         opt.disabled = true;
         opt.setAttribute('data-locked','1');
@@ -83,8 +90,8 @@
       og.appendChild(opt);
     });
 
-    // blocca selezioni locked e ripristina a flat
-    if (!sel.dataset.premListener) {
+    // Evita listener duplicati: lo aggiungiamo una sola volta
+    if (!sel.dataset.premiumBound) {
       sel.addEventListener('change', ()=>{
         const o = sel.selectedOptions[0];
         if (o && o.getAttribute('data-locked') === '1'){
@@ -94,47 +101,14 @@
           sel.dispatchEvent(new Event('change', {bubbles:true}));
         }
       });
-      sel.dataset.premListener = '1';
+      sel.dataset.premiumBound = '1';
     }
-  }
 
-  // === NUOVO: blocco anche per il menu Effetti Titolo (Premium) ===
-  function injectTitlePremiumLock(){
-    const sel = document.getElementById('titleFoil');
-    if (!sel) return;
-
-    const pro = isProUser();
-    const opts = sel.querySelectorAll('option[data-premium="1"]');
-
-    opts.forEach(opt=>{
-      const base = opt.getAttribute('data-label-base') || opt.textContent.replace(/\s*🔒$/, '');
-      opt.setAttribute('data-label-base', base);
-
-      if (pro){
-        opt.disabled = false;
-        opt.removeAttribute('data-locked');
-        opt.textContent = base;
-        opt.title = '';
-      } else {
-        opt.disabled = true;
-        opt.setAttribute('data-locked','1');
-        opt.textContent = base.endsWith('🔒') ? base : (base + ' 🔒');
-        opt.title = 'Disponibile con Premium';
-      }
-    });
-
-    // Safety: se provano a selezionarlo comunque, torna su "none"
-    if (!sel.dataset.premTitleListener){
-      sel.addEventListener('change', ()=>{
-        const o = sel.selectedOptions[0];
-        if (o && o.getAttribute('data-locked') === '1'){
-          alert('Questo effetto titolo è Premium ✨');
-          sel.value = 'none';
-          sel.dispatchEvent(new Event('input', {bubbles:true}));
-          sel.dispatchEvent(new Event('change', {bubbles:true}));
-        }
-      });
-      sel.dataset.premTitleListener = '1';
+    // 🔹 ripristino della selezione precedente (se ancora valida)
+    // Se non esiste più (es. da guest erano locked), facciamo fallback “flat”.
+    if (prevValue) {
+      const hasPrev = Array.from(sel.options).some(o => o.value === prevValue && !o.disabled);
+      sel.value = hasPrev ? prevValue : 'flat';
     }
   }
 
@@ -142,31 +116,18 @@
   function observeUserStatus(){
     const status = document.getElementById('userStatus');
     if (!status) return;
-    const mo = new MutationObserver(()=> setTimeout(()=>{
-      injectPremiumOptions();
-      injectTitlePremiumLock();
-    }, 80));
+    const mo = new MutationObserver(()=> setTimeout(injectPremiumOptions, 80));
     mo.observe(status, {childList:true, subtree:true, characterData:true});
   }
 
   // esponi helper per te
   window.premium = {
-    unlock(){
-      setLSPro(true);
-      injectPremiumOptions();
-      injectTitlePremiumLock();
-      alert('Premium attivato su questo dispositivo ✅');
-    },
-    lock(){
-      setLSPro(false);
-      injectPremiumOptions();
-      injectTitlePremiumLock();
-      alert('Premium disattivato su questo dispositivo');
-    },
+    unlock(){ setLSPro(true); injectPremiumOptions(); alert('Premium attivato su questo dispositivo ✅'); },
+    lock(){ setLSPro(false); injectPremiumOptions(); alert('Premium disattivato su questo dispositivo'); },
     isPro: isProUser
   };
 
   // avvio
   function ready(fn){ if (document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  ready(()=>{ injectPremiumOptions(); injectTitlePremiumLock(); observeUserStatus(); });
+  ready(()=>{ injectPremiumOptions(); observeUserStatus(); });
 })();
