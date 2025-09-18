@@ -117,6 +117,46 @@ const ICONS = {
 };
 window.ICONS = ICONS;
 
+// ============ FALLBACK ETICHETTE SELECT (solo se vuote) ============ // <<< Fallback classi
+const UI_FALLBACK = {
+  it: {
+    classSource: { none:'Nessuno', db:'Database', upload:'Carica immagine…' },
+    clazz: {
+      guerriero:'Guerriero', druido:'Druido', monaco:'Monaco', mago:'Mago', ladro:'Ladro',
+      barbaro:'Barbaro', paladino:'Paladino', chierico:'Chierico', bardo:'Bardo',
+      ranger:'Ranger', stregone:'Stregone', warlock:'Warlock', artificiere:'Artificiere'
+    }
+  },
+  en: {
+    classSource: { none:'None', db:'Database', upload:'Upload image…' },
+    clazz: {
+      guerriero:'Warrior', druido:'Druid', monaco:'Monk', mago:'Wizard', ladro:'Rogue',
+      barbaro:'Barbarian', paladino:'Paladin', chierico:'Cleric', bardo:'Bard',
+      ranger:'Ranger', stregone:'Sorcerer', warlock:'Warlock', artificiere:'Artificer'
+    }
+  }
+};
+function getLocale(){
+  const l = (window.intl?.getLocale?.() || document.documentElement.lang || 'it').toLowerCase();
+  return l.startsWith('en') ? 'en' : 'it';
+}
+function ensureOptionText(selectId, map){
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  Array.from(sel.options || []).forEach(opt=>{
+    const v = opt.value;
+    if ((!opt.textContent || !opt.textContent.trim()) && map[v]){
+      opt.textContent = map[v]; // scrive SOLO se vuoto
+    }
+  });
+}
+function fixClassMenus(){
+  const L = UI_FALLBACK[getLocale()] || UI_FALLBACK.it;
+  ensureOptionText('classSource', L.classSource);
+  ensureOptionText('clazz',       L.clazz);
+}
+// ======================= FINE FALLBACK =============================== // <<< Fallback classi
+
 // ======== HELPERS ========
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -175,11 +215,6 @@ function isPremiumFrame(val){ return /^frame-/.test(val||''); }
 function normalizeEffect(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('fx-')) return v;
-
-  // compatibilità con vecchi value tipo "foil-celestial", ecc.
-  const m = v.match(/^foil-(celestial|infernal|obsidian|royal|starlight)$/);
-  if (m) return `fx-${m[1]}`;
-
   const map = [
     [/^celest/, 'fx-celestial'],
     [/^infer/,  'fx-infernal'],
@@ -596,15 +631,12 @@ function bind(){
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
 
-  // Effetto titolo con gating robusto
+  // Effetto titolo con gating
   $id('titleFoil')?.addEventListener('change',e=>{
     const raw = e.target.value;
     const val = normalizeEffect(raw);
-    const opt = e.target.selectedOptions?.[0];
-    const isUiPremium = opt?.getAttribute('data-premium') === '1';
-    const looksPremium = isUiPremium || isPremiumEffect(val);
 
-    if (looksPremium && !isPremiumUnlocked()){
+    if (isPremiumEffect(val) && !isPremiumUnlocked()){
       const fb = (state.titleFoil && !isPremiumEffect(normalizeEffect(state.titleFoil)))
         ? normalizeEffect(state.titleFoil) : 'none';
       state.titleFoil = fb; e.target.value = fb;
@@ -687,20 +719,6 @@ function bind(){
     const buf=await f.arrayBuffer(); const ff=new FontFace('CardCustom',buf);
     await ff.load(); document.fonts.add(ff); drawFront();
   });
-
-  // Stato iniziale visibilità righe classi + valore select (fix iOS)
-  {
-    const dbRow=$id('dbClassRow');
-    const upRow=$id('uploadClassRow');
-    if (dbRow) dbRow.style.display=(state.classSource==='db')?'block':'none';
-    if (upRow) upRow.style.display=(state.classSource==='upload')?'block':'none';
-
-    const selClazz = $id('clazz');
-    if (selClazz) {
-      selClazz.value = state.clazz || selClazz.value || 'druido';
-      selClazz.addEventListener('touchend', ()=> { try{ selClazz.blur(); selClazz.focus(); }catch{} });
-    }
-  }
 }
 
 function loadDbIcon(key){
@@ -716,6 +734,11 @@ function loadDbIcon(key){
 // ======== INIT ========
 function init(){
   bind();
+
+  // Ripristina etichette se vuote (iOS/Safari + i18n) // <<< Fallback classi
+  fixClassMenus();
+  setTimeout(fixClassMenus, 0);
+
   loadDbIcon(state.clazz);
   drawFront();
   drawBack();
@@ -769,7 +792,7 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
       { type:'txt', el: document.getElementById('btnCloudPull'),  key:'btn_cloud_pull',  it:'Apri libreria cloud', en:'Open cloud library' },
       { type:'txt', el: document.getElementById('btnCloudClear'), key:'btn_cloud_clear', it:'Svuota cloud', en:'Clear cloud' },
       { type:'txt', el: document.getElementById('pngFront'),       key:'btn_png_front', it:'PNG (fronte)', en:'PNG (front)' },
-      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',  it:'PNG (retro)',  en:'PNG (back)' },
+      { type:'txt', el: document.getElementById('pngBack'),        key:'btn_png_back',  key2:'', it:'PNG (retro)',  en:'PNG (back)' },
       { type:'txt', el: document.getElementById('pdfSingleFront'), key:'btn_pdf_single_f', it:'PDF singola (fronte)', en:'Single PDF (front)' },
       { type:'txt', el: document.getElementById('pdfSingleBack'),  key:'btn_pdf_single_b', it:'PDF singola (retro)',  en:'Single PDF (back)' },
       { type:'txt', el: document.getElementById('pdfA4Front'),     key:'btn_pdf_a4_f',  it:'PDF A4 3×3 (fronti)',  en:'A4 PDF 3×3 (fronts)' },
@@ -790,9 +813,11 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
         if(type==='ph'){ el.setAttribute('placeholder', txt); }
         else { el.textContent = txt; }
       });
+      // Assicurati che i menu Classi non restino vuoti in nessuna lingua // <<< Fallback classi
+      fixClassMenus();
     }
     applyLocale();
-    intl.onChange(applyLocale);
+    intl.onChange(() => { applyLocale(); fixClassMenus(); }); // <<< Fallback classi
 
   }catch(e){
     console.warn('[intl] non attivo:', e?.message||e);
