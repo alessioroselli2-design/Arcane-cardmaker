@@ -54,14 +54,13 @@
   }
 
   /* ========== UI: inject & lock ========== */
+
+  // Cornici premium: inietta optgroup + gestisci lock
   function injectPremiumOptions(){
     const sel = document.getElementById('frameStyle');
     if (!sel) return;
 
-    // 🔹 salviamo la selezione corrente per ripristinarla dopo il reinject
-    const prevValue = sel.value; // può già essere 'frame-*' impostato da card.js
-
-    // crea/aggiorna optgroup Premium
+    const prevValue = sel.value;
     let og = sel.querySelector('optgroup[data-premium="1"]');
     if (!og){
       og = document.createElement('optgroup');
@@ -75,13 +74,10 @@
     const pro = isProUser();
 
     PREMIUM_FRAMES.forEach(({value,label})=>{
-      // 🔸 usiamo SEMPRE value="frame-..." per combaciare con card.js
       const canon = value.startsWith('frame-') ? value : ('frame-' + value);
-
       const opt = document.createElement('option');
       opt.value = canon;
       opt.textContent = pro ? label : (label + ' 🔒');
-
       if (!pro) {
         opt.disabled = true;
         opt.setAttribute('data-locked','1');
@@ -90,7 +86,6 @@
       og.appendChild(opt);
     });
 
-    // Evita listener duplicati: lo aggiungiamo una sola volta
     if (!sel.dataset.premiumBound) {
       sel.addEventListener('change', ()=>{
         const o = sel.selectedOptions[0];
@@ -104,30 +99,80 @@
       sel.dataset.premiumBound = '1';
     }
 
-    // 🔹 ripristino della selezione precedente (se ancora valida)
-    // Se non esiste più (es. da guest erano locked), facciamo fallback “flat”.
     if (prevValue) {
       const hasPrev = Array.from(sel.options).some(o => o.value === prevValue && !o.disabled);
       sel.value = hasPrev ? prevValue : 'flat';
     }
   }
 
-  // reinietta quando cambia lo userStatus (login/logout)
+  // ✅ NUOVO: effetti titolo premium — applica/riporta il lucchetto
+  function gateTitleEffects(){
+    const sel = document.getElementById('titleFoil');
+    if (!sel) return;
+
+    const prev = sel.value;
+    const pro = isProUser();
+
+    // cerca l'optgroup Premium dentro #titleFoil
+    const og = Array.from(sel.querySelectorAll('optgroup'))
+      .find(g => (g.getAttribute('label')||'').toLowerCase().includes('premium'));
+
+    const opts = og ? Array.from(og.querySelectorAll('option')) : [];
+
+    opts.forEach(opt=>{
+      // rimuovi eventuale lucchetto precedente
+      const base = opt.textContent.replace(/ ?🔒$/,'');
+      if (pro){
+        opt.disabled = false;
+        opt.removeAttribute('data-locked');
+        opt.textContent = base;
+      } else {
+        opt.disabled = true;
+        opt.setAttribute('data-locked','1');
+        opt.title = 'Disponibile con Premium';
+        opt.textContent = base + ' 🔒';
+      }
+    });
+
+    if (!sel.dataset.premiumBound){
+      sel.addEventListener('change', ()=>{
+        const o = sel.selectedOptions[0];
+        if (o && o.getAttribute('data-locked') === '1'){
+          alert('Questo effetto titolo è Premium ✨');
+          sel.value = 'none';
+          sel.dispatchEvent(new Event('input', {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+      });
+      sel.dataset.premiumBound = '1';
+    }
+
+    // ripristina selezione se valida (altrimenti 'none')
+    if (prev){
+      const ok = Array.from(sel.options).some(o => o.value === prev && !o.disabled);
+      sel.value = ok ? prev : 'none';
+    }
+  }
+
+  // reinietta/gate quando cambia lo userStatus (login/logout)
   function observeUserStatus(){
     const status = document.getElementById('userStatus');
     if (!status) return;
-    const mo = new MutationObserver(()=> setTimeout(injectPremiumOptions, 80));
+    const mo = new MutationObserver(()=> setTimeout(()=>{
+      injectPremiumOptions();
+      gateTitleEffects();
+    }, 80));
     mo.observe(status, {childList:true, subtree:true, characterData:true});
   }
 
   // esponi helper per te
   window.premium = {
-    unlock(){ setLSPro(true); injectPremiumOptions(); alert('Premium attivato su questo dispositivo ✅'); },
-    lock(){ setLSPro(false); injectPremiumOptions(); alert('Premium disattivato su questo dispositivo'); },
+    unlock(){ setLSPro(true); injectPremiumOptions(); gateTitleEffects(); alert('Premium attivato su questo dispositivo ✅'); },
+    lock(){ setLSPro(false); injectPremiumOptions(); gateTitleEffects(); alert('Premium disattivato su questo dispositivo'); },
     isPro: isProUser
   };
 
   // avvio
   function ready(fn){ if (document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  ready(()=>{ injectPremiumOptions(); observeUserStatus(); });
+  ready(()=>{ injectPremiumOptions(); gateTitleEffects(); observeUserStatus(); });
 })();
