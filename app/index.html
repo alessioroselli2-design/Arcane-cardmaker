@@ -5,20 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Arcane CardMaker</title>
   <meta name="theme-color" content="#111" />
-
-  <!-- IMPORTANT: fa risolvere tutti i percorsi sotto /app/ -->
   <base href="/app/">
 
-  <!-- CSS -->
   <link rel="stylesheet" href="stile.css" />
-
-  <!-- jsPDF per i PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
 
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- Manifest PWA -->
   <link rel="manifest" href="manifesto.webmanifest">
 </head>
 <body>
@@ -47,12 +39,11 @@
     <div class="row">
       <span id="userStatus" class="muted" data-i18n="user_guest">Ospite</span>
       <button id="btnLogout" class="btn" style="display:none" data-i18n="btn_logout">Esci</button>
-      <!-- Il selettore lingua viene inserito da app-i18n.js -->
+      <!-- Language selector from app-i18n.js -->
     </div>
   </header>
 
   <div class="wrap">
-    <!-- ===================== PANNELLO COMANDI ===================== -->
     <aside class="panel" id="controls">
       <h3 data-i18n="front_title">Fronte</h3>
 
@@ -94,13 +85,13 @@
             <option value="foil-gold"    data-i18n="opt_foil_gold">Foil oro</option>
             <option value="foil-silver"  data-i18n="opt_foil_silver">Foil argento</option>
             <option value="foil-rainbow" data-i18n="opt_foil_rainbow">Foil arcobaleno</option>
-            <!-- Premium (etichette; il gating lo fa card.js) -->
+            <!-- Premium (ora con value fx-*) -->
             <optgroup label="Premium">
-              <option value="foil-celestial" data-premium="1" data-i18n="opt_foil_celestial">Celestial (premium)</option>
-              <option value="foil-infernal"  data-premium="1" data-i18n="opt_foil_infernal">Infernal (premium)</option>
-              <option value="foil-obsidian"  data-premium="1" data-i18n="opt_foil_obsidian">Obsidian (premium)</option>
-              <option value="foil-royal"     data-premium="1" data-i18n="opt_foil_royal">Royal (premium)</option>
-              <option value="foil-starlight" data-premium="1" data-i18n="opt_foil_starlight">Starlight (premium)</option>
+              <option value="fx-celestial" data-premium="1" data-i18n="opt_foil_celestial">Celestial (premium)</option>
+              <option value="fx-infernal"  data-premium="1" data-i18n="opt_foil_infernal">Infernal (premium)</option>
+              <option value="fx-obsidian"  data-premium="1" data-i18n="opt_foil_obsidian">Obsidian (premium)</option>
+              <option value="fx-royal"     data-premium="1" data-i18n="opt_foil_royal">Royal (premium)</option>
+              <option value="fx-starlight" data-premium="1" data-i18n="opt_foil_starlight">Starlight (premium)</option>
             </optgroup>
           </select>
         </div>
@@ -176,7 +167,7 @@
             <option value="stone"         data-i18n="style_stone">Pietra</option>
             <option value="arcane"        data-i18n="style_arcane">Arcano</option>
             <option value="nature"        data-i18n="style_nature">Natura</option>
-            <!-- Le premium verranno iniettate da premium.js -->
+            <!-- Premium frames via premium.js -->
           </select>
         </div>
         <div>
@@ -265,7 +256,6 @@
       <small class="muted" data-i18n="hint_print">Stampa A4 verticale, margini minimi, scala 100%.</small>
     </aside>
 
-    <!-- ===================== ANTEPRIME ===================== -->
     <section class="panel preview">
       <div class="previewHead"><h3 data-i18n="preview_title">Anteprima</h3></div>
       <div class="grid2">
@@ -275,21 +265,19 @@
     </section>
   </div>
 
-  <!-- ===================== SCRIPT ===================== -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
     }
   </script>
 
-  <!-- i18n -->
   <script type="module" src="intl.js"></script>
   <script type="module" src="app-i18n.js"></script>
 
   <!-- Premium gating -->
   <script type="module" src="premium.js"></script>
 
-  <!-- La tua app -->
+  <!-- App -->
   <script type="module" src="Firebase.js"></script>
   <script type="module" src="card.js"></script>
   <script type="module" src="carta-locale.js"></script>
