@@ -84,33 +84,89 @@
     });
 
     // blocca selezioni locked e ripristina a flat
-    sel.addEventListener('change', ()=>{
-      const o = sel.selectedOptions[0];
-      if (o && o.getAttribute('data-locked') === '1'){
-        alert('Questa cornice è Premium ✨');
-        sel.value = 'flat';
-        sel.dispatchEvent(new Event('input', {bubbles:true}));
-        sel.dispatchEvent(new Event('change', {bubbles:true}));
+    if (!sel.dataset.premListener) {
+      sel.addEventListener('change', ()=>{
+        const o = sel.selectedOptions[0];
+        if (o && o.getAttribute('data-locked') === '1'){
+          alert('Questa cornice è Premium ✨');
+          sel.value = 'flat';
+          sel.dispatchEvent(new Event('input', {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+      });
+      sel.dataset.premListener = '1';
+    }
+  }
+
+  // === NUOVO: blocco anche per il menu Effetti Titolo (Premium) ===
+  function injectTitlePremiumLock(){
+    const sel = document.getElementById('titleFoil');
+    if (!sel) return;
+
+    const pro = isProUser();
+    const opts = sel.querySelectorAll('option[data-premium="1"]');
+
+    opts.forEach(opt=>{
+      const base = opt.getAttribute('data-label-base') || opt.textContent.replace(/\s*🔒$/, '');
+      opt.setAttribute('data-label-base', base);
+
+      if (pro){
+        opt.disabled = false;
+        opt.removeAttribute('data-locked');
+        opt.textContent = base;
+        opt.title = '';
+      } else {
+        opt.disabled = true;
+        opt.setAttribute('data-locked','1');
+        opt.textContent = base.endsWith('🔒') ? base : (base + ' 🔒');
+        opt.title = 'Disponibile con Premium';
       }
     });
+
+    // Safety: se provano a selezionarlo comunque, torna su "none"
+    if (!sel.dataset.premTitleListener){
+      sel.addEventListener('change', ()=>{
+        const o = sel.selectedOptions[0];
+        if (o && o.getAttribute('data-locked') === '1'){
+          alert('Questo effetto titolo è Premium ✨');
+          sel.value = 'none';
+          sel.dispatchEvent(new Event('input', {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+      });
+      sel.dataset.premTitleListener = '1';
+    }
   }
 
   // reinietta quando cambia lo userStatus (login/logout)
   function observeUserStatus(){
     const status = document.getElementById('userStatus');
     if (!status) return;
-    const mo = new MutationObserver(()=> setTimeout(injectPremiumOptions, 80));
+    const mo = new MutationObserver(()=> setTimeout(()=>{
+      injectPremiumOptions();
+      injectTitlePremiumLock();
+    }, 80));
     mo.observe(status, {childList:true, subtree:true, characterData:true});
   }
 
   // esponi helper per te
   window.premium = {
-    unlock(){ setLSPro(true); injectPremiumOptions(); alert('Premium attivato su questo dispositivo ✅'); },
-    lock(){ setLSPro(false); injectPremiumOptions(); alert('Premium disattivato su questo dispositivo'); },
+    unlock(){
+      setLSPro(true);
+      injectPremiumOptions();
+      injectTitlePremiumLock();
+      alert('Premium attivato su questo dispositivo ✅');
+    },
+    lock(){
+      setLSPro(false);
+      injectPremiumOptions();
+      injectTitlePremiumLock();
+      alert('Premium disattivato su questo dispositivo');
+    },
     isPro: isProUser
   };
 
   // avvio
   function ready(fn){ if (document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  ready(()=>{ injectPremiumOptions(); observeUserStatus(); });
+  ready(()=>{ injectPremiumOptions(); injectTitlePremiumLock(); observeUserStatus(); });
 })();
