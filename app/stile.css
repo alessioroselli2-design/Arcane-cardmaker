@@ -183,3 +183,51 @@ small.muted{display:block; margin-top:6px}
   .lib-row{grid-template-columns:48px 1fr auto}
   .lib-thumb{width:48px;height:66px}
 }
+/* ======= Lingua: visibilità e contrasto ======= */
+header #lang{
+  appearance: none;        /* rimuove lo style nativo (cross-browser) */
+  -webkit-appearance: none;
+  font: inherit;
+  line-height: 1.2;
+  padding: 4px 10px;
+  border-radius: 8px;
+
+  /* Se l'header è scuro: usa un bordo chiaro e sfondo traslucido */
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.35);
+  color: inherit;
+
+  /* iOS Safari: evita testo slavato */
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Hover/focus: aumenta contrasto e mostra outline accessibile */
+header #lang:hover{
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.55);
+}
+header #lang:focus{
+  outline: 2px solid #82aaff;     /* azzurro soft */
+  outline-offset: 2px;
+  background: rgba(255,255,255,.14);
+  border-color: #82aaff;
+}
+
+/* Opzioni leggibili */
+header #lang option{
+  color: #111;                     /* testo scuro nel menu a tendina */
+  background: #fff;                /* sfondo chiaro nell’elenco */
+}
+
+/* Tema chiaro (se l’header è chiaro) */
+@media (prefers-color-scheme: light){
+  header #lang{
+    background: rgba(0,0,0,.04);
+    border: 1px solid rgba(0,0,0,.25);
+    color: inherit;
+  }
+  header #lang:hover{
+    background: rgba(0,0,0,.07);
+    border-color: rgba(0,0,0,.35);
+  }
+}
