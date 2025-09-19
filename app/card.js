@@ -159,8 +159,11 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
 
 // === Premium gating & NORMALIZZAZIONE =================================
 function isPremiumUnlocked(){
+  // 1) Se premium.js è caricato, chiediamo a lui
   if (window.premium?.isPro && window.premium.isPro()) return true;
+  // 2) User premium da auth
   if (window.user && window.user.isPremium) return true;
+  // 3) Local device flag (supporta entrambe le chiavi storiche)
   if (localStorage.getItem('acm_pro') === '1') return true;
   if (localStorage.getItem('acm_premium') === '1') return true;
   return false;
@@ -561,6 +564,12 @@ let dragging=false,dx=0,dy=0;
 frontCanvas?.addEventListener('pointerdown',e=>{
   if(!state.imgClass) return;
   const rect=frontCanvas.getBoundingClientRect(), sx=frontCanvas.width/rect.width, sy=frontCanvas.height/rect.height;
+  const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect-top)*sy, s=state.classSize;
+  // FIX typo: rect.top
+});
+frontCanvas?.addEventListener('pointerdown',e=>{
+  if(!state.imgClass) return;
+  const rect=frontCanvas.getBoundingClientRect(), sx=frontCanvas.width/rect.width, sy=frontCanvas.height/rect.height;
   const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect.top)*sy, s=state.classSize;
   if(x>=state.classX&&x<=state.classX+s&&y>=state.classY&&y<=state.classY+s){
     dragging=true; dx=x-state.classX; dy=y-state.classY; frontCanvas.setPointerCapture(e.pointerId);
@@ -579,52 +588,6 @@ frontCanvas?.addEventListener('pointercancel',()=>dragging=false);
 
 // ======== BIND UI ========
 const $id = (x)=>document.getElementById(x);
-
-// -- autoriparazione/sync per menu classi (iOS) --
-function ensureClassSelect() {
-  const sel = $id('clazz');
-  if (!sel) return;
-
-  // Se non ha opzioni o il testo è vuoto, ripopola dalle chiavi ICONS
-  const needsRebuild =
-    !sel.options.length ||
-    Array.from(sel.options).every(o => !o.textContent || !o.textContent.trim());
-
-  if (needsRebuild) {
-    sel.innerHTML = '';
-    const groups = {
-      base: ['guerriero','druido','monaco','mago','ladro'],
-      extra: ['barbaro','paladino','chierico','bardo','ranger','stregone','warlock','artificiere']
-    };
-    const makeLabel = (k)=>({
-      guerriero:'Guerriero', druido:'Druido', monaco:'Monaco', mago:'Mago', ladro:'Ladro',
-      barbaro:'Barbaro', paladino:'Paladino', chierico:'Chierico', bardo:'Bardo',
-      ranger:'Ranger', stregone:'Stregone', warlock:'Warlock', artificiere:'Artificiere'
-    }[k] || (k.charAt(0).toUpperCase()+k.slice(1)));
-
-    const og1 = document.createElement('optgroup'); og1.label='Base';
-    groups.base.forEach(k=>{
-      if (!ICONS[k]) return;
-      const o=document.createElement('option'); o.value=k; o.textContent=makeLabel(k); og1.appendChild(o);
-    });
-    const og2 = document.createElement('optgroup'); og2.label='Espansione';
-    groups.extra.forEach(k=>{
-      if (!ICONS[k]) return;
-      const o=document.createElement('option'); o.value=k; o.textContent=makeLabel(k); og2.appendChild(o);
-    });
-    sel.appendChild(og1); sel.appendChild(og2);
-  }
-
-  // Imposta il valore coerente con lo stato; se mancante, fallback a 'druido'
-  if (!ICONS[state.clazz]) state.clazz = 'druido';
-  sel.value = state.clazz;
-  // Se per qualche motivo non riesce a selezionare (iOS), forza il primo valido
-  if (sel.value !== state.clazz) {
-    const first = Array.from(sel.options).find(o=>o.value && ICONS[o.value]);
-    if (first) { sel.value = first.value; state.clazz = first.value; }
-  }
-}
-
 function bind(){
   $id('title')?.addEventListener('input',e=>{state.title=e.target.value;drawFront();});
   $id('showMana')?.addEventListener('change',e=>{state.showMana=e.target.checked;drawFront();});
@@ -686,37 +649,18 @@ function bind(){
     if(dbRow) dbRow.style.display=(state.classSource==='db')?'block':'none';
     if(upRow) upRow.style.display=(state.classSource==='upload')?'block':'none';
     if(state.classSource==='none') state.imgClass=null;
-    if(state.classSource==='db'){
-      ensureClassSelect();
-      loadDbIcon($id('clazz')?.value||state.clazz||'druido');
-    }
+    if(state.classSource==='db') loadDbIcon($id('clazz')?.value||'druido');
     if(state.classSource!=='upload') $id('classImg') && ($id('classImg').value='');
     drawFront();
   });
-
-  $id('clazz')?.addEventListener('change',e=>{
-    if(state.classSource==='db'){
-      state.clazz = e.target.value;
-      loadDbIcon(state.clazz);
-    }
-  });
-
-  $id('classSize')?.addEventListener('input',e=>{
-    state.classSize=+e.target.value;
-    if(state.classX==null||state.classY==null) defaultSymbolPos();
-    drawFront();
-  });
+  $id('clazz')?.addEventListener('change',e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); });
+  $id('classSize')?.addEventListener('input',e=>{state.classSize=+e.target.value; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();});
 
   $id('classImg')?.addEventListener('change',e=>{
     if(state.classSource!=='upload')return;
     const f=e.target.files?.[0]; if(!f) return;
     const r=new FileReader();
-    r.onload=ev=>{
-      const img=new Image();
-      img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();};
-      img.src=ev.target.result;
-    };
-    r.readAsDataURL(f);
+    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);
   });
 
   $id('artFront')?.addEventListener('change',e=>{
@@ -756,16 +700,6 @@ function loadDbIcon(key){
 // ======== INIT ========
 function init(){
   bind();
-
-  // --- sincronizza visibilità & menù classi all'avvio ---
-  ensureClassSelect();
-  const dbRow=document.getElementById('dbClassRow');
-  const upRow=document.getElementById('uploadClassRow');
-  if(dbRow) dbRow.style.display=(state.classSource==='db')?'block':'none';
-  if(upRow) upRow.style.display=(state.classSource==='upload')?'block':'none';
-  const selClazz = document.getElementById('clazz');
-  if (selClazz) selClazz.value = state.clazz || 'druido';
-
   loadDbIcon(state.clazz);
   drawFront();
   drawBack();
@@ -797,15 +731,9 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
     if (hdr && !document.getElementById('lang')) {
       const sel = document.createElement('select');
       sel.id = 'lang';
-      // visibilità migliore su tema scuro (solo per questo select)
       sel.style.marginLeft = '10px';
       sel.style.padding = '4px 6px';
       sel.style.borderRadius = '8px';
-      sel.style.background = 'rgba(255,255,255,0.06)';
-      sel.style.border = '1px solid rgba(255,255,255,0.18)';
-      sel.style.color = 'rgba(255,255,255,0.92)';
-      sel.style.font = '14px Inter, system-ui, sans-serif';
-
       sel.innerHTML = `<option value="it">IT</option><option value="en">EN</option>`;
       const row = hdr.querySelector('.row') || hdr;
       row.appendChild(sel);
@@ -839,6 +767,28 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
     intl.addLocale('it', asDict('it'));
     intl.addLocale('en', asDict('en'));
 
+    // ⬇️⬇️ AGGIUNTA: traduzione dei nomi classi e delle option del selettore sorgente
+    function translateSelectOptions(){
+      // classi
+      document.querySelectorAll('#clazz [data-i18n]').forEach(opt=>{
+        const k = opt.getAttribute('data-i18n');
+        const t = intl.t(k);
+        if (t) opt.textContent = t;
+      });
+      // sorgente simbolo (Nessuno / Database / Carica immagine…)
+      document.querySelectorAll('#classSource [data-i18n]').forEach(opt=>{
+        const k = opt.getAttribute('data-i18n');
+        const t = intl.t(k);
+        if (t) opt.textContent = t;
+      });
+      // optgroup con data-i18n (se presenti in futuro)
+      document.querySelectorAll('#clazz optgroup[data-i18n]').forEach(og=>{
+        const k = og.getAttribute('data-i18n');
+        const t = intl.t(k);
+        if (t) og.label = t;
+      });
+    }
+
     function applyLocale(){
       map().forEach(({type, el, key})=>{
         if(!el) return;
@@ -846,6 +796,8 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
         if(type==='ph'){ el.setAttribute('placeholder', txt); }
         else { el.textContent = txt; }
       });
+      // ⬇️ chiama la traduzione delle option
+      translateSelectOptions();
     }
     applyLocale();
     intl.onChange(applyLocale);
