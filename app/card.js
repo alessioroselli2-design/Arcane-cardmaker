@@ -1,14 +1,16 @@
 // app/card.js — motore di disegno carte (fronte/retro) + stato + bind UI
-// Layout aggiornato: margine interno uniforme + retro full-bleed.
-// Effetti Premium: titolo (fx-*) e cornici (frame-*) con gating.
+// Layout: margine interno uniforme + retro full-bleed.
+// Premium: effetti titolo (fx-*) e cornici (frame-*) con gating runtime.
 
+// ================== STATO ==================
 export let state = {
   // titolo / mana
   title: '',
   titleFont: '"Cinzel",serif',
   titleSize: 42,
   titleColor: '#ffffff',
-  // 'none' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | 'fx-celestial' | 'fx-infernal' | 'fx-obsidian' | 'fx-royal' | 'fx-starlight'
+  // 'none' | 'foil-gold' | 'foil-silver' | 'foil-rainbow'
+  // premium: 'fx-celestial' | 'fx-infernal' | 'fx-obsidian' | 'fx-royal' | 'fx-starlight'
   titleFoil: 'none',
   titleShadow: false,
 
@@ -25,7 +27,8 @@ export let state = {
 
   // cornice (standard + premium)
   // standard: 'flat' | 'foil-gold' | 'foil-silver' | 'foil-rainbow' | 'wood' | 'stone' | 'arcane' | 'nature'
-  // premium:  'frame-celestial' | 'frame-infernal' | 'frame-obsidian' | 'frame-royal' | 'frame-starlight' | 'frame-frost' | 'frame-bloom' | 'frame-storm' | 'frame-vampiric' | 'frame-chronos'
+  // premium:  'frame-celestial' | 'frame-infernal' | 'frame-obsidian' | 'frame-royal' | 'frame-starlight'
+  //           'frame-frost' | 'frame-bloom' | 'frame-storm' | 'frame-vampiric' | 'frame-chronos'
   frameStyle: 'flat',
   frameColor: '#d8cfae',
   innerColor: '#f7f5ef',
@@ -46,14 +49,14 @@ export let state = {
 };
 window.state = state;
 
-// ======== CANVAS ========
+// ================== CANVAS ==================
 const frontCanvas = document.getElementById('cardFront');
 const backCanvas  = document.getElementById('cardBack');
 const ctxF = frontCanvas?.getContext('2d') || null;
 const ctxB = backCanvas?.getContext('2d') || null;
 if (!ctxF || !ctxB) console.warn('[card.js] canvas non trovati, salto init');
 
-// ======== ICONE DB ========
+// ================== ICONE DB ==================
 const ICONS = {
   guerriero: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
     <defs><linearGradient id='gSword' x1='0' y1='0' x2='1' y2='1'>
@@ -117,7 +120,7 @@ const ICONS = {
 };
 window.ICONS = ICONS;
 
-// ======== HELPERS ========
+// ================== HELPERS ==================
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
   const img=new Image(); img.onload=()=>cb(img); img.src=url;
@@ -171,7 +174,7 @@ function isPremiumUnlocked(){
 function isPremiumEffect(val){ return /^fx-/.test(val||''); }
 function isPremiumFrame(val){ return /^frame-/.test(val||''); }
 
-// Mappa le etichette (in qualsiasi lingua) alle chiavi fx-* (titolo)
+// Mappa etichette (qualsiasi lingua) → chiavi fx-* (titolo)
 function normalizeEffect(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('fx-')) return v;
@@ -191,7 +194,7 @@ function normalizeEffect(val=''){
   return val;
 }
 
-// Mappa etichette cornice → chiavi canoniche (incluse nuove premium)
+// Mappa etichette cornice → chiavi canoniche (incl. premium nuove)
 function normalizeFrameStyle(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('frame-')) return v;
@@ -223,7 +226,7 @@ function normalizeFrameStyle(val=''){
   return val;
 }
 
-// Effetti premium: disegno del TITOLO
+// Effetti premium: disegno TITOLO
 function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
   ctx.save();
   ctx.textAlign='left';
@@ -291,7 +294,7 @@ function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
   ctx.restore();
 }
 
-// ======== GEOMETRIA ========
+// ================== GEOMETRIA ==================
 const W=750, H=1050;
 const FRAME = { x:12, y:12, w:W-24, h:H-24, r:22 };     // cornice esterna
 const INNER = { x:28, y:28, w:W-56, h:H-56, r:18 };      // bordo interno (colore “carta”)
@@ -300,7 +303,7 @@ const TITLE_H = 86;
 const GAP = 18;
 const IMG_H = 460;
 
-// ======== CORNICE (include premium) ========
+// ================== CORNICE (incl. premium) ==================
 function paintFrame(c){
   c.save();
   rr(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h,FRAME.r);
@@ -347,6 +350,7 @@ function paintFrame(c){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
     g.addColorStop(0,'#6a2bb8'); g.addColorStop(1,'#9a66ff');
     c.fillStyle=g; c.fill();
+    // filetto dorato interno
     c.lineWidth=3; c.strokeStyle='#d4af37'; c.stroke();
   } else if (fs === 'frame-starlight'){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
@@ -394,13 +398,13 @@ function defaultSymbolPos(){
   state.classY = cy - s/2;
 }
 
-// ======== FRONT ========
+// ================== FRONT ==================
 export function drawFront(){
   if(!ctxF) return;
   ctxF.clearRect(0,0,W,H);
   paintFrame(ctxF);
 
-  // === Titolo (riquadro) ===
+  // Titolo (riquadro)
   const t = { x: INNER.x + P, y: INNER.y + P, w: INNER.w - P*2, h: TITLE_H, r: 16 };
   rr(ctxF, t.x, t.y, t.w, t.h, t.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
@@ -410,13 +414,13 @@ export function drawFront(){
   ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, Math.max(0,t.r-4)); ctxF.clip();
   ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
-  // === Immagine ===
+  // Immagine
   const ax = INNER.x + P + 16, ay = t.y + t.h + GAP;
   const aw = INNER.w - (P+16)*2, ah = IMG_H;
   if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
   else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
-  // === Descrizione (riquadro) ===
+  // Descrizione (riquadro)
   const b = {
     x: INNER.x + P,
     y: ay + ah + GAP,
@@ -428,7 +432,7 @@ export function drawFront(){
   ctxF.fillStyle = '#fcfcf8'; ctxF.fill();
   ctxF.lineWidth = 2; ctxF.strokeStyle = 'rgba(122,177,114,.7)'; ctxF.stroke();
 
-  // === Titolo (testo) ===
+  // Titolo (testo)
   ctxF.textBaseline='middle';
   ctxF.textAlign='left';
   ctxF.font = `700 ${state.titleSize}px ${state.titleFont}`;
@@ -443,7 +447,7 @@ export function drawFront(){
   const titleY = t.y + t.h/2;
   const titleW = t.w - 140;
 
-  // normalizza effetto titolo e applica gating runtime
+  // normalizza effetto titolo e applica gating
   let eff = normalizeEffect(state.titleFoil || 'none');
   if (isPremiumEffect(eff) && !isPremiumUnlocked()) eff = 'none';
 
@@ -458,13 +462,13 @@ export function drawFront(){
     ctxF.fillText(state.title || '', titleX, titleY, titleW);
   }
 
-  // === Simbolo di classe ===
+  // Simbolo di classe
   if(state.imgClass){
     if(state.classX==null || state.classY==null) defaultSymbolPos();
     cover(ctxF,state.imgClass,state.classX,state.classY,state.classSize,state.classSize,10);
   }
 
-  // === Mana ===
+  // Mana
   if(state.showMana && (state.mana||'').trim()){
     ctxF.shadowColor='transparent';
     ctxF.fillStyle='#222';
@@ -476,7 +480,7 @@ export function drawFront(){
     ctxF.textAlign='left';
   }
 
-  // === Descrizione (wrap con **grassetto**) ===
+  // Descrizione (wrap con **grassetto**)
   const bx=b.x+14, by=b.y+18, bw=b.w-28;
   ctxF.save();
   ctxF.fillStyle=state.descColor;
@@ -485,7 +489,7 @@ export function drawFront(){
   ctxF.restore();
 }
 
-// ======== BACK (full-bleed entro la cornice interna) ========
+// ================== BACK (full-bleed) ==================
 export function drawBack(){
   if(!ctxB) return;
   ctxB.clearRect(0,0,W,H);
@@ -500,7 +504,7 @@ export function drawBack(){
   }
 }
 
-// ======== TEXT WRAP (supporta **grassetto**) ========
+// ================== WRAP TESTO ==================
 function wrapText(ctx,text,x,y,maxWidth,lineHeight){
   if(!text) return;
   const parts = (text||'').split(/(\*\*.*?\*\*)|\s+/g).filter(Boolean);
@@ -525,7 +529,7 @@ function wrapText(ctx,text,x,y,maxWidth,lineHeight){
   if (line.trim()) ctx.fillText(line,x,yy);
 }
 
-// ======== SNAPSHOT / RESTORE ========
+// ================== SNAPSHOT / RESTORE ==================
 export function snapshot(includeImages = true){
   const out = { ...state };
   delete out.imgFront; delete out.imgBack; delete out.imgClass;
@@ -555,18 +559,12 @@ export async function applySnap(s) {
   }
 }
 
-// ======== PNG ========
+// ================== PNG EXPORT ==================
 export function frontPNG(){ return frontCanvas.toDataURL('image/png'); }
 export function backPNG(){ return backCanvas.toDataURL('image/png'); }
 
-// ======== DRAG SIMBOLO ========
+// ================== DRAG SIMBOLO ==================
 let dragging=false,dx=0,dy=0;
-frontCanvas?.addEventListener('pointerdown',e=>{
-  if(!state.imgClass) return;
-  const rect=frontCanvas.getBoundingClientRect(), sx=frontCanvas.width/rect.width, sy=frontCanvas.height/rect.height;
-  const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect-top)*sy, s=state.classSize;
-  // FIX typo: rect.top
-});
 frontCanvas?.addEventListener('pointerdown',e=>{
   if(!state.imgClass) return;
   const rect=frontCanvas.getBoundingClientRect(), sx=frontCanvas.width/rect.width, sy=frontCanvas.height/rect.height;
@@ -586,8 +584,9 @@ frontCanvas?.addEventListener('pointermove',e=>{
 frontCanvas?.addEventListener('pointerup',e=>{ if(dragging){dragging=false; frontCanvas.releasePointerCapture(e.pointerId);} });
 frontCanvas?.addEventListener('pointercancel',()=>dragging=false);
 
-// ======== BIND UI ========
+// ================== BIND UI ==================
 const $id = (x)=>document.getElementById(x);
+
 function bind(){
   $id('title')?.addEventListener('input',e=>{state.title=e.target.value;drawFront();});
   $id('showMana')?.addEventListener('change',e=>{state.showMana=e.target.checked;drawFront();});
@@ -597,7 +596,7 @@ function bind(){
   $id('titleSize')?.addEventListener('input',e=>{state.titleSize=+e.target.value;drawFront();});
   $id('titleColor')?.addEventListener('input',e=>{state.titleColor=e.target.value;drawFront();});
 
-  // Effetto titolo con gating
+  // Effetto titolo (gating runtime)
   $id('titleFoil')?.addEventListener('change',e=>{
     const raw = e.target.value;
     const val = normalizeEffect(raw);
@@ -619,7 +618,7 @@ function bind(){
   $id('descColor')?.addEventListener('input',e=>{state.descColor=e.target.value;drawFront();});
   $id('rulesText')?.addEventListener('input',e=>{state.rulesText=e.target.value;drawFront();});
 
-  // Cornice con normalizzazione + gating
+  // Cornice (normalizzazione + gating)
   $id('frameStyle')?.addEventListener('change',e=>{
     const raw = e.target.value;
     const val = normalizeFrameStyle(raw);
@@ -642,6 +641,7 @@ function bind(){
   $id('panelColor')?.addEventListener('input',e=>{state.panelColor=e.target.value;drawFront();});
   $id('panelAlpha')?.addEventListener('input',e=>{state.panelAlpha=+e.target.value/100;drawFront();});
 
+  // Sorgente simbolo + caricamenti
   $id('classSource')?.addEventListener('change',e=>{
     state.classSource=e.target.value;
     const dbRow=document.getElementById('dbClassRow');
@@ -654,39 +654,70 @@ function bind(){
     drawFront();
   });
   $id('clazz')?.addEventListener('change',e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); });
-  $id('classSize')?.addEventListener('input',e=>{state.classSize=+e.target.value; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();});
+  $id('classSize')?.addEventListener('input',e=>{
+    state.classSize=+e.target.value;
+    if(state.classX==null||state.classY==null) defaultSymbolPos();
+    drawFront();
+  });
 
   $id('classImg')?.addEventListener('change',e=>{
     if(state.classSource!=='upload')return;
     const f=e.target.files?.[0]; if(!f) return;
     const r=new FileReader();
-    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);
+    r.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{state.imgClass=img; if(state.classX==null||state.classY==null) defaultSymbolPos(); drawFront();};
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
   });
 
   $id('artFront')?.addEventListener('change',e=>{
     const f=e.target.files?.[0]; if(!f)return;
     const r=new FileReader();
-    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgFront=img; drawFront();}; img.src=ev.target.result;}; r.readAsDataURL(f);
+    r.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{state.imgFront=img; drawFront();};
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
   });
   $id('artBack')?.addEventListener('change',e=>{
     const f=e.target.files?.[0]; if(!f)return;
     const r=new FileReader();
-    r.onload=ev=>{const img=new Image(); img.onload=()=>{state.imgBack=img; drawBack();}; img.src=ev.target.result;}; r.readAsDataURL(f);
-  });
-
-  // font custom
-  $id('titleFontFile')?.addEventListener('change', async e=>{
-    const f=e.target.files?.[0]; if(!f)return;
-    const buf=await f.arrayBuffer(); const ff=new FontFace('CardCustom',buf);
-    await ff.load(); document.fonts.add(ff); drawFront();
-  });
-  $id('descFontFile')?.addEventListener('change', async e=>{
-    const f=e.target.files?.[0]; if(!f)return;
-    const buf=await f.arrayBuffer(); const ff=new FontFace('CardCustom',buf);
-    await ff.load(); document.fonts.add(ff); drawFront();
+    r.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{state.imgBack=img; drawBack();};
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
   });
 }
 
+// ============= FIX: visibilità iniziale righe DB/Upload simbolo ============
+function updateClassRowsOnce(){
+  const selSrc = document.getElementById('classSource');
+  const dbRow  = document.getElementById('dbClassRow');
+  const upRow  = document.getElementById('uploadClassRow');
+  const apply = ()=>{
+    const v = (selSrc?.value || state.classSource || 'db');
+    if(dbRow) dbRow.style.display = (v==='db') ? 'block' : 'none';
+    if(upRow) upRow.style.display = (v==='upload') ? 'block' : 'none';
+  };
+  apply();
+  selSrc?.addEventListener('change', apply);
+}
+
+// (opzionale) migliora leggibilità dei <select> su alcuni browser mobili
+(function injectSelectFixCSS(){
+  const css = `
+  .panel select{ color: inherit; }
+  .panel select option, .panel select optgroup{ color: initial; }`;
+  const s = document.createElement('style'); s.textContent = css;
+  document.head.appendChild(s);
+})();
+
+// ================== LOAD ICONA DB ==================
 function loadDbIcon(key){
   const svg = ICONS[key];
   if(!svg){ state.imgClass=null; drawFront(); return; }
@@ -697,9 +728,10 @@ function loadDbIcon(key){
   });
 }
 
-// ======== INIT ========
+// ================== INIT ==================
 function init(){
   bind();
+  updateClassRowsOnce();
   loadDbIcon(state.clazz);
   drawFront();
   drawBack();
@@ -727,6 +759,7 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
   try{
     const intl = await import('./intl.js');
 
+    // piccolo selettore lingua in header se non esiste già
     const hdr = document.querySelector('header');
     if (hdr && !document.getElementById('lang')) {
       const sel = document.createElement('select');
@@ -767,28 +800,6 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
     intl.addLocale('it', asDict('it'));
     intl.addLocale('en', asDict('en'));
 
-    // ⬇️⬇️ AGGIUNTA: traduzione dei nomi classi e delle option del selettore sorgente
-    function translateSelectOptions(){
-      // classi
-      document.querySelectorAll('#clazz [data-i18n]').forEach(opt=>{
-        const k = opt.getAttribute('data-i18n');
-        const t = intl.t(k);
-        if (t) opt.textContent = t;
-      });
-      // sorgente simbolo (Nessuno / Database / Carica immagine…)
-      document.querySelectorAll('#classSource [data-i18n]').forEach(opt=>{
-        const k = opt.getAttribute('data-i18n');
-        const t = intl.t(k);
-        if (t) opt.textContent = t;
-      });
-      // optgroup con data-i18n (se presenti in futuro)
-      document.querySelectorAll('#clazz optgroup[data-i18n]').forEach(og=>{
-        const k = og.getAttribute('data-i18n');
-        const t = intl.t(k);
-        if (t) og.label = t;
-      });
-    }
-
     function applyLocale(){
       map().forEach(({type, el, key})=>{
         if(!el) return;
@@ -796,8 +807,6 @@ try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
         if(type==='ph'){ el.setAttribute('placeholder', txt); }
         else { el.textContent = txt; }
       });
-      // ⬇️ chiama la traduzione delle option
-      translateSelectOptions();
     }
     applyLocale();
     intl.onChange(applyLocale);
