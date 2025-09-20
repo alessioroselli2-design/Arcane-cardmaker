@@ -510,3 +510,78 @@ intl.onChange(() => {
   const sel = document.getElementById('lang');
   if (sel) sel.value = intl.getLocale();
 });
+/* === HOTFIX: ricostruzione sicura del menu classi ===================== */
+(async () => {
+  // Importo l'helper i18n già caricato dall'index
+  let intl;
+  try { intl = await import('./intl.js'); } catch { return; }
+
+  const GROUPS = [
+    {
+      labelKey: 'optgroup_base',
+      fallback: 'Base',
+      items: [
+        { v: 'guerriero',  key: 'cls_warrior',  fb: 'Guerriero' },
+        { v: 'druido',     key: 'cls_druid',    fb: 'Druido'    },
+        { v: 'monaco',     key: 'cls_monk',     fb: 'Monaco'    },
+        { v: 'mago',       key: 'cls_wizard',   fb: 'Mago'      },
+        { v: 'ladro',      key: 'cls_rogue',    fb: 'Ladro'     },
+      ]
+    },
+    {
+      labelKey: 'optgroup_expansion',
+      fallback: 'Espansione',
+      items: [
+        { v: 'barbaro',     key: 'cls_barbarian', fb: 'Barbaro'     },
+        { v: 'paladino',    key: 'cls_paladin',   fb: 'Paladino'    },
+        { v: 'chierico',    key: 'cls_cleric',    fb: 'Chierico'    },
+        { v: 'bardo',       key: 'cls_bard',      fb: 'Bardo'       },
+        { v: 'ranger',      key: 'cls_ranger',    fb: 'Ranger'      },
+        { v: 'stregone',    key: 'cls_sorcerer',  fb: 'Stregone'    },
+        { v: 'warlock',     key: 'cls_warlock',   fb: 'Warlock'     },
+        { v: 'artificiere', key: 'cls_artificer', fb: 'Artificiere' },
+      ]
+    }
+  ];
+
+  function rebuildClassMenu() {
+    const sel = document.getElementById('clazz');
+    if (!sel) return;
+
+    // Valore corrente (se valido lo preserviamo)
+    const prev = sel.value && sel.value.trim() ? sel.value.trim() : null;
+
+    // Costruzione HTML: i value restano CANONICI (non tradurre!)
+    let html = '';
+    for (const g of GROUPS) {
+      const gLabel = intl.t(g.labelKey, g.fallback);
+      html += `<optgroup label="${gLabel}">`;
+      for (const it of g.items) {
+        const lbl = intl.t(it.key, it.fb);
+        html += `<option value="${it.v}">${lbl}</option>`;
+      }
+      html += `</optgroup>`;
+    }
+    sel.innerHTML = html;
+
+    // Ripristina selezione (o default 'druido')
+    const wanted = prev && sel.querySelector(`option[value="${prev}"]`) ? prev : 'druido';
+    sel.value = wanted;
+
+    // Se la sorgente è "db", assicuriamo che la riga sia visibile
+    const sourceSel = document.getElementById('classSource');
+    const dbRow = document.getElementById('dbClassRow');
+    if (dbRow && sourceSel && sourceSel.value === 'db') dbRow.style.display = 'block';
+
+    // Notifica card.js (loadDbIcon) attraverso l'evento change
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // Ricostruisci all'avvio e ad ogni cambio lingua
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(rebuildClassMenu, 0));
+  } else {
+    setTimeout(rebuildClassMenu, 0);
+  }
+  intl.onChange(() => rebuildClassMenu());
+})();
