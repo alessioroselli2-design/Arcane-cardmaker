@@ -42,6 +42,9 @@ export function setLocale(lang){
 export function translateDom(root=document){
   // 1) Nuova sintassi: [data-i18n] (+ opzionale data-i18n-type="placeholder")
   root.querySelectorAll('[data-i18n]').forEach(el=>{
+    // ⛔ Non toccare elementi marcati esplicitamente
+    if (el.dataset.noI18n === '1') return;
+
     const key = el.getAttribute('data-i18n');
     const type = (el.getAttribute('data-i18n-type') || 'text').toLowerCase();
     saveOriginalOnce(el, type);
@@ -58,6 +61,9 @@ export function translateDom(root=document){
 
   // 2) Legacy: [data-i18n-ph] (placeholder)
   root.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    // ⛔ Non toccare elementi marcati esplicitamente
+    if (el.dataset.noI18n === '1') return;
+
     const key = el.getAttribute('data-i18n-ph');
     saveOriginalOnce(el, 'placeholder');
     const val = safeGet(current, key);
