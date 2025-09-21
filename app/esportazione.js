@@ -1,266 +1,239 @@
-// /app/esportazione.js — Export PNG & PDF (singolo, A4 3×3) + crop marks + mirror/offset retro
-// Non richiede modifiche all'HTML. Se esistono certi input opzionali, li usa; altrimenti usa default.
+// /app/esportazione.js — Export PNG/PDF + Foglio 3×3 con carte diverse (front+back, crop marks)
+import { frontPNG, backPNG } from './card.js';
 
-// ================== Helper base ==================
-const $ = (id) => document.getElementById(id);
-function createPDF(orientation = 'portrait') {
-  const { jsPDF } = (window.jspdf || {});
-  if (!jsPDF) {
-    alert('Libreria jsPDF non trovata. Controlla lo <script> jsPDF nel tuo index.html.');
-    throw new Error('jsPDF missing');
-  }
-  return new jsPDF({
-    orientation: orientation.startsWith('p') ? 'portrait' : 'landscape',
-    unit: 'mm',
-    format: 'a4',
-    compress: true,
-  });
+const jsPDF = window.jspdf?.jsPDF;
+
+// ==== UTIL ====
+function mm(v){ return v; } // per chiarezza: usiamo già jsPDF in mm
+
+function dataURLFromCanvas(url){
+  // se è già dataURL, la ritorno così; altrimenti la uso direttamente
+  return url;
 }
-function getCanvases() {
-  const front = $('cardFront');
-  const back = $('cardBack');
-  if (!front || !back) {
-    alert('Canvas non trovati. Ricarica la pagina.');
-    throw new Error('canvas missing');
-  }
-  return { front, back };
+
+// Crop marks (segni di taglio) attorno a ogni cella
+function drawCropMarks(doc, x, y, w, h, len=3, off=1){
+  // linee fuori dai bordi (offset = distanza dal bordo)
+  const l = mm(len), o = mm(off);
+  doc.setLineWidth(0.2);
+
+  // top-left
+  doc.line(x - o - l, y - o,     x - o,     y - o);
+  doc.line(x - o,     y - o - l, x - o,     y - o);
+  // top-right
+  doc.line(x + w + o, y - o,     x + w + o + l, y - o);
+  doc.line(x + w + o, y - o - l, x + w + o,     y - o);
+  // bottom-left
+  doc.line(x - o - l, y + h + o, x - o,         y + h + o);
+  doc.line(x - o,     y + h + o, x - o,         y + h + o + l);
+  // bottom-right
+  doc.line(x + w + o, y + h + o, x + w + o + l, y + h + o);
+  doc.line(x + w + o, y + h + o, x + w + o,     y + h + o + l);
 }
-function downloadDataURL(dataURL, filename) {
+
+// Calcola posizioni 3×3 su A4 (mm)
+function layoutA4Grid3x3(cardW=63, cardH=88, gutterX=5, gutterY=5){
+  const pageW = 210, pageH = 297;
+  const totalW = cardW*3 + gutterX*2;
+  const totalH = cardH*3 + gutterY*2;
+  const marginX = (pageW - totalW)/2;
+  const marginY = (pageH - totalH)/2;
+  const cells = [];
+  for (let r=0; r<3; r++){
+    for (let c=0; c<3; c++){
+      const x = marginX + c*(cardW + gutterX);
+      const y = marginY + r*(cardH + gutterY);
+      cells.push({x, y, w:cardW, h:cardH, r, c});
+    }
+  }
+  return { pageW, pageH, marginX, marginY, cells };
+}
+
+// ==== EXPORT ESISTENTI ====
+// (attacco agli ID già presenti nell'index, se esistono)
+const $ = (id)=>document.getElementById(id);
+
+function downloadDataUrl(dataUrl, filename){
   const a = document.createElement('a');
-  a.href = dataURL;
+  a.href = dataUrl;
   a.download = filename;
-  document.body.appendChild(a);
   a.click();
-  a.remove();
-}
-// Mirror orizzontale opzionale
-function canvasToDataURL(canvas, { mirror = false } = {}) {
-  if (!mirror) return canvas.toDataURL('image/png');
-  const off = document.createElement('canvas');
-  off.width = canvas.width; off.height = canvas.height;
-  const ctx = off.getContext('2d');
-  ctx.save(); ctx.translate(off.width, 0); ctx.scale(-1, 1);
-  ctx.drawImage(canvas, 0, 0); ctx.restore();
-  return off.toDataURL('image/png');
 }
 
-// ================== Impostazioni (con fallback) ==================
-// Se metti questi controlli nell'HTML, verranno usati automaticamente.
-// Altrimenti usiamo i default.
-function readNumber(id, fallback) {
-  const el = $(id);
-  if (!el) return fallback;
-  const v = parseFloat(el.value);
-  return Number.isFinite(v) ? v : fallback;
+// PNG singoli
+$('#pngFront')?.addEventListener('click',()=>{
+  try {
+    const url = frontPNG();
+    downloadDataUrl(url, 'card-front.png');
+  } catch(e){ alert('Errore PNG fronte: '+e); }
+});
+$('#pngBack')?.addEventListener('click',()=>{
+  try {
+    const url = backPNG();
+    downloadDataUrl(url, 'card-back.png');
+  } catch(e){ alert('Errore PNG retro: '+e); }
+});
+
+// PDF singola (fronte/retro) — stesso posizionamento della card intera
+$('#pdfSingleFront')?.addEventListener('click',()=>{
+  if(!jsPDF){ alert('jsPDF non disponibile'); return; }
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { cells } = layoutA4Grid3x3(); // uso una cella per scalare bene
+  const { w:cardW, h:cardH } = cells[0];
+  const page = {w:210, h:297};
+
+  const url = frontPNG();
+  // centro la singola carta in pagina
+  const x = (page.w - cardW)/2, y = (page.h - cardH)/2;
+  doc.addImage(dataURLFromCanvas(url), 'PNG', x, y, cardW, cardH);
+  doc.save('card-front.pdf');
+});
+
+$('#pdfSingleBack')?.addEventListener('click',()=>{
+  if(!jsPDF){ alert('jsPDF non disponibile'); return; }
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { cells } = layoutA4Grid3x3();
+  const { w:cardW, h:cardH } = cells[0];
+  const page = {w:210, h:297};
+
+  const url = backPNG();
+  const x = (page.w - cardW)/2, y = (page.h - cardH)/2;
+  doc.addImage(dataURLFromCanvas(url), 'PNG', x, y, cardW, cardH);
+  doc.save('card-back.pdf');
+});
+
+// PDF A4 3×3 (replica la stessa carta) — FRONTI
+$('#pdfA4Front')?.addEventListener('click',()=>{
+  if(!jsPDF){ alert('jsPDF non disponibile'); return; }
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { cells } = layoutA4Grid3x3();
+  const url = frontPNG();
+
+  cells.forEach(cell=>{
+    doc.addImage(dataURLFromCanvas(url), 'PNG', cell.x, cell.y, cell.w, cell.h);
+    drawCropMarks(doc, cell.x, cell.y, cell.w, cell.h);
+  });
+  doc.save('a4-fronts-3x3.pdf');
+});
+
+// PDF A4 3×3 (replica la stessa carta) — RETRO
+$('#pdfA4Back')?.addEventListener('click',()=>{
+  if(!jsPDF){ alert('jsPDF non disponibile'); return; }
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { cells, pageW } = layoutA4Grid3x3();
+  const url = backPNG();
+
+  // Retro specchiato per allineamento (inverte le colonne)
+  cells.forEach(cell=>{
+    const mirroredX = pageW - cell.x - cell.w; // specchio orizzontale
+    doc.addImage(dataURLFromCanvas(url), 'PNG', mirroredX, cell.y, cell.w, cell.h);
+    drawCropMarks(doc, mirroredX, cell.y, cell.w, cell.h);
+  });
+
+  doc.save('a4-backs-3x3.pdf');
+});
+
+// PDF A4 3×3 (fronte+retro della stessa carta)
+$('#pdfA4Both')?.addEventListener('click',()=>{
+  if(!jsPDF){ alert('jsPDF non disponibile'); return; }
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { cells, pageW } = layoutA4Grid3x3();
+  const fUrl = frontPNG();
+  const bUrl = backPNG();
+
+  // page 1: fronti
+  cells.forEach(cell=>{
+    doc.addImage(dataURLFromCanvas(fUrl), 'PNG', cell.x, cell.y, cell.w, cell.h);
+    drawCropMarks(doc, cell.x, cell.y, cell.w, cell.h);
+  });
+
+  // page 2: retro (specchiati)
+  doc.addPage();
+  cells.forEach(cell=>{
+    const mirroredX = pageW - cell.x - cell.w;
+    doc.addImage(dataURLFromCanvas(bUrl), 'PNG', mirroredX, cell.y, cell.w, cell.h);
+    drawCropMarks(doc, mirroredX, cell.y, cell.w, cell.h);
+  });
+
+  doc.save('a4-both-3x3.pdf');
+});
+
+
+// ==== N U O V O  —  F O G L I O  3 × 3  (carte diverse) ====
+
+// Config “tipografica” (puoi modificare se vuoi)
+const CARD_W = 63;     // mm (formato tipo Magic 63×88)
+const CARD_H = 88;     // mm
+const GUTTER_X = 5;    // mm tra colonne
+const GUTTER_Y = 5;    // mm tra righe
+const CROP_LEN = 3;    // mm lunghezza segni di taglio
+const CROP_OFF = 1;    // mm offset segni
+
+// Offset retro per micro-allineamento (se serve)
+/** Se noti uno shift in stampa, puoi provare a mettere 0.5 o 1.0 */
+const BACK_OFFSET_X = 0;   // mm
+const BACK_OFFSET_Y = 0;   // mm
+
+// Foglio: max 9 slot {front, back}
+const sheet = [];
+function updateSheetCount(){
+  const el = document.getElementById('sheetCountHint');
+  if (el) el.textContent = `${sheet.length}/9`;
 }
-function readCheckbox(id, fallback) {
-  const el = $(id);
-  return el ? !!el.checked : fallback;
-}
-function isMirrorBack() { return readCheckbox('mirrorBack', false); }
 
-// Impostazioni di stampa (mm)
-function getPrintSettings() {
-  return {
-    // dimensioni carta tipo TCG (trim) — NON cambiare a caso, tutta la griglia si basa su questi
-    CARD_W: 63,
-    CARD_H: 88,
+// Aggiungi carta corrente (fronte+retro) allo sheet
+$('#sheetAdd')?.addEventListener('click',()=>{
+  if (sheet.length >= 9){
+    alert('Hai già 9 carte nel foglio.');
+    return;
+  }
+  try{
+    const f = frontPNG();
+    const b = backPNG();
+    sheet.push({ front:f, back:b });
+    updateSheetCount();
+  }catch(e){
+    alert('Errore nel catturare la carta: '+e?.message||e);
+  }
+});
 
-    // griglia A4
-    COLS: 3,
-    ROWS: 3,
-    GUTTER_X: readNumber('gutterX', 6),  // distanza orizzontale tra carte
-    GUTTER_Y: readNumber('gutterY', 6),  // distanza verticale tra carte
+// Svuota foglio
+$('#sheetClear')?.addEventListener('click',()=>{
+  sheet.length = 0;
+  updateSheetCount();
+});
 
-    // crop marks
-    CROP_MARKS: readCheckbox('cropMarks', true), // se non esiste il checkbox => crop attivi
-    CROP_LEN: readNumber('cropLen', 4),          // lunghezza linea di taglio (mm)
-    CROP_GAP: readNumber('cropGap', 2),          // dist. dal bordo trim al segno (mm)
-    CROP_STROKE: 0.6,                            // spessore linea (mm)
+// PDF A4 3×3 di TUTTE le carte nello sheet (fino a 9), fronte+retro
+$('#sheetPDF')?.addEventListener('click',()=>{
+  if(!jsPDF){ alert('jsPDF non disponibile'); return; }
+  if(sheet.length === 0){ alert('Il foglio è vuoto. Aggiungi almeno 1 carta.'); return; }
 
-    // offset retro per micro-registrazione (applicato SOLO alle pagine del retro)
-    BACK_OFS_X: readNumber('backOffsetX', 0),    // mm: + sposta a destra, - a sinistra
-    BACK_OFS_Y: readNumber('backOffsetY', 0),    // mm: + sposta in basso, - in alto
-  };
-}
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { cells, pageW } = layoutA4Grid3x3(CARD_W, CARD_H, GUTTER_X, GUTTER_Y);
 
-// ================== Crop marks ==================
-// Disegna croci agli angoli del rettangolo trim (x,y,w,h).
-function drawCropMarks(pdf, x, y, w, h, cfg) {
-  if (!cfg.CROP_MARKS) return;
-
-  pdf.setDrawColor(90);   // grigio scuro (non 100% nero: più “tipografico”)
-  pdf.setLineWidth(cfg.CROP_STROKE);
-
-  const L = cfg.CROP_LEN;
-  const G = cfg.CROP_GAP;
-
-  // angolo in alto a sinistra
-  // verticale
-  pdf.line(x - G, y - L - G, x - G, y - G);
-  // orizzontale
-  pdf.line(x - L - G, y - G, x - G, y - G);
-
-  // alto a destra
-  pdf.line(x + w + G, y - L - G, x + w + G, y - G);
-  pdf.line(x + w + G, y - G, x + w + L + G, y - G);
-
-  // basso a sinistra
-  pdf.line(x - G, y + h + G, x - G, y + h + L + G);
-  pdf.line(x - L - G, y + h + G, x - G, y + h + G);
-
-  // basso a destra
-  pdf.line(x + w + G, y + h + G, x + w + G, y + h + L + G);
-  pdf.line(x + w + G, y + h + G, x + w + L + G, y + h + G);
-}
-
-// ================== PNG ==================
-function exportPNGFront() {
-  const { front } = getCanvases();
-  downloadDataURL(front.toDataURL('image/png'), 'card_front.png');
-}
-function exportPNGBack() {
-  const { back } = getCanvases();
-  const data = canvasToDataURL(back, { mirror: isMirrorBack() });
-  downloadDataURL(data, 'card_back.png');
-}
-
-// ================== PDF — Singolo (centrato in A4) ==================
-function exportPDFSingle({ side = 'front' } = {}) {
-  const { front, back } = getCanvases();
-  const pdf = createPDF('portrait');
-
-  // A4 (mm)
-  const PAGE_W = 210, PAGE_H = 297;
-
-  // uso dimensione più grande per singola (ben visibile su A4)
-  const CARD_W = 90, CARD_H = 120;
-
-  const cfg = getPrintSettings();
-
-  // centratura base
-  let X = (PAGE_W - CARD_W) / 2;
-  let Y = (PAGE_H - CARD_H) / 2;
-
-  // offset retro (solo per back)
-  if (side !== 'front') {
-    X += cfg.BACK_OFS_X;
-    Y += cfg.BACK_OFS_Y;
+  // --- Pagina 1: FRONTI ---
+  for (let i=0; i<cells.length; i++){
+    const cell = cells[i];
+    const item = sheet[i];
+    if (!item) break;
+    doc.addImage(dataURLFromCanvas(item.front), 'PNG', cell.x, cell.y, cell.w, cell.h);
+    drawCropMarks(doc, cell.x, cell.y, cell.w, cell.h, CROP_LEN, CROP_OFF);
   }
 
-  // immagine
-  const dataURL = (side === 'front')
-    ? front.toDataURL('image/png')
-    : canvasToDataURL(back, { mirror: isMirrorBack() });
-
-  pdf.addImage(dataURL, 'PNG', X, Y, CARD_W, CARD_H);
-
-  // crop marks attorno al box trim
-  drawCropMarks(pdf, X, Y, CARD_W, CARD_H, cfg);
-
-  pdf.save(side === 'front' ? 'card_front.pdf' : 'card_back.pdf');
-}
-
-// ================== PDF — A4 3×3 (9 carte) ==================
-function exportPDFA4({ side = 'front' } = {}) {
-  const { front, back } = getCanvases();
-  const pdf = createPDF('portrait');
-
-  // A4
-  const PAGE_W = 210, PAGE_H = 297;
-
-  const cfg = getPrintSettings();
-  const { CARD_W, CARD_H, COLS, ROWS, GUTTER_X, GUTTER_Y } = cfg;
-
-  // calcolo centratura della griglia
-  const totalW = COLS * CARD_W + (COLS - 1) * GUTTER_X;
-  const totalH = ROWS * CARD_H + (ROWS - 1) * GUTTER_Y;
-  const MARGIN_X = (PAGE_W - totalW) / 2;
-  const MARGIN_Y = (PAGE_H - totalH) / 2;
-
-  const mirror = isMirrorBack();
-  const dataURL = (side === 'front')
-    ? front.toDataURL('image/png')
-    : canvasToDataURL(back, { mirror });
-
-  // offset retro (si applica a tutta la pagina-retro)
-  const baseOffsetX = (side === 'front') ? 0 : cfg.BACK_OFS_X;
-  const baseOffsetY = (side === 'front') ? 0 : cfg.BACK_OFS_Y;
-
-  let y = MARGIN_Y + baseOffsetY;
-  for (let r = 0; r < ROWS; r++) {
-    let x = MARGIN_X + baseOffsetX;
-    for (let c = 0; c < COLS; c++) {
-      pdf.addImage(dataURL, 'PNG', x, y, CARD_W, CARD_H);
-      drawCropMarks(pdf, x, y, CARD_W, CARD_H, cfg);
-      x += CARD_W + GUTTER_X;
-    }
-    y += CARD_H + GUTTER_Y;
+  // --- Pagina 2: RETRO (specchiati + micro-offset) ---
+  doc.addPage();
+  for (let i=0; i<cells.length; i++){
+    const cell = cells[i];
+    const item = sheet[i];
+    if (!item) break;
+    const mirroredX = pageW - cell.x - cell.w + BACK_OFFSET_X;
+    const y = cell.y + BACK_OFFSET_Y;
+    doc.addImage(dataURLFromCanvas(item.back), 'PNG', mirroredX, y, cell.w, cell.h);
+    drawCropMarks(doc, mirroredX, y, cell.w, cell.h, CROP_LEN, CROP_OFF);
   }
 
-  pdf.save(side === 'front' ? 'cards_A4_front.pdf' : 'cards_A4_back.pdf');
-}
+  doc.save('a4-sheet-3x3-both.pdf');
+});
 
-// ================== PDF — A4 3×3 (fronte+retro) ==================
-function exportPDFA4Both() {
-  const { front, back } = getCanvases();
-  const pdf = createPDF('portrait');
-
-  // A4
-  const PAGE_W = 210, PAGE_H = 297;
-
-  const cfg = getPrintSettings();
-  const { CARD_W, CARD_H, COLS, ROWS, GUTTER_X, GUTTER_Y } = cfg;
-
-  // centratura griglia
-  const totalW = COLS * CARD_W + (COLS - 1) * GUTTER_X;
-  const totalH = ROWS * CARD_H + (ROWS - 1) * GUTTER_Y;
-  const MARGIN_X = (PAGE_W - totalW) / 2;
-  const MARGIN_Y = (PAGE_H - totalH) / 2;
-
-  // Pagina 1 — Fronti
-  let y = MARGIN_Y;
-  const frontURL = front.toDataURL('image/png');
-  for (let r = 0; r < ROWS; r++) {
-    let x = MARGIN_X;
-    for (let c = 0; c < COLS; c++) {
-      pdf.addImage(frontURL, 'PNG', x, y, CARD_W, CARD_H);
-      drawCropMarks(pdf, x, y, CARD_W, CARD_H, cfg);
-      x += CARD_W + GUTTER_X;
-    }
-    y += CARD_H + GUTTER_Y;
-  }
-
-  // Pagina 2 — Retro (mirror + offset se richiesti)
-  pdf.addPage('a4', 'portrait');
-  const backURL = canvasToDataURL(back, { mirror: isMirrorBack() });
-
-  y = MARGIN_Y + cfg.BACK_OFS_Y;
-  for (let r = 0; r < ROWS; r++) {
-    let x = MARGIN_X + cfg.BACK_OFS_X;
-    for (let c = 0; c < COLS; c++) {
-      pdf.addImage(backURL, 'PNG', x, y, CARD_W, CARD_H);
-      drawCropMarks(pdf, x, y, CARD_W, CARD_H, cfg);
-      x += CARD_W + GUTTER_X;
-    }
-    y += CARD_H + GUTTER_Y;
-  }
-
-  pdf.save('cards_A4_front+back.pdf');
-}
-
-// ================== Bind bottoni (come nel tuo index) ==================
-function bindExportUI() {
-  $('pngFront')?.addEventListener('click', exportPNGFront);
-  $('pngBack')?.addEventListener('click', exportPNGBack);
-
-  $('pdfSingleFront')?.addEventListener('click', () => exportPDFSingle({ side: 'front' }));
-  $('pdfSingleBack')?.addEventListener('click', () => exportPDFSingle({ side: 'back' }));
-
-  $('pdfA4Front')?.addEventListener('click', () => exportPDFA4({ side: 'front' }));
-  $('pdfA4Back')?.addEventListener('click', () => exportPDFA4({ side: 'back' }));
-
-  $('pdfA4Both')?.addEventListener('click', exportPDFA4Both);
-}
-if (document.readyState !== 'loading') bindExportUI();
-else document.addEventListener('DOMContentLoaded', bindExportUI);
+// all’avvio, mostra 0/9
+updateSheetCount();
