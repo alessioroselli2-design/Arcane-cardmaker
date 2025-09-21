@@ -1,57 +1,91 @@
-import { drawFront, drawBack, frontPNG, backPNG, state, snapshot } from './card.js';
+// /app/esportazione.js — Export PNG/PDF (con supporto Specchia retro)
 
-// bottoni
-const $=id=>document.getElementById(id);
-$('pngFront').onclick=()=>{ drawFront(); download(frontPNG(),'carta-front.png'); };
-$('pngBack').onclick =()=>{ drawBack();  download(backPNG(),'carta-back.png'); };
+import { jsPDF } from "jspdf";
+import { frontPNG, backPNG, state } from "./card.js";
 
-$('pdfSingleFront').onclick=()=>singlePDF(frontPNG(),'carta-front.pdf');
-$('pdfSingleBack').onclick =()=>singlePDF(backPNG(),'carta-back.pdf');
+const $id = (x) => document.getElementById(x);
 
-$('pdfA4Front').onclick =()=>gridPDF(frontPNG(), null, 'carte-fronti.pdf', false);
-$('pdfA4Back').onclick  =()=>gridPDF(null, backPNG(), 'carte-retro.pdf',  false);
-$('pdfA4Both').onclick  =()=>gridPDF(frontPNG(), backPNG(), 'carte-fronte-retro.pdf', true);
+// funzione helper per specchiare il retro su un canvas temporaneo
+function getMirroredBack() {
+  const back = document.getElementById("cardBack");
+  if (!back) return back;
+  if (!$id("mirrorBack")?.checked) return back;
 
-// JSON locali
-$('exportJson').onclick=()=>{ const payload={meta:{app:'ACM',v:14},data:snapshot(true)}; const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); download(URL.createObjectURL(blob),(document.getElementById('cardName').value||'carta')+'.json'); };
-document.getElementById('importJson').addEventListener('change',e=>{
-  import('./card.js').then(m=>{
-    const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const p=JSON.parse(r.result); m.applySnap(p.data); document.getElementById('cardName').value=p.data?.title||'Carta importata'; alert('Import OK'); }catch{ alert('JSON non valido'); } }; r.readAsText(f);
-  });
+  const canvas = document.createElement("canvas");
+  canvas.width = back.width;
+  canvas.height = back.height;
+  const ctx = canvas.getContext("2d");
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(back, 0, 0);
+  return canvas;
+}
+
+// PNG singoli
+$id("pngFront")?.addEventListener("click", () => {
+  const a = document.createElement("a");
+  a.href = frontPNG();
+  a.download = (state.title || "card") + "-front.png";
+  a.click();
 });
 
-// Salvataggi locali
-const KEY='acm_cards_v14';
-const getSaved=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}};
-const setSaved=a=>localStorage.setItem(KEY,JSON.stringify(a));
-document.getElementById('saveLocal').onclick=()=>{
-  const name=(document.getElementById('cardName').value||'Carta').trim();
-  const arr=getSaved(); const data=snapshot(true);
-  const c=document.createElement('canvas'); c.width=150;c.height=210; const g=c.getContext('2d');
-  const img=new Image(); img.onload=()=>{ g.drawImage(img,0,0,150,210); const thumb=c.toDataURL('image/png'); const time=Date.now(); const i=arr.findIndex(x=>x.name===name); if(i>=0) arr[i]={name,data,thumb,time}; else arr.push({name,data,thumb,time}); setSaved(arr); alert('Salvata localmente!'); };
-  img.src=frontPNG();
-};
-document.getElementById('loadLocal').onclick=()=>{
-  import('./card.js').then(m=>{
-    const arr=getSaved(); if(!arr.length) return alert('Nessuna carta salvata'); const names=arr.map((x,i)=>`${i+1}) ${x.name}`); const pick=prompt('Quale carta?\n'+names.join('\n')); const idx=(parseInt(pick||'',10)-1); if(isNaN(idx)||idx<0||idx>=arr.length) return; m.applySnap(arr[idx].data); document.getElementById('cardName').value=arr[idx].name;
-  });
-};
+$id("pngBack")?.addEventListener("click", () => {
+  const backCanvas = getMirroredBack();
+  const a = document.createElement("a");
+  a.href = backCanvas.toDataURL("image/png");
+  a.download = (state.title || "card") + "-back.png";
+  a.click();
+});
 
-function download(url, name){ const a=document.createElement('a'); a.href=url; a.download=name; a.click(); }
+// PDF singoli
+$id("pdfSingleFront")?.addEventListener("click", () => {
+  const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: [750, 1050] });
+  pdf.addImage(frontPNG(), "PNG", 0, 0, 750, 1050);
+  pdf.save((state.title || "card") + "-front.pdf");
+});
 
-function singlePDF(png, name){
-  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:[69,94]}); doc.addImage(png,'PNG',0,0,69,94); doc.save(name);
+$id("pdfSingleBack")?.addEventListener("click", () => {
+  const backCanvas = getMirroredBack();
+  const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: [750, 1050] });
+  pdf.addImage(backCanvas.toDataURL("image/png"), "PNG", 0, 0, 750, 1050);
+  pdf.save((state.title || "card") + "-back.pdf");
+});
+
+// PDF A4 multipli (3×3 carte)
+function pdfGrid(kind) {
+  const pdf = new jsPDF("portrait", "pt", "a4");
+  const W = 595.28, H = 841.89; // A4 in pt
+  const cardW = 180, cardH = 252; // proporzione ~ 750×1050 ridotta
+  const marginX = 18, marginY = 18;
+  let x = marginX, y = marginY;
+
+  const add = (img) => {
+    pdf.addImage(img, "PNG", x, y, cardW, cardH);
+    x += cardW + marginX;
+    if (x + cardW > W) { x = marginX; y += cardH + marginY; }
+    if (y + cardH > H) {
+      pdf.addPage(); x = marginX; y = marginY;
+    }
+  };
+
+  if (kind === "fronts" || kind === "both") {
+    for (let i = 0; i < 9; i++) add(frontPNG());
+    if (kind === "both") pdf.addPage();
+  }
+  if (kind === "backs" || kind === "both") {
+    const backCanvas = getMirroredBack();
+    const backImg = backCanvas.toDataURL("image/png");
+    for (let i = 0; i < 9; i++) add(backImg);
+  }
+
+  const name =
+    kind === "fronts" ? "-fronts.pdf" :
+    kind === "backs" ? "-backs.pdf" :
+    "-both.pdf";
+
+  pdf.save((state.deckName || state.title || "cards") + name);
 }
 
-function gridPDF(pngFrontData, pngBackData, name, both){
-  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'});
-  const W=63,H=88, Xs=[10,10+W+10,10+2*(W+10)], Ys=[10,10+H+10,10+2*(H+10)];
-  if(pngFrontData){
-    for(let i=0;i<3;i++)for(let j=0;j<3;j++) doc.addImage(pngFrontData,'PNG', Xs[j], Ys[i], W, H);
-  }
-  if(both){ doc.addPage(); }
-  if(pngBackData){
-    for(let i=0;i<3;i++)for(let j=0;j<3;j++) doc.addImage(pngBackData,'PNG', Xs[j], Ys[i], W, H);
-  }
-  doc.save(name);
-}
+$id("pdfA4Front")?.addEventListener("click", () => pdfGrid("fronts"));
+$id("pdfA4Back")?.addEventListener("click", () => pdfGrid("backs"));
+$id("pdfA4Both")?.addEventListener("click", () => pdfGrid("both"));
