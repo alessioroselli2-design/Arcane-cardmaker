@@ -94,7 +94,7 @@
             <option value="foil-gold"    data-i18n="opt_foil_gold">Foil oro</option>
             <option value="foil-silver"  data-i18n="opt_foil_silver">Foil argento</option>
             <option value="foil-rainbow" data-i18n="opt_foil_rainbow">Foil arcobaleno</option>
-            <!-- Premium (etichette; il gating lo fa card.js + premium.js) -->
+            <!-- Premium (etichette; gating in card.js/premium.js) -->
             <optgroup label="Premium">
               <option value="fx-celestial" data-premium="1" data-i18n="opt_fx_celestial">Celestial (premium)</option>
               <option value="fx-infernal"  data-premium="1" data-i18n="opt_fx_infernal">Infernal (premium)</option>
@@ -125,21 +125,21 @@
           <div id="dbClassRow" class="stack" style="margin-top:6px">
             <select id="clazz">
               <optgroup label="Base" data-i18n="optgroup_base">
-                <option value="guerriero" data-no-i18n="1">Guerriero</option>
-                <option value="druido"    data-no-i18n="1">Druido</option>
-                <option value="monaco"    data-no-i18n="1">Monaco</option>
-                <option value="mago"      data-no-i18n="1">Mago</option>
-                <option value="ladro"     data-no-i18n="1">Ladro</option>
+                <option value="guerriero" data-i18n="cls_warrior">Guerriero</option>
+                <option value="druido"    data-i18n="cls_druid">Druido</option>
+                <option value="monaco"    data-i18n="cls_monk">Monaco</option>
+                <option value="mago"      data-i18n="cls_wizard">Mago</option>
+                <option value="ladro"     data-i18n="cls_rogue">Ladro</option>
               </optgroup>
               <optgroup label="Espansione" data-i18n="optgroup_expansion">
-                <option value="barbaro"     data-no-i18n="1">Barbaro</option>
-                <option value="paladino"    data-no-i18n="1">Paladino</option>
-                <option value="chierico"    data-no-i18n="1">Chierico</option>
-                <option value="bardo"       data-no-i18n="1">Bardo</option>
-                <option value="ranger"      data-no-i18n="1">Ranger</option>
-                <option value="stregone"    data-no-i18n="1">Stregone</option>
-                <option value="warlock"     data-no-i18n="1">Warlock</option>
-                <option value="artificiere" data-no-i18n="1">Artificiere</option>
+                <option value="barbaro"     data-i18n="cls_barbarian">Barbaro</option>
+                <option value="paladino"    data-i18n="cls_paladin">Paladino</option>
+                <option value="chierico"    data-i18n="cls_cleric">Chierico</option>
+                <option value="bardo"       data-i18n="cls_bard">Bardo</option>
+                <option value="ranger"      data-i18n="cls_ranger">Ranger</option>
+                <option value="stregone"    data-i18n="cls_sorcerer">Stregone</option>
+                <option value="warlock"     data-i18n="cls_warlock">Warlock</option>
+                <option value="artificiere" data-i18n="cls_artificer">Artificiere</option>
               </optgroup>
             </select>
           </div>
@@ -236,19 +236,6 @@
         </div>
       </div>
 
-      <h3 data-i18n="export_title">Export</h3>
-
-      <!-- NUOVA OPZIONE: Specchia retro (per stampa fronte/retro casalinga) -->
-      <div class="group">
-        <label>
-          <input id="mirrorBack" type="checkbox" />
-          <span data-i18n="lbl_mirror_back">Specchia retro (stampa domestica)</span>
-        </label>
-        <small class="muted" data-i18n="hint_mirror_back">
-          Se attivo, il PDF del retro viene specchiato per facilitare l’allineamento quando stampi fronte/retro.
-        </small>
-      </div>
-
       <div class="btnbar">
         <button class="btn" id="saveLocal" data-i18n="btn_save_local">Salva locale</button>
         <button class="btn" id="loadLocal" data-i18n="btn_load_local">Apri libreria locale</button>
@@ -263,6 +250,19 @@
           <button class="btn danger" id="btnCloudClear" data-i18n="btn_cloud_clear">Svuota cloud</button>
         </div>
         <div id="cloudLibrary" class="library" style="display:none"></div>
+      </div>
+
+      <h3 data-i18n="export_title">Export</h3>
+
+      <!-- NUOVA OPZIONE: Specchia retro -->
+      <div class="group">
+        <label>
+          <input id="mirrorBack" type="checkbox" />
+          <span data-i18n="lbl_mirror_back">Specchia retro (stampa domestica)</span>
+        </label>
+        <small class="muted" data-i18n="hint_mirror_back">
+          Se attivo, il PDF del retro viene specchiato per facilitare l’allineamento quando stampi fronte/retro.
+        </small>
       </div>
 
       <div class="btnbar">
@@ -290,22 +290,22 @@
   <!-- ===================== SCRIPT ===================== -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/app/sw.js?v=20240921', { scope: '/app/' });
+      navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
     }
   </script>
 
   <!-- i18n -->
-  <script type="module" src="intl.js?v=20240921"></script>
-  <script type="module" src="app-i18n.js?v=20240921"></script>
+  <script type="module" src="intl.js"></script>
+  <script type="module" src="app-i18n.js"></script>
 
   <!-- Premium gating -->
-  <script type="module" src="premium.js?v=20240921"></script>
+  <script type="module" src="premium.js"></script>
 
-  <!-- La tua app -->
-  <script type="module" src="Firebase.js?v=20240921"></script>
-  <script type="module" src="card.js?v=20240921"></script>
-  <script type="module" src="carta-locale.js?v=20240921"></script>
-  <script type="module" src="esportazione.js?v=20240921"></script>
-  <script type="module" src="auth.js?v=20240921"></script>
+  <!-- La tua app (ordine importante) -->
+  <script type="module" src="Firebase.js"></script>
+  <script type="module" src="card.js"></script>
+  <script type="module" src="esportazione.js"></script>
+  <script type="module" src="carta-locale.js"></script>
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
