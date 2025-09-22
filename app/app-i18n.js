@@ -124,7 +124,22 @@ function dictIT() {
 
     // Messaggi premium
     premium_frame_msg: 'Cornice Premium. Disponibile con abbonamento.',
-    premium_title_msg: 'Effetto Premium disponibile con abbonamento.'
+    premium_title_msg: 'Effetto Premium disponibile con abbonamento.',
+
+    // === Foglio 3×3 (NUOVE CHIAVI) ===
+    sheet_title: 'Foglio (fino a 9 carte diverse)',
+    sheet_add: 'Aggiungi questa carta al foglio',
+    sheet_clear: 'Svuota foglio',
+    sheet_remove_last: 'Rimuovi ultima',
+    sheet_pdf: 'PDF A4 3×3 (foglio, fronte+retro)',
+    jsPDF_missing: 'jsPDF non disponibile. Controlla la connessione o ricarica la pagina.',
+    sheet_full: 'Hai già 9 carte nel foglio.',
+    sheet_empty: 'Il foglio è vuoto. Aggiungi almeno 1 carta.',
+    sheet_already_empty: 'Il foglio è già vuoto.',
+    export_error_prefix: 'Errore esportazione: ',
+    front_canvas_missing: 'Canvas fronte non trovato',
+    back_canvas_missing: 'Canvas retro non trovato',
+    sheet_count: '{n}/9 carte'
   };
 }
 
@@ -236,7 +251,22 @@ function dictEN() {
     hint_print: 'Print A4 portrait, minimal margins, scale 100%.',
 
     premium_frame_msg: 'Premium frame. Available with subscription.',
-    premium_title_msg: 'Premium title effect available with subscription.'
+    premium_title_msg: 'Premium title effect available with subscription.',
+
+    // Sheet 3×3 (NEW KEYS)
+    sheet_title: 'Sheet (up to 9 different cards)',
+    sheet_add: 'Add this card to sheet',
+    sheet_clear: 'Clear sheet',
+    sheet_remove_last: 'Remove last',
+    sheet_pdf: 'A4 PDF 3×3 (sheet, front+back)',
+    jsPDF_missing: 'jsPDF not available. Check your connection or reload the page.',
+    sheet_full: 'You already have 9 cards on the sheet.',
+    sheet_empty: 'The sheet is empty. Add at least 1 card.',
+    sheet_already_empty: 'The sheet is already empty.',
+    export_error_prefix: 'Export error: ',
+    front_canvas_missing: 'Front canvas not found',
+    back_canvas_missing: 'Back canvas not found',
+    sheet_count: '{n}/9 cards'
   };
 }
 
@@ -348,7 +378,22 @@ function dictES() {
     hint_print: 'Imprime A4 vertical, márgenes mínimos, escala 100%.',
 
     premium_frame_msg: 'Marco Premium. Disponible con suscripción.',
-    premium_title_msg: 'Efecto Premium disponible con suscripción.'
+    premium_title_msg: 'Efecto Premium disponible con suscripción.',
+
+    // Hoja 3×3 (CLAVES NUEVAS)
+    sheet_title: 'Hoja (hasta 9 cartas distintas)',
+    sheet_add: 'Añadir esta carta a la hoja',
+    sheet_clear: 'Vaciar hoja',
+    sheet_remove_last: 'Quitar última',
+    sheet_pdf: 'PDF A4 3×3 (hoja, anverso+reverso)',
+    jsPDF_missing: 'jsPDF no disponible. Revisa la conexión o recarga la página.',
+    sheet_full: 'Ya tienes 9 cartas en la hoja.',
+    sheet_empty: 'La hoja está vacía. Añade al menos 1 carta.',
+    sheet_already_empty: 'La hoja ya está vacía.',
+    export_error_prefix: 'Error de exportación: ',
+    front_canvas_missing: 'Lienzo frontal no encontrado',
+    back_canvas_missing: 'Lienzo trasero no encontrado',
+    sheet_count: '{n}/9 cartas'
   };
 }
 
@@ -460,7 +505,22 @@ function dictDE() {
     hint_print: 'A4 hochkant, minimale Ränder, Maßstab 100 %.',
 
     premium_frame_msg: 'Premium-Rahmen. Mit Abo verfügbar.',
-    premium_title_msg: 'Premium-Titeleffekt mit Abo verfügbar.'
+    premium_title_msg: 'Premium-Titeleffekt mit Abo verfügbar.',
+
+    // 3×3-Bogen (NEUE SCHLÜSSEL)
+    sheet_title: 'Bogen (bis zu 9 verschiedene Karten)',
+    sheet_add: 'Diese Karte zum Bogen hinzufügen',
+    sheet_clear: 'Bogen leeren',
+    sheet_remove_last: 'Letzte entfernen',
+    sheet_pdf: 'A4 PDF 3×3 (Bogen, Vorder- & Rückseite)',
+    jsPDF_missing: 'jsPDF nicht verfügbar. Verbindung prüfen oder Seite neu laden.',
+    sheet_full: 'Du hast bereits 9 Karten im Bogen.',
+    sheet_empty: 'Der Bogen ist leer. Füge mindestens 1 Karte hinzu.',
+    sheet_already_empty: 'Der Bogen ist bereits leer.',
+    export_error_prefix: 'Exportfehler: ',
+    front_canvas_missing: 'Vorderes Canvas nicht gefunden',
+    back_canvas_missing: 'Hinteres Canvas nicht gefunden',
+    sheet_count: '{n}/9 Karten'
   };
 }
 
