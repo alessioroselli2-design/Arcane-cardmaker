@@ -1,13 +1,77 @@
 // /app/esportazione.js — Export PNG/PDF + Foglio 3×3 (carte diverse) + crop marks
 // Versione super-robusta per iPhone/Safari: nessun import, binding ridondante, download compatibile.
+// Ora con messaggi e contatore localizzati (IT/EN/ES/DE) via window.intl se disponibile.
 
 (function(){
+  // ---------- i18n (soft) ----------
+  // Prova a leggere da window.intl, altrimenti usa fallback qui sotto.
+  const FALLBACK = {
+    it: {
+      jsPDF_missing: 'jsPDF non disponibile. Controlla la connessione o ricarica la pagina.',
+      sheet_full: 'Hai già 9 carte nel foglio.',
+      sheet_empty: 'Il foglio è vuoto. Aggiungi almeno 1 carta.',
+      export_error_prefix: 'Errore esportazione: ',
+      front_canvas_missing: 'Canvas fronte non trovato',
+      back_canvas_missing: 'Canvas retro non trovato',
+      sheet_count: '{n}/9 carte'
+    },
+    en: {
+      jsPDF_missing: 'jsPDF not available. Check your connection or reload the page.',
+      sheet_full: 'You already have 9 cards on the sheet.',
+      sheet_empty: 'The sheet is empty. Add at least 1 card.',
+      export_error_prefix: 'Export error: ',
+      front_canvas_missing: 'Front canvas not found',
+      back_canvas_missing: 'Back canvas not found',
+      sheet_count: '{n}/9 cards'
+    },
+    es: {
+      jsPDF_missing: 'jsPDF no disponible. Revisa la conexión o recarga la página.',
+      sheet_full: 'Ya tienes 9 cartas en la hoja.',
+      sheet_empty: 'La hoja está vacía. Añade al menos 1 carta.',
+      export_error_prefix: 'Error de exportación: ',
+      front_canvas_missing: 'Lienzo frontal no encontrado',
+      back_canvas_missing: 'Lienzo trasero no encontrado',
+      sheet_count: '{n}/9 cartas'
+    },
+    de: {
+      jsPDF_missing: 'jsPDF nicht verfügbar. Prüfe die Verbindung oder lade die Seite neu.',
+      sheet_full: 'Du hast bereits 9 Karten im Bogen.',
+      sheet_empty: 'Der Bogen ist leer. Füge mindestens 1 Karte hinzu.',
+      export_error_prefix: 'Exportfehler: ',
+      front_canvas_missing: 'Vorderes Canvas nicht gefunden',
+      back_canvas_missing: 'Hinteres Canvas nicht gefunden',
+      sheet_count: '{n}/9 Karten'
+    }
+  };
+
+  function getLang(){
+    try{
+      const cur = (window.intl && window.intl.getLocale && window.intl.getLocale()) || 'it';
+      return (['it','en','es','de'].includes(cur)) ? cur : 'it';
+    }catch{ return 'it'; }
+  }
+  function tt(key, fallback, params){
+    // prova window.intl
+    let s;
+    try{ s = window.intl && window.intl.t && window.intl.t(key); }catch{}
+    if (!s || s === '') {
+      const lang = getLang();
+      s = (FALLBACK[lang] && FALLBACK[lang][key]) || fallback || '';
+    }
+    if (params && typeof s === 'string'){
+      Object.keys(params).forEach(k=>{
+        s = s.replace(new RegExp(`\\{${k}\\}`,'g'), String(params[k]));
+      });
+    }
+    return s;
+  }
+
   // ---------- UTIL ----------
   function $(id){ return document.getElementById(id); }
 
   function jsPDForAlert(){
     const PDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
-    if (!PDF) alert('jsPDF non disponibile. Controlla la connessione o ricarica la pagina.');
+    if (!PDF) alert(tt('jsPDF_missing', FALLBACK.it.jsPDF_missing));
     return PDF;
   }
 
@@ -27,20 +91,17 @@
     }
   }
 
-  function mirrorEnabled(){
-    var el = $('mirrorBack');
-    return !!(el && el.checked);
-  }
+  function mirrorEnabled(){ var el=$('mirrorBack'); return !!(el && el.checked); }
 
   // PNG direttamente dai canvas (niente import)
   function getFrontPNG(){
     const c = $('cardFront');
-    if (!c) throw new Error('Canvas fronte non trovato');
+    if (!c) throw new Error(tt('front_canvas_missing', FALLBACK.it.front_canvas_missing));
     return c.toDataURL('image/png');
   }
   function getBackPNG(){
     const c = $('cardBack');
-    if (!c) throw new Error('Canvas retro non trovato');
+    if (!c) throw new Error(tt('back_canvas_missing', FALLBACK.it.back_canvas_missing));
     return c.toDataURL('image/png');
   }
 
@@ -97,7 +158,7 @@
   const sheet = [];
   function updateSheetCount(){
     var el = $('sheetCountHint');
-    if (el) el.textContent = sheet.length + '/9';
+    if (el) el.textContent = tt('sheet_count', FALLBACK.it.sheet_count, { n: sheet.length });
   }
 
   // ---------- HANDLERS (delegati + bind diretto) ----------
@@ -178,18 +239,13 @@
 
       // FOGLIO 3×3 (carte diverse)
       else if (id==='sheetAdd'){
-        if (sheet.length >= 9){ alert('Hai già 9 carte nel foglio.'); return; }
+        if (sheet.length >= 9){ alert(tt('sheet_full', FALLBACK.it.sheet_full)); return; }
         sheet.push({ front:getFrontPNG(), back:getBackPNG() });
         updateSheetCount();
-      } else if (id==='sheetRemoveLast'){
-        if (sheet.length === 0){ alert('Il foglio è vuoto.'); return; }
-        sheet.pop();
-        updateSheetCount();
       } else if (id==='sheetClear'){
-        sheet.length = 0;
-        updateSheetCount();
+        sheet.length = 0; updateSheetCount();
       } else if (id==='sheetPDF'){
-        if (sheet.length === 0){ alert('Il foglio è vuoto. Aggiungi almeno 1 carta.'); return; }
+        if (sheet.length === 0){ alert(tt('sheet_empty', FALLBACK.it.sheet_empty)); return; }
         const PDF = jsPDForAlert(); if(!PDF) return;
         const doc = new PDF({ unit:'mm', format:'a4' });
         const { cells, pageW } = layoutA4Grid3x3(CARD_W, CARD_H, GUTTER_X, GUTTER_Y);
@@ -201,7 +257,7 @@
           doc.addImage(it.front,'PNG',c.x,c.y,c.w,c.h);
           drawCropMarks(doc,c.x,c.y,c.w,c.h,CROP_LEN,CROP_OFF);
         }
-        // pag2: retro (eventuale specchio + micro-offset)
+        // pag2: retro
         doc.addPage();
         for (let i=0;i<cells.length;i++){
           const c = cells[i], it = sheet[i];
@@ -214,7 +270,7 @@
         doc.save('a4-sheet-3x3-both.pdf');
       }
     }catch(err){
-      alert('Errore export: ' + (err && err.message ? err.message : err));
+      alert(tt('export_error_prefix', FALLBACK.it.export_error_prefix) + (err && err.message ? err.message : err));
     }
   }
 
@@ -227,7 +283,7 @@
       'pngFront','pngBack',
       'pdfSingleFront','pdfSingleBack',
       'pdfA4Front','pdfA4Back','pdfA4Both',
-      'sheetAdd','sheetRemoveLast','sheetClear','sheetPDF'
+      'sheetAdd','sheetClear','sheetPDF'
     ].forEach(id=>{
       const el = $(id);
       if (el) el.addEventListener('click', handleClick);
