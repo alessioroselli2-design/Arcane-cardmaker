@@ -1,4 +1,5 @@
 // /app/esportazione.js — Export PNG/PDF + Foglio 3×3 con carte diverse (front+back, crop marks)
+// Versione “a prova di iPhone”: nessun import; PNG presi direttamente dai canvas.
 
 // ========= UTIL =========
 const $ = id => document.getElementById(id);
@@ -7,12 +8,23 @@ function jsPDForAlert(){
   if (!PDF) alert('jsPDF non disponibile: controlla la connessione o ricarica la pagina.');
   return PDF;
 }
-function dataURLFromCanvas(url){ return url; }
 function downloadDataUrl(dataUrl, filename){
   const a = document.createElement('a');
   a.href = dataUrl; a.download = filename; a.click();
 }
 function mirrorEnabled(){ return $('#mirrorBack')?.checked === true; }
+
+// Prende i PNG direttamente dai canvas
+function getFrontPNG(){
+  const c = $('#cardFront');
+  if (!c) throw new Error('Canvas fronte non trovato');
+  return c.toDataURL('image/png');
+}
+function getBackPNG(){
+  const c = $('#cardBack');
+  if (!c) throw new Error('Canvas retro non trovato');
+  return c.toDataURL('image/png');
+}
 
 // Segni di taglio
 function drawCropMarks(doc, x, y, w, h, len=3, off=1){
@@ -68,92 +80,81 @@ function updateSheetCount(){
 }
 
 // ========= HANDLERS =========
-async function getPNGs(){
-  // import dinamico: evita problemi di ordine di caricamento su iOS/Safari
-  const mod = await import('./card.js');
-  return { frontPNG: mod.frontPNG, backPNG: mod.backPNG };
-}
-
 function bindExportHandlers(){
   // PNG
-  $('#pngFront')?.addEventListener('click', async ()=>{
-    try { const {frontPNG} = await getPNGs(); downloadDataUrl(frontPNG(), 'card-front.png'); }
+  $('#pngFront')?.addEventListener('click', ()=>{
+    try { downloadDataUrl(getFrontPNG(), 'card-front.png'); }
     catch(e){ alert('Errore PNG fronte: ' + (e?.message||e)); }
   });
-  $('#pngBack')?.addEventListener('click', async ()=>{
-    try { const {backPNG} = await getPNGs(); downloadDataUrl(backPNG(), 'card-back.png'); }
+  $('#pngBack')?.addEventListener('click', ()=>{
+    try { downloadDataUrl(getBackPNG(), 'card-back.png'); }
     catch(e){ alert('Errore PNG retro: ' + (e?.message||e)); }
   });
 
   // PDF singola (centrata)
-  $('#pdfSingleFront')?.addEventListener('click', async ()=>{
+  $('#pdfSingleFront')?.addEventListener('click', ()=>{
     const PDF = jsPDForAlert(); if(!PDF) return;
-    const { frontPNG } = await getPNGs();
     const doc = new PDF({ unit:'mm', format:'a4' });
     const { w, h } = layoutA4Grid3x3().cells[0];
     const x = (210 - w)/2, y = (297 - h)/2;
-    doc.addImage(dataURLFromCanvas(frontPNG()), 'PNG', x, y, w, h);
+    doc.addImage(getFrontPNG(), 'PNG', x, y, w, h);
     doc.save('card-front.pdf');
   });
-  $('#pdfSingleBack')?.addEventListener('click', async ()=>{
+  $('#pdfSingleBack')?.addEventListener('click', ()=>{
     const PDF = jsPDForAlert(); if(!PDF) return;
-    const { backPNG } = await getPNGs();
     const doc = new PDF({ unit:'mm', format:'a4' });
     const { w, h } = layoutA4Grid3x3().cells[0];
     const x = (210 - w)/2, y = (297 - h)/2;
-    doc.addImage(dataURLFromCanvas(backPNG()), 'PNG', x, y, w, h);
+    doc.addImage(getBackPNG(), 'PNG', x, y, w, h);
     doc.save('card-back.pdf');
   });
 
   // A4 3×3 – stessa carta FRONTI
-  $('#pdfA4Front')?.addEventListener('click', async ()=>{
+  $('#pdfA4Front')?.addEventListener('click', ()=>{
     const PDF = jsPDForAlert(); if(!PDF) return;
-    const { frontPNG } = await getPNGs();
     const doc = new PDF({ unit:'mm', format:'a4' });
     const { cells } = layoutA4Grid3x3();
-    const fUrl = frontPNG();
+    const fUrl = getFrontPNG();
     cells.forEach(cell=>{
-      doc.addImage(dataURLFromCanvas(fUrl),'PNG',cell.x,cell.y,cell.w,cell.h);
+      doc.addImage(fUrl,'PNG',cell.x,cell.y,cell.w,cell.h);
       drawCropMarks(doc,cell.x,cell.y,cell.w,cell.h);
     });
     doc.save('a4-fronts-3x3.pdf');
   });
 
   // A4 3×3 – stessa carta RETRO
-  $('#pdfA4Back')?.addEventListener('click', async ()=>{
+  $('#pdfA4Back')?.addEventListener('click', ()=>{
     const PDF = jsPDForAlert(); if(!PDF) return;
-    const { backPNG } = await getPNGs();
     const doc = new PDF({ unit:'mm', format:'a4' });
     const { cells, pageW } = layoutA4Grid3x3();
-    const bUrl = backPNG();
+    const bUrl = getBackPNG();
     cells.forEach(cell=>{
       const xBack = mirrorEnabled() ? (pageW - cell.x - cell.w) : cell.x;
-      doc.addImage(dataURLFromCanvas(bUrl),'PNG',xBack,cell.y,cell.w,cell.h);
+      doc.addImage(bUrl,'PNG',xBack,cell.y,cell.w,cell.h);
       drawCropMarks(doc,xBack,cell.y,cell.w,cell.h);
     });
     doc.save('a4-backs-3x3.pdf');
   });
 
   // A4 3×3 – FRONT+BACK
-  $('#pdfA4Both')?.addEventListener('click', async ()=>{
+  $('#pdfA4Both')?.addEventListener('click', ()=>{
     const PDF = jsPDForAlert(); if(!PDF) return;
-    const { frontPNG, backPNG } = await getPNGs();
     const doc = new PDF({ unit:'mm', format:'a4' });
     const { cells, pageW } = layoutA4Grid3x3();
 
     // pagina 1: fronti
-    const fUrl = frontPNG();
+    const fUrl = getFrontPNG();
     cells.forEach(cell=>{
-      doc.addImage(dataURLFromCanvas(fUrl),'PNG',cell.x,cell.y,cell.w,cell.h);
+      doc.addImage(fUrl,'PNG',cell.x,cell.y,cell.w,cell.h);
       drawCropMarks(doc,cell.x,cell.y,cell.w,cell.h);
     });
 
     // pagina 2: retro
-    const bUrl = backPNG();
+    const bUrl = getBackPNG();
     doc.addPage();
     cells.forEach(cell=>{
       const xBack = mirrorEnabled() ? (pageW - cell.x - cell.w) : cell.x;
-      doc.addImage(dataURLFromCanvas(bUrl),'PNG',xBack,cell.y,cell.w,cell.h);
+      doc.addImage(bUrl,'PNG',xBack,cell.y,cell.w,cell.h);
       drawCropMarks(doc,xBack,cell.y,cell.w,cell.h);
     });
 
@@ -161,11 +162,10 @@ function bindExportHandlers(){
   });
 
   // ===== FOGLIO 3×3 (carte diverse) =====
-  $('#sheetAdd')?.addEventListener('click', async ()=>{
+  $('#sheetAdd')?.addEventListener('click', ()=>{
     if (sheet.length >= 9){ alert('Hai già 9 carte nel foglio.'); return; }
     try{
-      const { frontPNG, backPNG } = await getPNGs();
-      sheet.push({ front: frontPNG(), back: backPNG() });
+      sheet.push({ front: getFrontPNG(), back: getBackPNG() });
       updateSheetCount();
     }catch(e){
       alert('Errore nel catturare la carta: ' + (e?.message||e));
@@ -176,7 +176,7 @@ function bindExportHandlers(){
     sheet.length = 0; updateSheetCount();
   });
 
-  $('#sheetPDF')?.addEventListener('click', async ()=>{
+  $('#sheetPDF')?.addEventListener('click', ()=>{
     const PDF = jsPDForAlert(); if(!PDF) return;
     if (sheet.length === 0){ alert('Il foglio è vuoto. Aggiungi almeno 1 carta.'); return; }
 
@@ -188,7 +188,7 @@ function bindExportHandlers(){
       const cell = cells[i];
       const item = sheet[i];
       if (!item) break;
-      doc.addImage(dataURLFromCanvas(item.front),'PNG',cell.x,cell.y,cell.w,cell.h);
+      doc.addImage(item.front,'PNG',cell.x,cell.y,cell.w,cell.h);
       drawCropMarks(doc,cell.x,cell.y,cell.w,cell.h,CROP_LEN,CROP_OFF);
     }
 
@@ -200,13 +200,14 @@ function bindExportHandlers(){
       if (!item) break;
       const xBack = (mirrorEnabled() ? (pageW - cell.x - cell.w) : cell.x) + BACK_OFFSET_X;
       const yBack = cell.y + BACK_OFFSET_Y;
-      doc.addImage(dataURLFromCanvas(item.back),'PNG',xBack,yBack,cell.w,cell.h);
+      doc.addImage(item.back,'PNG',xBack,yBack,cell.w,cell.h);
       drawCropMarks(doc,xBack,yBack,cell.w,cell.h,CROP_LEN,CROP_OFF);
     }
 
     doc.save('a4-sheet-3x3-both.pdf');
   });
 
+  // contatore iniziale
   updateSheetCount();
 }
 
