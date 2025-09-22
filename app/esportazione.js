@@ -27,7 +27,10 @@
     }
   }
 
-  function mirrorEnabled(){ var el=$('mirrorBack'); return !!(el && el.checked); }
+  function mirrorEnabled(){
+    var el = $('mirrorBack');
+    return !!(el && el.checked);
+  }
 
   // PNG direttamente dai canvas (niente import)
   function getFrontPNG(){
@@ -178,8 +181,13 @@
         if (sheet.length >= 9){ alert('Hai già 9 carte nel foglio.'); return; }
         sheet.push({ front:getFrontPNG(), back:getBackPNG() });
         updateSheetCount();
+      } else if (id==='sheetRemoveLast'){
+        if (sheet.length === 0){ alert('Il foglio è vuoto.'); return; }
+        sheet.pop();
+        updateSheetCount();
       } else if (id==='sheetClear'){
-        sheet.length = 0; updateSheetCount();
+        sheet.length = 0;
+        updateSheetCount();
       } else if (id==='sheetPDF'){
         if (sheet.length === 0){ alert('Il foglio è vuoto. Aggiungi almeno 1 carta.'); return; }
         const PDF = jsPDForAlert(); if(!PDF) return;
@@ -193,7 +201,7 @@
           doc.addImage(it.front,'PNG',c.x,c.y,c.w,c.h);
           drawCropMarks(doc,c.x,c.y,c.w,c.h,CROP_LEN,CROP_OFF);
         }
-        // pag2: retro
+        // pag2: retro (eventuale specchio + micro-offset)
         doc.addPage();
         for (let i=0;i<cells.length;i++){
           const c = cells[i], it = sheet[i];
@@ -219,7 +227,7 @@
       'pngFront','pngBack',
       'pdfSingleFront','pdfSingleBack',
       'pdfA4Front','pdfA4Back','pdfA4Both',
-      'sheetAdd','sheetClear','sheetPDF'
+      'sheetAdd','sheetRemoveLast','sheetClear','sheetPDF'
     ].forEach(id=>{
       const el = $(id);
       if (el) el.addEventListener('click', handleClick);
