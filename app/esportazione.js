@@ -1,15 +1,15 @@
 // /app/esportazione.js — Export PNG/PDF + Foglio 3×3 (carte diverse) + crop marks
-// Versione super-robusta per iPhone/Safari: nessun import, binding ridondante, download compatibile.
-// Ora con messaggi e contatore localizzati (IT/EN/ES/DE) via window.intl se disponibile.
+// Versione robusta per iPhone/Safari: nessun import, binding diretto (no duplicazioni), download compatibile.
+// Include messaggi e contatore localizzati (IT/EN/ES/DE) via window.intl se presente.
 
 (function(){
   // ---------- i18n (soft) ----------
-  // Prova a leggere da window.intl, altrimenti usa fallback qui sotto.
   const FALLBACK = {
     it: {
       jsPDF_missing: 'jsPDF non disponibile. Controlla la connessione o ricarica la pagina.',
       sheet_full: 'Hai già 9 carte nel foglio.',
       sheet_empty: 'Il foglio è vuoto. Aggiungi almeno 1 carta.',
+      sheet_already_empty: 'Il foglio è già vuoto.',
       export_error_prefix: 'Errore esportazione: ',
       front_canvas_missing: 'Canvas fronte non trovato',
       back_canvas_missing: 'Canvas retro non trovato',
@@ -19,6 +19,7 @@
       jsPDF_missing: 'jsPDF not available. Check your connection or reload the page.',
       sheet_full: 'You already have 9 cards on the sheet.',
       sheet_empty: 'The sheet is empty. Add at least 1 card.',
+      sheet_already_empty: 'The sheet is already empty.',
       export_error_prefix: 'Export error: ',
       front_canvas_missing: 'Front canvas not found',
       back_canvas_missing: 'Back canvas not found',
@@ -28,6 +29,7 @@
       jsPDF_missing: 'jsPDF no disponible. Revisa la conexión o recarga la página.',
       sheet_full: 'Ya tienes 9 cartas en la hoja.',
       sheet_empty: 'La hoja está vacía. Añade al menos 1 carta.',
+      sheet_already_empty: 'La hoja ya está vacía.',
       export_error_prefix: 'Error de exportación: ',
       front_canvas_missing: 'Lienzo frontal no encontrado',
       back_canvas_missing: 'Lienzo trasero no encontrado',
@@ -37,13 +39,13 @@
       jsPDF_missing: 'jsPDF nicht verfügbar. Prüfe die Verbindung oder lade die Seite neu.',
       sheet_full: 'Du hast bereits 9 Karten im Bogen.',
       sheet_empty: 'Der Bogen ist leer. Füge mindestens 1 Karte hinzu.',
+      sheet_already_empty: 'Der Bogen ist bereits leer.',
       export_error_prefix: 'Exportfehler: ',
       front_canvas_missing: 'Vorderes Canvas nicht gefunden',
       back_canvas_missing: 'Hinteres Canvas nicht gefunden',
       sheet_count: '{n}/9 Karten'
     }
   };
-
   function getLang(){
     try{
       const cur = (window.intl && window.intl.getLocale && window.intl.getLocale()) || 'it';
@@ -51,7 +53,6 @@
     }catch{ return 'it'; }
   }
   function tt(key, fallback, params){
-    // prova window.intl
     let s;
     try{ s = window.intl && window.intl.t && window.intl.t(key); }catch{}
     if (!s || s === '') {
@@ -75,25 +76,23 @@
     return PDF;
   }
 
-  // Download compatibile iOS: prova <a download>, se fallisce apri nuova scheda
+  // Download compatibile iOS
   function downloadDataUrl(dataUrl, filename){
     try{
       const a = document.createElement('a');
       a.href = dataUrl;
       a.download = filename || 'download';
-      // Su iOS spesso serve appendere al DOM
       document.body.appendChild(a);
       a.click();
       setTimeout(()=>{ try{ document.body.removeChild(a); }catch{} }, 0);
     }catch(e){
-      // Fallback iOS: apri nuova scheda (l’utente potrà salvare)
       try{ window.open(dataUrl, '_blank'); }catch{}
     }
   }
 
   function mirrorEnabled(){ var el=$('mirrorBack'); return !!(el && el.checked); }
 
-  // PNG direttamente dai canvas (niente import)
+  // PNG dai canvas (nessun import)
   function getFrontPNG(){
     const c = $('cardFront');
     if (!c) throw new Error(tt('front_canvas_missing', FALLBACK.it.front_canvas_missing));
@@ -144,14 +143,14 @@
     return { pageW, pageH, marginX, marginY, cells };
   }
 
-  // ---------- CONFIG TIPOGRAFICA ----------
+  // ---------- CONFIG ----------
   const CARD_W = 63;   // mm
   const CARD_H = 88;   // mm
   const GUTTER_X = 5;  // mm
   const GUTTER_Y = 5;  // mm
   const CROP_LEN = 3;  // mm
   const CROP_OFF = 1;  // mm
-  const BACK_OFFSET_X = 0; // micro-allineamento retro (mm)
+  const BACK_OFFSET_X = 0; // mm
   const BACK_OFFSET_Y = 0;
 
   // Foglio 3×3 (carte diverse)
@@ -161,9 +160,9 @@
     if (el) el.textContent = tt('sheet_count', FALLBACK.it.sheet_count, { n: sheet.length });
   }
 
-  // ---------- HANDLERS (delegati + bind diretto) ----------
+  // ---------- HANDLER UNICO ----------
   function handleClick(e){
-    const id = e.target && e.target.id;
+    const id = e.currentTarget && e.currentTarget.id;
     if (!id) return;
 
     try{
@@ -244,6 +243,10 @@
         updateSheetCount();
       } else if (id==='sheetClear'){
         sheet.length = 0; updateSheetCount();
+      } else if (id==='sheetRemoveLast'){
+        if (sheet.length === 0){ alert(tt('sheet_already_empty', FALLBACK.it.sheet_already_empty)); return; }
+        sheet.pop();
+        updateSheetCount();
       } else if (id==='sheetPDF'){
         if (sheet.length === 0){ alert(tt('sheet_empty', FALLBACK.it.sheet_empty)); return; }
         const PDF = jsPDForAlert(); if(!PDF) return;
@@ -274,26 +277,24 @@
     }
   }
 
-  function bindExportHandlers(){
-    // Delega globale (se i bottoni vengono re-renderizzati non perdiamo i listener)
-    document.addEventListener('click', handleClick);
+  function bind(id){
+    const el = $(id);
+    if (el) el.addEventListener('click', handleClick);
+  }
 
-    // Bind diretto ai bottoni presenti (aiuta Safari vecchi)
+  function bindExportHandlers(){
+    // SOLO binding diretto (niente delega globale → evita doppioni)
     [
       'pngFront','pngBack',
       'pdfSingleFront','pdfSingleBack',
       'pdfA4Front','pdfA4Back','pdfA4Both',
-      'sheetAdd','sheetClear','sheetPDF'
-    ].forEach(id=>{
-      const el = $(id);
-      if (el) el.addEventListener('click', handleClick);
-    });
+      'sheetAdd','sheetClear','sheetRemoveLast','sheetPDF'
+    ].forEach(bind);
 
-    // Aggiorna contatore foglio
     updateSheetCount();
   }
 
-  // Avvio sicuro
+  // Avvio
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', bindExportHandlers);
   } else {
