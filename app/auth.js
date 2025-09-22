@@ -29,13 +29,23 @@ function flash(btn, text = 'Fatto ✅') {
   setTimeout(() => { btn.textContent = old; }, 1500);
 }
 
-/* UI auth */
 function setAuthUI(user){
   const logged = !!user;
   if (btnLogout) btnLogout.style.display = logged ? '' : 'none';
   const cloudSection = document.querySelector('[data-auth="only"]');
   if (cloudSection) cloudSection.style.display = logged ? '' : 'none';
-  if (userStatus) userStatus.textContent = logged ? (user.email || 'Account') : 'Ospite';
+
+  if (userStatus){
+    if (logged){
+      // NON far sovrascrivere da app-i18n
+      userStatus.removeAttribute('data-i18n');
+      userStatus.textContent = user.email || 'Account';
+    } else {
+      // da guest torna traducibile
+      userStatus.setAttribute('data-i18n','user_guest');
+      userStatus.textContent = (window.intl?.t && window.intl.t('user_guest')) || 'Ospite';
+    }
+  }
 }
 
 /* Welcome / Accesso */
