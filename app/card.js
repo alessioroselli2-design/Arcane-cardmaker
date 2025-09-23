@@ -146,7 +146,7 @@ function ensureClassOptions(){
       <option value="artefice"  data-i18n="cls_artificer">Artefice</option>
     </optgroup>
   `;
-
+translateClassOptions();
   sel.value = prev;
   if (!sel.value) sel.value = 'druido';
   state.clazz = sel.value;
@@ -157,7 +157,35 @@ function ensureClassOptions(){
     loadDbIcon(sel.value);
   }
 }
+// === i18n helpers (non toccano login/landing) =============================
+function t(key, fallback){
+  try {
+    if (window.appI18n?.t) {
+      const v = window.appI18n.t(key);
+      if (v != null && v !== key) return v;
+    }
+    if (window.intl?.t) {
+      const v2 = window.intl.t(key);
+      if (v2 != null && v2 !== key) return v2;
+    }
+  } catch {}
+  return (fallback ?? '');
+}
 
+// Traduci optgroup/option nel select classi usando i data-i18n
+function translateClassOptions(){
+  const sel = document.getElementById('clazz');
+  if (!sel) return;
+
+  sel.querySelectorAll('optgroup').forEach(g=>{
+    const k = g.getAttribute('data-i18n');
+    if (k) g.label = t(k, g.label || '');
+  });
+  sel.querySelectorAll('option').forEach(o=>{
+    const k = o.getAttribute('data-i18n');
+    if (k) o.textContent = t(k, o.textContent || '');
+  });
+}
 // ================== HELPERS ==================
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -805,7 +833,14 @@ function init(){
   // 5) richiami differiti per librerie che traducono/sostituiscono i nodi
   setTimeout(ensureClassOptions, 0);
   setTimeout(ensureClassOptions, 400);
-
+if (window.appI18n?.on) {
+    try { window.appI18n.on('changed', translateClassOptions); } catch {}
+try {
+    new MutationObserver(()=> translateClassOptions())
+      .observe(document.documentElement, { attributes:true, attributeFilter:['lang'] });
+  } catch {}  
+  setTimeout(translateClassOptions, 0);
+  setTimeout(translateClassOptions, 400);  
   if (window.appI18n?.refresh) {
     const _refresh = window.appI18n.refresh.bind(window.appI18n);
     window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions(); }catch{} return r; };
