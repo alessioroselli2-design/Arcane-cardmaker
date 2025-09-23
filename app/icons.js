@@ -102,7 +102,7 @@ export const ICONS = {
   <circle cx='50' cy='40' r='7' fill='#c7a3ff' stroke='#3e2560' stroke-width='2'/>
 </svg>`,
 
-  artificiere: `
+  artefice: `
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
   <circle cx='50' cy='50' r='26' fill='#b9c3ce' stroke='#3a4a5a' stroke-width='3'/>
   <path d='M50 22 v10 M50 68 v10 M22 50 h10 M68 50 h10 M33 33 l7 7 M67 67 l7 7 M33 67 l7 -7 M67 33 l7 -7'
