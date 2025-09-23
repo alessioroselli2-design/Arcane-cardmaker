@@ -76,7 +76,7 @@ const ICONS = {
     <path d='M50 18 v64' stroke='#caa96b' stroke-width='6'/>
     <path d='M35 42 h30' stroke='#caa96b' stroke-width='4' opacity='.7'/></svg>`,
   mago: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='gHat' x1='0' y1='0' x2='0' y2='1'>
+    <defs><linearGradient id='gHat' x1='0' y='0' x2='0' y2='1'>
       <stop offset='0' stop-color='#6fb7ff'/><stop offset='1' stop-color='#2a69d1'/></linearGradient></defs>
     <path d='M50 16 l24 44 h-48 z' fill='url(#gHat)' stroke='#173b75' stroke-width='3'/>
     <circle cx='50' cy='64' r='5' fill='#fff' stroke='#173b75' stroke-width='2'/>
@@ -119,13 +119,13 @@ const ICONS = {
     <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/></svg>`
 };
 window.ICONS = ICONS;
-// --- Selettore classi "auto-ripara" ---
+
+// --- Selettore classi "auto-ripara" (SEMPLICE + RESILIENTE) ---
 function ensureClassOptions(){
   const sel = document.getElementById('clazz');
   if (!sel) return;
 
-  // se ci sono già opzioni, non tocco nulla
-  if (sel.options && sel.options.length > 0) return;
+  const prev = sel.value || state.clazz || 'druido';
 
   sel.innerHTML = `
     <optgroup label="Base" data-i18n="optgroup_base">
@@ -136,20 +136,28 @@ function ensureClassOptions(){
       <option value="ladro"     data-i18n="cls_rogue">Ladro</option>
     </optgroup>
     <optgroup label="Espansione" data-i18n="optgroup_expansion">
-      <option value="barbaro"     data-i18n="cls_barbarian">Barbaro</option>
-      <option value="paladino"    data-i18n="cls_paladin">Paladino</option>
-      <option value="chierico"    data-i18n="cls_cleric">Chierico</option>
-      <option value="bardo"       data-i18n="cls_bard">Bardo</option>
-      <option value="ranger"      data-i18n="cls_ranger">Ranger</option>
-      <option value="stregone"    data-i18n="cls_sorcerer">Stregone</option>
-      <option value="warlock"     data-i18n="cls_warlock">Warlock</option>
-      <option value="artefice" data-i18n="cls_artificer">Artefice</option>
+      <option value="barbaro"   data-i18n="cls_barbarian">Barbaro</option>
+      <option value="paladino"  data-i18n="cls_paladin">Paladino</option>
+      <option value="chierico"  data-i18n="cls_cleric">Chierico</option>
+      <option value="bardo"     data-i18n="cls_bard">Bardo</option>
+      <option value="ranger"    data-i18n="cls_ranger">Ranger</option>
+      <option value="stregone"  data-i18n="cls_sorcerer">Stregone</option>
+      <option value="warlock"   data-i18n="cls_warlock">Warlock</option>
+      <option value="artefice"  data-i18n="cls_artificer">Artefice</option>
     </optgroup>
   `;
 
-  // ritraduci subito se i18n è carico
+  sel.value = prev;
+  if (!sel.value) sel.value = 'druido';
+  state.clazz = sel.value;
+
   try { window.appI18n?.refresh && window.appI18n.refresh(); } catch {}
+
+  if (state.classSource === 'db') {
+    loadDbIcon(sel.value);
+  }
 }
+
 // ================== HELPERS ==================
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -192,11 +200,8 @@ function makeFoilGradient(ctx,x,y,w,h,kind){
 
 // === Premium gating & NORMALIZZAZIONE =================================
 function isPremiumUnlocked(){
-  // 1) Se premium.js è caricato, chiediamo a lui
   if (window.premium?.isPro && window.premium.isPro()) return true;
-  // 2) User premium da auth
   if (window.user && window.user.isPremium) return true;
-  // 3) Local device flag (supporta entrambe le chiavi storiche)
   if (localStorage.getItem('acm_pro') === '1') return true;
   if (localStorage.getItem('acm_premium') === '1') return true;
   return false;
@@ -204,7 +209,6 @@ function isPremiumUnlocked(){
 function isPremiumEffect(val){ return /^fx-/.test(val||''); }
 function isPremiumFrame(val){ return /^frame-/.test(val||''); }
 
-// Mappa etichette (qualsiasi lingua) → chiavi fx-* (titolo)
 function normalizeEffect(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('fx-')) return v;
@@ -223,13 +227,10 @@ function normalizeEffect(val=''){
   if (['none','nessuno','ninguno','keiner'].includes(v)) return 'none';
   return val;
 }
-
-// Mappa etichette cornice → chiavi canoniche (incl. premium nuove)
 function normalizeFrameStyle(val=''){
   const v = (val||'').toString().trim().toLowerCase();
   if (v.startsWith('frame-')) return v;
 
-  // premium
   const mapP = [
     [/^celest/,      'frame-celestial'],
     [/^infer/,       'frame-infernal'],
@@ -244,7 +245,6 @@ function normalizeFrameStyle(val=''){
   ];
   for (const [re,out] of mapP) if (re.test(v)) return out;
 
-  // standard
   if (v.includes('foil') && v.includes('gold'))   return 'foil-gold';
   if (v.includes('foil') && v.includes('silver')) return 'foil-silver';
   if (v.includes('foil') && (v.includes('rainbow')||v.includes('arcobal')||v.includes('regenbogen'))) return 'foil-rainbow';
@@ -326,9 +326,9 @@ function paintTitleWithEffect(ctx, text, x, y, w, h, effectKey){
 
 // ================== GEOMETRIA ==================
 const W=750, H=1050;
-const FRAME = { x:12, y:12, w:W-24, h:H-24, r:22 };     // cornice esterna
-const INNER = { x:28, y:28, w:W-56, h:H-56, r:18 };      // bordo interno (colore “carta”)
-const P = 22;                                            // padding
+const FRAME = { x:12, y:12, w:W-24, h:H-24, r:22 };
+const INNER = { x:28, y:28, w:W-56, h:H-56, r:18 };
+const P = 22;
 const TITLE_H = 86;
 const GAP = 18;
 const IMG_H = 460;
@@ -338,7 +338,6 @@ function paintFrame(c){
   c.save();
   rr(c,FRAME.x,FRAME.y,FRAME.w,FRAME.h,FRAME.r);
 
-  // normalizza e (se non premium) ripiega a flat
   let fs = normalizeFrameStyle(state.frameStyle || 'flat');
   if (isPremiumFrame(fs) && !isPremiumUnlocked()) fs = 'flat';
 
@@ -380,7 +379,6 @@ function paintFrame(c){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x,FRAME.y+FRAME.h);
     g.addColorStop(0,'#6a2bb8'); g.addColorStop(1,'#9a66ff');
     c.fillStyle=g; c.fill();
-    // filetto dorato interno
     c.lineWidth=3; c.strokeStyle='#d4af37'; c.stroke();
   } else if (fs === 'frame-starlight'){
     const g = c.createLinearGradient(FRAME.x,FRAME.y,FRAME.x+FRAME.w,FRAME.y+FRAME.h);
@@ -409,13 +407,11 @@ function paintFrame(c){
     c.fillStyle=g; c.fill();
 
   } else {
-    // flat
     c.fillStyle = state.frameColor;
     c.fill();
   }
   c.restore();
 
-  // Interno (campo chiaro)
   rr(c,INNER.x,INNER.y,INNER.w,INNER.h,INNER.r);
   c.fillStyle = state.innerColor;
   c.fill();
@@ -434,7 +430,6 @@ export function drawFront(){
   ctxF.clearRect(0,0,W,H);
   paintFrame(ctxF);
 
-  // Titolo (riquadro)
   const t = { x: INNER.x + P, y: INNER.y + P, w: INNER.w - P*2, h: TITLE_H, r: 16 };
   rr(ctxF, t.x, t.y, t.w, t.h, t.r);
   ctxF.fillStyle = '#e6f2e6'; ctxF.fill();
@@ -444,25 +439,17 @@ export function drawFront(){
   ctxF.save(); rr(ctxF, t.x+2, t.y+2, t.w-4, t.h*0.45, Math.max(0,t.r-4)); ctxF.clip();
   ctxF.fillStyle = gTop; ctxF.fillRect(t.x, t.y, t.w, t.h*0.6); ctxF.restore();
 
-  // Immagine
   const ax = INNER.x + P + 16, ay = t.y + t.h + GAP;
   const aw = INNER.w - (P+16)*2, ah = IMG_H;
   if(state.imgFront) cover(ctxF,state.imgFront,ax,ay,aw,ah,18);
   else { ctxF.fillStyle='#cfcfcf'; rr(ctxF,ax,ay,aw,ah,18); ctxF.fill(); }
 
-  // Descrizione (riquadro)
-  const b = {
-    x: INNER.x + P,
-    y: ay + ah + GAP,
-    w: INNER.w - P*2,
-    h: (INNER.y + INNER.h) - (ay + ah + GAP) - P,
-    r: 18
-  };
+  const b = { x: INNER.x + P, y: ay + ah + GAP, w: INNER.w - P*2,
+              h: (INNER.y + INNER.h) - (ay + ah + GAP) - P, r: 18 };
   rr(ctxF, b.x, b.y, b.w, b.h, b.r);
   ctxF.fillStyle = '#fcfcf8'; ctxF.fill();
   ctxF.lineWidth = 2; ctxF.strokeStyle = 'rgba(122,177,114,.7)'; ctxF.stroke();
 
-  // Titolo (testo)
   ctxF.textBaseline='middle';
   ctxF.textAlign='left';
   ctxF.font = `700 ${state.titleSize}px ${state.titleFont}`;
@@ -477,7 +464,6 @@ export function drawFront(){
   const titleY = t.y + t.h/2;
   const titleW = t.w - 140;
 
-  // normalizza effetto titolo e applica gating
   let eff = normalizeEffect(state.titleFoil || 'none');
   if (isPremiumEffect(eff) && !isPremiumUnlocked()) eff = 'none';
 
@@ -683,7 +669,10 @@ function bind(){
     if(state.classSource!=='upload') $id('classImg') && ($id('classImg').value='');
     drawFront();
   });
-  $id('clazz')?.addEventListener('change',e=>{ if(state.classSource==='db') loadDbIcon(e.target.value); });
+  $id('clazz')?.addEventListener('change',e=>{
+    state.clazz = e.target.value;
+    if(state.classSource==='db') loadDbIcon(e.target.value);
+  });
   $id('classSize')?.addEventListener('input',e=>{
     state.classSize=+e.target.value;
     if(state.classX==null||state.classY==null) defaultSymbolPos();
@@ -758,11 +747,70 @@ function loadDbIcon(key){
   });
 }
 
+// ================== WATCHERS PER SELECT CLASSE ==================
+function watchClazz(){
+  const sel = document.getElementById('clazz');
+  if (!sel) return;
+  if (!sel.options || sel.options.length === 0) {
+    ensureClassOptions();
+  }
+  const mo = new MutationObserver(() => {
+    if (!sel.options || sel.options.length === 0) {
+      ensureClassOptions();
+    }
+  });
+  mo.observe(sel, { childList: true, subtree: true });
+}
+
+function watchClazzContainer(){
+  const container = document.getElementById('dbClassRow') || document.getElementById('classRow') || document;
+  const mo = new MutationObserver(() => {
+    // se il nodo #clazz è stato rimpiazzato, riattivo watcher e ricostruisco
+    const sel = document.getElementById('clazz');
+    if (sel && (!sel.options || sel.options.length === 0)) {
+      ensureClassOptions();
+    }
+  });
+  mo.observe(container, { childList: true, subtree: true });
+}
+
+// Allinea il select della sorgente alla realtà dello stato
+function syncClassSourceSelect(){
+  const cs = document.getElementById('classSource');
+  if (!cs) return;
+  if (!cs.value) cs.value = state.classSource;
+  if (cs.value !== state.classSource) {
+    cs.value = 'db';
+    state.classSource = 'db';
+  }
+}
+
 // ================== INIT ==================
 function init(){
   bind();
+
+  // 1) forziamo partenza sensata per la sorgente icona
+  syncClassSourceSelect();
+
+  // 2) costruisci SEMPRE le opzioni del select classi
   ensureClassOptions();
+
+  // 3) mostra/occulta righe DB/Upload
   updateClassRowsOnce();
+
+  // 4) osserva #clazz e il suo contenitore per ricostruirlo se viene svuotato o rimpiazzato
+  watchClazz();
+  watchClazzContainer();
+
+  // 5) richiami differiti per librerie che traducono/sostituiscono i nodi
+  setTimeout(ensureClassOptions, 0);
+  setTimeout(ensureClassOptions, 400);
+
+  if (window.appI18n?.refresh) {
+    const _refresh = window.appI18n.refresh.bind(window.appI18n);
+    window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions(); }catch{} return r; };
+  }
+
   loadDbIcon(state.clazz);
   drawFront();
   drawBack();
@@ -784,4 +832,3 @@ function init(){
 }
 
 try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
-
