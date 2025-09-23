@@ -119,7 +119,37 @@ const ICONS = {
     <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/></svg>`
 };
 window.ICONS = ICONS;
+// --- Selettore classi "auto-ripara" ---
+function ensureClassOptions(){
+  const sel = document.getElementById('clazz');
+  if (!sel) return;
 
+  // se ci sono già opzioni, non tocco nulla
+  if (sel.options && sel.options.length > 0) return;
+
+  sel.innerHTML = `
+    <optgroup label="Base" data-i18n="optgroup_base">
+      <option value="guerriero" data-i18n="cls_warrior">Guerriero</option>
+      <option value="druido"    data-i18n="cls_druid">Druido</option>
+      <option value="monaco"    data-i18n="cls_monk">Monaco</option>
+      <option value="mago"      data-i18n="cls_wizard">Mago</option>
+      <option value="ladro"     data-i18n="cls_rogue">Ladro</option>
+    </optgroup>
+    <optgroup label="Espansione" data-i18n="optgroup_expansion">
+      <option value="barbaro"     data-i18n="cls_barbarian">Barbaro</option>
+      <option value="paladino"    data-i18n="cls_paladin">Paladino</option>
+      <option value="chierico"    data-i18n="cls_cleric">Chierico</option>
+      <option value="bardo"       data-i18n="cls_bard">Bardo</option>
+      <option value="ranger"      data-i18n="cls_ranger">Ranger</option>
+      <option value="stregone"    data-i18n="cls_sorcerer">Stregone</option>
+      <option value="warlock"     data-i18n="cls_warlock">Warlock</option>
+      <option value="artefice" data-i18n="cls_artificer">Artefice</option>
+    </optgroup>
+  `;
+
+  // ritraduci subito se i18n è carico
+  try { window.appI18n?.refresh && window.appI18n.refresh(); } catch {}
+}
 // ================== HELPERS ==================
 function svgToImage(svg,cb){
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -731,6 +761,7 @@ function loadDbIcon(key){
 // ================== INIT ==================
 function init(){
   bind();
+  ensureClassOptions();
   updateClassRowsOnce();
   loadDbIcon(state.clazz);
   drawFront();
