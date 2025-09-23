@@ -51,7 +51,7 @@ const it = {
   cls_ranger: 'Ranger',
   cls_sorcerer: 'Stregone',
   cls_warlock: 'Warlock',
-  cls_artificer: 'Artificiere',
+  cls_artificer: 'Artefice',
 
   lbl_symbol_size: 'Dimensione simbolo',
   hint_drag_symbol: 'Trascina il simbolo sull’anteprima per spostarlo.',
