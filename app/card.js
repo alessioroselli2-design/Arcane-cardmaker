@@ -120,30 +120,6 @@ const ICONS = {
 };
 window.ICONS = ICONS;
 
-// === i18n helpers & option translation (NEW) =============================
-function t(key, fallback){
-  try {
-    if (window.appI18n?.t) return window.appI18n.t(key) || fallback;
-    if (window.intl?.t)    return window.intl.t(key)    || fallback;
-  } catch {}
-  return fallback;
-}
-function translateClassOptions(){
-  const sel = document.getElementById('clazz');
-  if (!sel) return;
-
-  // optgroup
-  sel.querySelectorAll('optgroup').forEach(g=>{
-    const k = g.getAttribute('data-i18n');
-    if (k) g.label = t(k, g.label || '');
-  });
-  // option
-  sel.querySelectorAll('option').forEach(o=>{
-    const k = o.getAttribute('data-i18n');
-    if (k) o.textContent = t(k, o.textContent || '');
-  });
-}
-
 // --- Selettore classi "auto-ripara" (SEMPLICE + RESILIENTE) ---
 function ensureClassOptions(){
   const sel = document.getElementById('clazz');
@@ -176,9 +152,6 @@ function ensureClassOptions(){
   state.clazz = sel.value;
 
   try { window.appI18n?.refresh && window.appI18n.refresh(); } catch {}
-
-  // NEW: applica traduzioni alle option/optgroup
-  translateClassOptions();
 
   if (state.classSource === 'db') {
     loadDbIcon(sel.value);
@@ -792,6 +765,7 @@ function watchClazz(){
 function watchClazzContainer(){
   const container = document.getElementById('dbClassRow') || document.getElementById('classRow') || document;
   const mo = new MutationObserver(() => {
+    // se il nodo #clazz è stato rimpiazzato, riattivo watcher e ricostruisco
     const sel = document.getElementById('clazz');
     if (sel && (!sel.options || sel.options.length === 0)) {
       ensureClassOptions();
@@ -811,71 +785,8 @@ function syncClassSourceSelect(){
   }
 }
 
-// --------- AUTH & LINGUA helper (NUOVI) ----------
-function wantGuestFromURL(){
-  try{ return new URLSearchParams(location.search).get('guest') === '1'; }catch{ return false; }
-}
-function getAuthState(){
-  const u = window.user || {};
-  return {
-    isLogged: !!(u.isAuthenticated || u.email || u.uid),
-    isGuest : localStorage.getItem('acm_guest') === '1'
-  };
-}
-// Selettore lingua "di emergenza" sempre disponibile
-function ensureLangSelector(){
-  if (document.getElementById('lang')) return; // già presente
-  const locales = (window.appI18n?.locales) || ['it','en','es','de','fr'];
-  const getLocale = window.appI18n?.getLocale?.bind(window.appI18n);
-  const setLocale = window.appI18n?.setLocale?.bind(window.appI18n);
-  const refresh   = window.appI18n?.refresh?.bind(window.appI18n);
-
-  const saved = localStorage.getItem('acm_lang');
-  const current = saved || (getLocale ? getLocale() : locales[0]);
-
-  try{ if (setLocale && saved){ setLocale(saved); refresh && refresh(); } }catch{}
-
-  const sel = document.createElement('select');
-  sel.id='lang';
-  sel.style.position='fixed';
-  sel.style.top='12px';
-  sel.style.right='12px';
-  sel.style.zIndex='9999';
-  sel.style.padding='4px 6px';
-  sel.style.borderRadius='6px';
-  sel.style.background='rgba(255,255,255,.9)';
-  sel.style.border='1px solid #d0d0d0';
-  sel.setAttribute('aria-label','Language');
-
-  locales.forEach(l=>{
-    const o=document.createElement('option');
-    o.value=l; o.textContent=l.toUpperCase();
-    sel.appendChild(o);
-  });
-  sel.value = current;
-
-  sel.addEventListener('change',e=>{
-    const v = e.target.value;
-    try{
-      setLocale && setLocale(v);
-      refresh && refresh();
-      ensureClassOptions(); // aggiorna etichette classi
-      localStorage.setItem('acm_lang', v);
-    }catch{}
-  });
-
-  document.body.appendChild(sel);
-}
-
 // ================== INIT ==================
 function init(){
-  // Stop auto-guest se non esplicitato da URL (?guest=1)
-  const auth0 = getAuthState();
-  if (!auth0.isLogged && !wantGuestFromURL()){
-    localStorage.removeItem('acm_guest');       // niente “entra come ospite” automatico
-    localStorage.removeItem('cm_hide_welcome'); // così rivedi il welcome
-  }
-
   bind();
 
   // 1) forziamo partenza sensata per la sorgente icona
@@ -895,63 +806,29 @@ function init(){
   setTimeout(ensureClassOptions, 0);
   setTimeout(ensureClassOptions, 400);
 
-  // NEW: ritraduci su cambi lingua
-  if (window.appI18n?.on) {
-    try { window.appI18n.on('changed', translateClassOptions); } catch {}
-  }
-  try {
-    new MutationObserver(()=> translateClassOptions())
-      .observe(document.documentElement, { attributes:true, attributeFilter:['lang'] });
-  } catch {}
-
   if (window.appI18n?.refresh) {
     const _refresh = window.appI18n.refresh.bind(window.appI18n);
-    window.appI18n.refresh = (...args)=>{
-      const r = _refresh(...args);
-      try{ translateClassOptions(); }catch{}
-      return r;
-    };
+    window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions(); }catch{} return r; };
   }
-
-  // doppio tick per UI che reinserisce le option
-  setTimeout(translateClassOptions, 0);
-  setTimeout(translateClassOptions, 400);
 
   loadDbIcon(state.clazz);
   drawFront();
   drawBack();
 
-  // welcome coerente con index (NO auto-guest silenzioso)
+  // welcome coerente con index (non blocca canvas)
   const el = document.getElementById('welcome');
   const p = new URLSearchParams(location.search);
   const force = p.get('welcome') === '1';
   const hide  = localStorage.getItem('cm_hide_welcome') === 'true';
-  const shouldGuest = wantGuestFromURL();
-  const auth = getAuthState();
-
   if (el){
-    if (shouldGuest){
-      // esplicitamente ospite via URL: salta welcome solo questa volta
-      localStorage.setItem('acm_guest','1');
-      el.style.display = 'none';
-    } else if (!auth.isLogged && !auth.isGuest){
-      // né loggato né ospite: mostra welcome per scegliere login/ospite/lingua
-      el.style.display = 'flex';
-    } else {
-      // già deciso in passato: onora force/hide
-      if (force){ localStorage.removeItem('cm_hide_welcome'); el.style.display='flex'; }
-      else if (hide){ el.style.display='none'; }
-    }
+    if (force){ localStorage.removeItem('cm_hide_welcome'); el.style.display='flex'; }
+    else if (hide){ el.style.display='none'; }
   }
   document.getElementById('btnGuest')?.addEventListener('click',()=>{
     const dont=document.getElementById('dontShow');
     if(dont?.checked) localStorage.setItem('cm_hide_welcome','true');
-    localStorage.setItem('acm_guest','1');   // da ora in poi è realmente ospite
     el && (el.style.display='none');
   });
-
-  // Selettore lingua di emergenza (se quello principale sparisce)
-  ensureLangSelector();
 }
 
 try{ init(); }catch(e){ console.error('[card.js] init failed', e); }
