@@ -120,6 +120,30 @@ const ICONS = {
 };
 window.ICONS = ICONS;
 
+// === i18n helpers & option translation (NEW) =============================
+function t(key, fallback){
+  try {
+    if (window.appI18n?.t) return window.appI18n.t(key) || fallback;
+    if (window.intl?.t)    return window.intl.t(key)    || fallback;
+  } catch {}
+  return fallback;
+}
+function translateClassOptions(){
+  const sel = document.getElementById('clazz');
+  if (!sel) return;
+
+  // optgroup
+  sel.querySelectorAll('optgroup').forEach(g=>{
+    const k = g.getAttribute('data-i18n');
+    if (k) g.label = t(k, g.label || '');
+  });
+  // option
+  sel.querySelectorAll('option').forEach(o=>{
+    const k = o.getAttribute('data-i18n');
+    if (k) o.textContent = t(k, o.textContent || '');
+  });
+}
+
 // --- Selettore classi "auto-ripara" (SEMPLICE + RESILIENTE) ---
 function ensureClassOptions(){
   const sel = document.getElementById('clazz');
@@ -152,6 +176,9 @@ function ensureClassOptions(){
   state.clazz = sel.value;
 
   try { window.appI18n?.refresh && window.appI18n.refresh(); } catch {}
+
+  // NEW: applica traduzioni alle option/optgroup
+  translateClassOptions();
 
   if (state.classSource === 'db') {
     loadDbIcon(sel.value);
@@ -765,7 +792,6 @@ function watchClazz(){
 function watchClazzContainer(){
   const container = document.getElementById('dbClassRow') || document.getElementById('classRow') || document;
   const mo = new MutationObserver(() => {
-    // se il nodo #clazz è stato rimpiazzato, riattivo watcher e ricostruisco
     const sel = document.getElementById('clazz');
     if (sel && (!sel.options || sel.options.length === 0)) {
       ensureClassOptions();
@@ -806,10 +832,27 @@ function init(){
   setTimeout(ensureClassOptions, 0);
   setTimeout(ensureClassOptions, 400);
 
+  // NEW: ritraduci su cambi lingua
+  if (window.appI18n?.on) {
+    try { window.appI18n.on('changed', translateClassOptions); } catch {}
+  }
+  try {
+    new MutationObserver(()=> translateClassOptions())
+      .observe(document.documentElement, { attributes:true, attributeFilter:['lang'] });
+  } catch {}
+
   if (window.appI18n?.refresh) {
     const _refresh = window.appI18n.refresh.bind(window.appI18n);
-    window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions(); }catch{} return r; };
+    window.appI18n.refresh = (...args)=>{
+      const r = _refresh(...args);
+      try{ translateClassOptions(); }catch{}
+      return r;
+    };
   }
+
+  // doppio tick per UI che reinserisce le option
+  setTimeout(translateClassOptions, 0);
+  setTimeout(translateClassOptions, 400);
 
   loadDbIcon(state.clazz);
   drawFront();
