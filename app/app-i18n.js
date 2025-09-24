@@ -554,36 +554,57 @@ function tPublic(k) {
 }
 
 /* ===================== SELETTORE LINGUA ===================== */
+function hostForLangSelector(){
+  return (
+    document.querySelector('header .row') ||
+    document.querySelector('header .toolbar') ||
+    document.querySelector('header .topbar') ||
+    document.querySelector('header') ||
+    document.querySelector('#appHeader') ||
+    document.body
+  );
+}
 function ensureLanguageSelector(){
-  const hdr = document.querySelector('header .row') || document.querySelector('header');
-  if (!hdr || document.getElementById('lang')) return;
-  const sel = document.createElement('select');
-  sel.id = 'lang';
-  sel.style.marginLeft = '10px';
-  sel.style.padding = '4px 6px';
-  sel.style.borderRadius = '8px';
-  sel.innerHTML = `
-    <option value="it">IT</option>
-    <option value="en">EN</option>
-    <option value="es">ES</option>
-    <option value="de">DE</option>`;
-  hdr.appendChild(sel);
+  const hdr = hostForLangSelector();
+  if (!hdr) return;
+  let sel = document.getElementById('lang');
+  if (!sel){
+    sel = document.createElement('select');
+    sel.id = 'lang';
+    sel.style.marginLeft = '10px';
+    sel.style.padding = '4px 6px';
+    sel.style.borderRadius = '8px';
+    sel.innerHTML = `
+      <option value="it">IT</option>
+      <option value="en">EN</option>
+      <option value="es">ES</option>
+      <option value="de">DE</option>`;
+    hdr.appendChild(sel);
+  }
   sel.value = intl.getLocale();
-  sel.addEventListener('change', () => intl.setLocale(sel.value)); // usa il wrapper
+  sel.onchange = () => window.appI18n.setLocale(sel.value);
 }
 
 /* ===================== APPLICA ALL’AVVIO ===================== */
 function applyI18nToDom(){ try { intl.translateDom(document); } catch {} }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // default locale se non presente
-  const cur = intl.getLocale();
-  if (!cur) intl.setLocale('it'); // passa dal wrapper ⇒ imposta <html lang> + traduce
+  // default locale se mancante
+  const cur = intl.getLocale() || 'it';
+  intl.setLocale(cur);
+  document.documentElement.setAttribute('lang', cur);
 
   ensureLanguageSelector();
   applyI18nToDom();
 
-  // Se premium.js inietta dopo, ritraduci quando cambia lo userStatus
+  // Se elementi di header vengono ricreati, re-inietta il selettore
+  const hdr = hostForLangSelector();
+  if (hdr){
+    new MutationObserver(() => ensureLanguageSelector())
+      .observe(hdr, { childList:true, subtree:true });
+  }
+
+  // Re-translate quando cambia lo userStatus
   const status = document.getElementById('userStatus');
   if (status) {
     const mo = new MutationObserver(() => setTimeout(applyI18nToDom, 80));
@@ -591,10 +612,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-/* ===================== API PUBBLICA appI18n (NEW) ===================== */
+// Esponi API i18n per altri moduli
 window.appI18n = {
   refresh: applyI18nToDom,
-  t: tPublic,
-  on: (event, cb) => { if (event === 'changed' && typeof cb === 'function') __listeners.add(cb); },
-  off: (event, cb) => { if (event === 'changed') __listeners.delete(cb); }
+  t: intl.t,
+  on(evt, cb){ document.addEventListener('appI18n:'+evt, cb); },
+  off(evt, cb){ document.removeEventListener('appI18n:'+evt, cb); },
+  setLocale(loc){
+    if (!loc || loc === intl.getLocale()) return;
+    intl.setLocale(loc);
+    document.documentElement.setAttribute('lang', loc);
+    applyI18nToDom();
+    document.dispatchEvent(new Event('appI18n:changed'));
+    // allinea il selettore se presente
+    const sel = document.getElementById('lang');
+    if (sel) sel.value = loc;
+  }
 };
