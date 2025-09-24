@@ -119,7 +119,26 @@ const ICONS = {
     <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/></svg>`
 };
 window.ICONS = ICONS;
-
+// === i18n helpers & option translation =============================
+function t(key, fallback){
+  try {
+    if (window.appI18n?.t) return window.appI18n.t(key) || fallback;
+    if (window.intl?.t)    return window.intl.t(key)    || fallback;
+  } catch {}
+  return fallback;
+}
+function translateClassOptions(){
+  const sel = document.getElementById('clazz');
+  if (!sel) return;
+  sel.querySelectorAll('optgroup').forEach(g=>{
+    const k = g.getAttribute('data-i18n');
+    if (k) g.label = t(k, g.label || '');
+  });
+  sel.querySelectorAll('option').forEach(o=>{
+    const k = o.getAttribute('data-i18n');
+    if (k) o.textContent = t(k, o.textContent || '');
+  });
+}
 // --- Selettore classi "auto-ripara" (SEMPLICE + RESILIENTE) ---
 function ensureClassOptions(){
   const sel = document.getElementById('clazz');
@@ -150,7 +169,7 @@ function ensureClassOptions(){
   sel.value = prev;
   if (!sel.value) sel.value = 'druido';
   state.clazz = sel.value;
-
+translateClassOptions();
   try { window.appI18n?.refresh && window.appI18n.refresh(); } catch {}
 
   if (state.classSource === 'db') {
@@ -808,7 +827,7 @@ function init(){
 
   if (window.appI18n?.refresh) {
     const _refresh = window.appI18n.refresh.bind(window.appI18n);
-    window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions(); }catch{} return r; };
+    window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions();translateClassOptions(); }catch{} return r; };
   }
 
   loadDbIcon(state.clazz);
