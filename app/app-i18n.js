@@ -530,6 +530,29 @@ intl.addLocale('en', dictEN());
 intl.addLocale('es', dictES());
 intl.addLocale('de', dictDE());
 
+/* ===================== BRIDGE + EVENTI (NEW) ===================== */
+// wrapper che notifica il cambio lingua e aggiorna <html lang> + DOM
+const __listeners = new Set();
+const __origSetLocale = intl.setLocale;
+
+function setLocaleAndNotify(lang) {
+  __origSetLocale(lang);
+  try { document.documentElement.setAttribute('lang', lang); } catch {}
+  try { applyI18nToDom(); } catch {}
+  // notify callbacks registrati
+  __listeners.forEach(cb => { try { cb(lang); } catch {} });
+  // evento DOM opzionale
+  try { window.dispatchEvent(new CustomEvent('i18n-changed', { detail: { lang } })); } catch {}
+}
+
+// sovrascrivo la funzione esposta da intl, senza toccare i dizionari
+intl.setLocale = setLocaleAndNotify;
+
+// helper pubblico per altri moduli (es. card.js)
+function tPublic(k) {
+  try { return intl.t(k); } catch { return k; }
+}
+
 /* ===================== SELETTORE LINGUA ===================== */
 function ensureLanguageSelector(){
   const hdr = document.querySelector('header .row') || document.querySelector('header');
@@ -546,7 +569,7 @@ function ensureLanguageSelector(){
     <option value="de">DE</option>`;
   hdr.appendChild(sel);
   sel.value = intl.getLocale();
-  sel.addEventListener('change', () => intl.setLocale(sel.value));
+  sel.addEventListener('change', () => intl.setLocale(sel.value)); // usa il wrapper
 }
 
 /* ===================== APPLICA ALL’AVVIO ===================== */
@@ -555,7 +578,7 @@ function applyI18nToDom(){ try { intl.translateDom(document); } catch {} }
 document.addEventListener('DOMContentLoaded', () => {
   // default locale se non presente
   const cur = intl.getLocale();
-  if (!cur) intl.setLocale('it');
+  if (!cur) intl.setLocale('it'); // passa dal wrapper ⇒ imposta <html lang> + traduce
 
   ensureLanguageSelector();
   applyI18nToDom();
@@ -568,5 +591,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Esponi un refresh manuale (se altri moduli iniettano UI)
-window.appI18n = { refresh: applyI18nToDom };
+/* ===================== API PUBBLICA appI18n (NEW) ===================== */
+window.appI18n = {
+  refresh: applyI18nToDom,
+  t: tPublic,
+  on: (event, cb) => { if (event === 'changed' && typeof cb === 'function') __listeners.add(cb); },
+  off: (event, cb) => { if (event === 'changed') __listeners.delete(cb); }
+};
