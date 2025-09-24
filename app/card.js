@@ -59,7 +59,7 @@ if (!ctxF || !ctxB) console.warn('[card.js] canvas non trovati, salto init');
 // ================== ICONE DB ==================
 const ICONS = {
   guerriero: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <defs><linearGradient id='gSword' x1='0' y1='0' x2='1' y2='1'>
+    <defs><linearGradient id='gSword' x1='0' y='0' x2='1' y2='1'>
       <stop offset='0' stop-color='#f7f7f7'/><stop offset='1' stop-color='#c9c9c9'/></linearGradient></defs>
     <rect x='20' y='20' width='60' height='60' rx='10' fill='none' stroke='#2b2b2b' stroke-width='3'/>
     <path d='M28 64 l20 -20 l4 4 l-20 20 z' fill='#8c6b3c' stroke='#2b2b2b' stroke-width='2'/>
@@ -119,6 +119,7 @@ const ICONS = {
     <path d='M50 32 l14 4 -8 8 z' fill='#3a4a5a'/></svg>`
 };
 window.ICONS = ICONS;
+
 // === i18n helpers & option translation =============================
 function t(key, fallback){
   try {
@@ -139,6 +140,17 @@ function translateClassOptions(){
     if (k) o.textContent = t(k, o.textContent || '');
   });
 }
+
+// >>> LISTENER UNIVERSALI CAMBIO LINGUA <<<
+window.addEventListener('i18n-changed', () => {
+  ensureClassOptions();
+  translateClassOptions();
+});
+document.addEventListener('appI18n:changed', () => {
+  ensureClassOptions();
+  translateClassOptions();
+});
+
 // --- Selettore classi "auto-ripara" (SEMPLICE + RESILIENTE) ---
 function ensureClassOptions(){
   const sel = document.getElementById('clazz');
@@ -169,7 +181,9 @@ function ensureClassOptions(){
   sel.value = prev;
   if (!sel.value) sel.value = 'druido';
   state.clazz = sel.value;
-translateClassOptions();
+
+  translateClassOptions();
+
   try { window.appI18n?.refresh && window.appI18n.refresh(); } catch {}
 
   if (state.classSource === 'db') {
@@ -827,7 +841,11 @@ function init(){
 
   if (window.appI18n?.refresh) {
     const _refresh = window.appI18n.refresh.bind(window.appI18n);
-    window.appI18n.refresh = (...args)=>{ const r=_refresh(...args); try{ ensureClassOptions();translateClassOptions(); }catch{} return r; };
+    window.appI18n.refresh = (...args)=>{ 
+      const r=_refresh(...args); 
+      try{ ensureClassOptions(); translateClassOptions(); }catch{} 
+      return r; 
+    };
   }
 
   loadDbIcon(state.clazz);
