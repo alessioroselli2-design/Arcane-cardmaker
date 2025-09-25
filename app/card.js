@@ -140,8 +140,8 @@ function translateClassOptions(){
     if (k) o.textContent = t(k, o.textContent || '');
   });
 }
-// EXPOSE: make translateClassOptions callable from i18n
-window.translateClassOptions = translateClassOptions;
+// Espone la funzione al bridge di app-i18n
+try { window.appI18n && (window.appI18n.__translateClassOptions = translateClassOptions); } catch {}
 
 // >>> LISTENER UNIVERSALI CAMBIO LINGUA <<<
 window.addEventListener('i18n-changed', () => {
@@ -254,7 +254,7 @@ function normalizeEffect(val=''){
     [/^royal|reale/, 'fx-royal'],
     [/^star|stell/,  'fx-starlight'],
   ];
-    for (const [re,out] of map) if (re.test(v)) return out;
+  for (const [re,out] of map) if (re.test(v)) return out;
 
   if (v.includes('foil') && v.includes('gold'))   return 'foil-gold';
   if (v.includes('foil') && v.includes('silver')) return 'foil-silver';
@@ -800,7 +800,6 @@ function watchClazz(){
 function watchClazzContainer(){
   const container = document.getElementById('dbClassRow') || document.getElementById('classRow') || document;
   const mo = new MutationObserver(() => {
-    // se il nodo #clazz è stato rimpiazzato, riattivo watcher e ricostruisco
     const sel = document.getElementById('clazz');
     if (sel && (!sel.options || sel.options.length === 0)) {
       ensureClassOptions();
@@ -824,20 +823,23 @@ function syncClassSourceSelect(){
 function init(){
   bind();
 
-  // 1) forziamo partenza sensata per la sorgente icona
+  // 1) lingua: forza una prima traduzione e garantisci il bridge
+  try { window.appI18n && (window.appI18n.__translateClassOptions = translateClassOptions); } catch {}
+
+  // 2) forziamo partenza sensata per la sorgente icona
   syncClassSourceSelect();
 
-  // 2) costruisci SEMPRE le opzioni del select classi
+  // 3) costruisci SEMPRE le opzioni del select classi
   ensureClassOptions();
 
-  // 3) mostra/occulta righe DB/Upload
+  // 4) mostra/occulta righe DB/Upload
   updateClassRowsOnce();
 
-  // 4) osserva #clazz e il suo contenitore per ricostruirlo se viene svuotato o rimpiazzato
+  // 5) osserva #clazz e il suo contenitore per ricostruirlo se viene svuotato o rimpiazzato
   watchClazz();
   watchClazzContainer();
 
-  // 5) richiami differiti per librerie che traducono/sostituiscono i nodi
+  // 6) richiami differiti per librerie che traducono/sostituiscono i nodi
   setTimeout(ensureClassOptions, 0);
   setTimeout(ensureClassOptions, 400);
 
