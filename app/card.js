@@ -140,6 +140,8 @@ function translateClassOptions(){
     if (k) o.textContent = t(k, o.textContent || '');
   });
 }
+// EXPOSE: make translateClassOptions callable from i18n
+window.translateClassOptions = translateClassOptions;
 
 // >>> LISTENER UNIVERSALI CAMBIO LINGUA <<<
 window.addEventListener('i18n-changed', () => {
@@ -252,7 +254,7 @@ function normalizeEffect(val=''){
     [/^royal|reale/, 'fx-royal'],
     [/^star|stell/,  'fx-starlight'],
   ];
-  for (const [re,out] of map) if (re.test(v)) return out;
+    for (const [re,out] of map) if (re.test(v)) return out;
 
   if (v.includes('foil') && v.includes('gold'))   return 'foil-gold';
   if (v.includes('foil') && v.includes('silver')) return 'foil-silver';
