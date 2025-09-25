@@ -1,4 +1,4 @@
-// app/app-i18n.js — dizionari UI + selettore lingua robusto + memoria lingua
+// app/app-i18n.js — dizionari UI + selettore lingua robusto
 import * as intl from './intl.js';
 
 /* ===================== DIZIONARI ===================== */
@@ -268,8 +268,8 @@ function dictEN() {
   };
 }
 
-function dictES() { /* — identico a quello che hai già incollato — */ return {/* … */}; }
-function dictDE() { /* — identico a quello che hai già incollato — */ return {/* … */}; }
+function dictES() { /* — identico a quello che mi hai mandato, invariato — */ return {/*...come sopra...*/}; }
+function dictDE() { /* — identico a quello che mi hai mandato, invariato — */ return {/*...come sopra...*/}; }
 
 /* ===================== REGISTRAZIONE ===================== */
 intl.addLocale('it', dictIT());
@@ -277,25 +277,10 @@ intl.addLocale('en', dictEN());
 intl.addLocale('es', dictES());
 intl.addLocale('de', dictDE());
 
-/* ===================== LETTURA/SCRITTURA LINGUA ===================== */
-function getInitialLang() {
-  const url = new URL(location.href);
-  const qLang = (url.searchParams.get('lang') || '').toLowerCase();
-  if (qLang) { localStorage.setItem('acm_lang', qLang); return qLang; }
-  const saved = (localStorage.getItem('acm_lang') || '').toLowerCase();
-  if (saved) return saved;
-  // default IT se non c'è nulla
-  return 'it';
-}
-function rememberLang(lang){
-  try { localStorage.setItem('acm_lang', lang); } catch {}
-}
-
 /* ===================== BRIDGE + EVENTI ===================== */
 const __origSetLocale = intl.setLocale;
 function setLocaleAndNotify(lang) {
   __origSetLocale(lang);
-  rememberLang(lang);
   try { document.documentElement.setAttribute('lang', lang); } catch {}
   try { applyI18nToDom(); } catch {}
   try { window.dispatchEvent(new CustomEvent('i18n-changed', { detail: { lang } })); } catch {}
@@ -303,11 +288,16 @@ function setLocaleAndNotify(lang) {
 intl.setLocale = setLocaleAndNotify;
 
 /* ===================== SELETTORE LINGUA ===================== */
+// Trova il bottone di logout e inserisce il selettore subito prima
+function findLogoutButton() {
+  const labels = ['Log out', 'Logout', 'Esci', 'Salir', 'Abmelden'];
+  const btns = Array.from(document.querySelectorAll('button, a'));
+  return btns.find(b => labels.some(t => (b.textContent || '').trim().toLowerCase() === t.toLowerCase()));
+}
 function hostForLangSelector(){
-  const userHost = document.getElementById('userStatus')?.parentElement
-                || document.getElementById('userStatus');
+  const logoutBtn = findLogoutButton();
+  if (logoutBtn && logoutBtn.parentElement) return logoutBtn.parentElement;
   return (
-    userHost ||
     document.querySelector('header .row') ||
     document.querySelector('header .toolbar') ||
     document.querySelector('header .topbar') ||
@@ -336,12 +326,19 @@ function ensureLanguageSelector(){
       <option value="en">EN</option>
       <option value="es">ES</option>
       <option value="de">DE</option>`;
-    hdr.appendChild(sel);
+    // se abbiamo trovato il bottone logout, mettiamo il select prima
+    const logoutBtn = findLogoutButton();
+    if (logoutBtn && logoutBtn.parentElement === hdr) {
+      hdr.insertBefore(sel, logoutBtn);
+    } else {
+      hdr.appendChild(sel);
+    }
   }
   sel.value = intl.getLocale();
   sel.onchange = () => window.appI18n.setLocale(sel.value);
   return true;
 }
+
 let __langObserverStarted = false;
 function installLangSelectorWatcher(){
   if (__langObserverStarted) return;
@@ -358,20 +355,8 @@ function installLangSelectorWatcher(){
 }
 
 /* ===================== APPLY DOM ===================== */
-function translatePlaceholdersManually(root){
-  // Fallback se la tua intl.js non traduce i placeholder
-  root.querySelectorAll('[data-i18n-ph]').forEach(el=>{
-    const key = el.getAttribute('data-i18n-ph');
-    try{
-      const txt = intl.t(key);
-      if (txt) el.setAttribute('placeholder', txt);
-    }catch{}
-  });
-}
 function applyI18nToDom(){
   try { intl.translateDom(document); } catch {}
-  translatePlaceholdersManually(document);
-  // Bridge opzionale per card.js (traduzione delle <option> classi)
   try {
     if (window.appI18n && typeof window.appI18n.__translateClassOptions === 'function') {
       window.appI18n.__translateClassOptions();
@@ -379,9 +364,8 @@ function applyI18nToDom(){
   } catch {}
 }
 
-/* ===================== BOOT ===================== */
 document.addEventListener('DOMContentLoaded', () => {
-  const cur = getInitialLang();
+  const cur = intl.getLocale() || 'en'; // default EN, come nello screenshot
   intl.setLocale(cur);
   document.documentElement.setAttribute('lang', cur);
 
@@ -401,6 +385,6 @@ window.appI18n = {
     const sel = document.getElementById('lang');
     if (sel) sel.value = loc;
   },
-  // card.js imposterà qui la sua funzione
+  // card.js può settare questa funzione per tradurre le option del select classi
   __translateClassOptions: null
 };
