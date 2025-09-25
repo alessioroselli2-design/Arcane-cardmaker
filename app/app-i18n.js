@@ -1,4 +1,4 @@
-// app/app-i18n.js — dizionari UI + selettore lingua robusto
+// /app/app-i18n.js — dizionari UI + selettore lingua robusto
 import * as intl from './intl.js';
 
 /* ===================== DIZIONARI ===================== */
@@ -39,7 +39,7 @@ function dictIT() {
     opt_foil_silver: 'Foil argento',
     opt_foil_rainbow: 'Foil arcobaleno',
 
-    // Effetti titolo premium
+    // Effetti titolo premium (etichette)
     opt_fx_celestial: 'Celestial (premium)',
     opt_fx_infernal: 'Infernal (premium)',
     opt_fx_obsidian: 'Obsidian (premium)',
@@ -268,8 +268,257 @@ function dictEN() {
   };
 }
 
-function dictES() { /* — identico a quello che mi hai mandato, invariato — */ return {/*...come sopra...*/}; }
-function dictDE() { /* — identico a quello che mi hai mandato, invariato — */ return {/*...come sopra...*/}; }
+function dictES() {
+  return {
+    welcome_title: 'Bienvenido a Card Maker',
+    welcome_text: 'Crea cartas estilo Magic. Inicia sesión para guardar en tu nube o entra como invitado.',
+    ph_email: 'Correo',
+    ph_password: 'Contraseña',
+    btn_login: 'Entrar',
+    btn_signup: 'Crear cuenta',
+    btn_guest: 'Entrar como invitado',
+    welcome_dontshow: 'No volver a mostrar',
+    user_guest: 'Invitado',
+    btn_logout: 'Salir',
+
+    front_title: 'Frente',
+    back_title: 'Reverso',
+    saves_title: 'Guardados',
+    export_title: 'Exportar',
+    preview_title: 'Vista previa',
+    cloud_title: 'Cuenta y Nube',
+
+    lbl_title: 'Título',
+    ph_title: 'Nombre del hechizo',
+    lbl_title_font: 'Fuente del título',
+    opt_custom_font: 'Personalizada (subir)',
+    lbl_upload_font: 'Subir fuente TTF/OTF',
+    lbl_title_color: 'Color del título',
+    lbl_title_size: 'Tamaño del título',
+    lbl_title_effect: 'Efecto del título',
+    lbl_title_shadow: 'Sombra del título',
+    opt_none: 'Ninguno',
+    opt_foil_gold: 'Foil dorado',
+    opt_foil_silver: 'Foil plateado',
+    opt_foil_rainbow: 'Foil arcoíris',
+
+    opt_fx_celestial: 'Celestial (premium)',
+    opt_fx_infernal: 'Infernal (premium)',
+    opt_fx_obsidian: 'Obsidian (premium)',
+    opt_fx_royal: 'Royal (premium)',
+    opt_fx_starlight: 'Starlight (premium)',
+
+    lbl_show_mana: 'Mostrar maná',
+    ph_mana: '{G}{U} o 2G',
+
+    lbl_class_symbol: 'Símbolo de clase',
+    opt_database: 'Base de datos',
+    opt_upload_img: 'Subir imagen…',
+    optgroup_base: 'Básico',
+    optgroup_expansion: 'Expansión',
+    cls_warrior: 'Guerrero',
+    cls_druid: 'Druida',
+    cls_monk: 'Monje',
+    cls_wizard: 'Mago',
+    cls_rogue: 'Pícaro',
+    cls_barbarian: 'Bárbaro',
+    cls_paladin: 'Paladín',
+    cls_cleric: 'Clérigo',
+    cls_bard: 'Bardo',
+    cls_ranger: 'Explorador',
+    cls_sorcerer: 'Hechicero',
+    cls_warlock: 'Brujo',
+    cls_artificer: 'Artífice',
+    lbl_symbol_size: 'Tamaño del símbolo',
+    hint_drag_symbol: 'Arrastra el símbolo sobre la vista previa para moverlo.',
+
+    lbl_panel_color: 'Color de líneas/cuadros',
+    lbl_panel_alpha: 'Opacidad de cuadros',
+
+    lbl_frame_style: 'Estilo del marco',
+    style_flat: 'Color plano',
+    style_wood: 'Madera',
+    style_stone: 'Piedra',
+    style_arcane: 'Arcano',
+    style_nature: 'Naturaleza',
+    lbl_frame_inner: 'Color del marco (plano) e interior',
+
+    lbl_front_image: 'Imagen frontal',
+    lbl_back_image: 'Imagen reverso (a sangre)',
+    hint_back_image: 'Rellena el área interior; mismo marco que el frente.',
+
+    lbl_desc_title: 'Descripción (cuadro inferior)',
+    ph_rules: 'Texto de reglas… **palabras clave** en negrita.',
+    lbl_desc_font: 'Fuente de descripción',
+    lbl_upload_desc_font: 'Subir fuente de descripción (TTF/OTF)',
+    lbl_desc_size: 'Tamaño descripción',
+    lbl_desc_color: 'Color descripción',
+
+    lbl_card_name: 'Nombre de la carta',
+    ph_card: 'p. ej., Hojas del Bosque',
+    lbl_deck_name: 'Mazo (carpeta nube, opc.)',
+    ph_deck: 'p. ej., Hechizos Druida',
+    btn_save_local: 'Guardar localmente',
+    btn_load_local: 'Abrir biblioteca local',
+    btn_cloud_save: 'Guardar en la nube',
+    btn_cloud_pull: 'Abrir biblioteca nube',
+    btn_cloud_clear: 'Vaciar nube',
+
+    lbl_mirror_back: 'Espejar reverso (impresión en casa)',
+    hint_mirror_back: 'Si está activo, el PDF del reverso se espeja para alinear frente y reverso.',
+    btn_png_front: 'PNG (frente)',
+    btn_png_back: 'PNG (reverso)',
+    btn_pdf_single_f: 'PDF única (frente)',
+    btn_pdf_single_b: 'PDF única (reverso)',
+    btn_pdf_a4_f: 'A4 PDF 3×3 (frentes)',
+    btn_pdf_a4_b: 'A4 PDF 3×3 (reversos)',
+    btn_pdf_a4_both: 'A4 PDF 3×3 (frente+reverso)',
+    hint_print: 'Imprime A4 vertical, márgenes mínimos, escala 100%.',
+
+    premium_frame_msg: 'Marco Premium. Disponible con suscripción.',
+    premium_title_msg: 'Efecto Premium disponible con suscripción.',
+
+    sheet_title: 'Hoja (hasta 9 cartas distintas)',
+    sheet_add: 'Añadir esta carta a la hoja',
+    sheet_clear: 'Vaciar hoja',
+    sheet_remove_last: 'Quitar última',
+    sheet_pdf: 'PDF A4 3×3 (hoja, anverso+reverso)',
+    jsPDF_missing: 'jsPDF no disponible. Revisa la conexión o recarga la página.',
+    sheet_full: 'Ya tienes 9 cartas en la hoja.',
+    sheet_empty: 'La hoja está vacía. Añade al menos 1 carta.',
+    sheet_already_empty: 'La hoja ya está vacía.',
+    export_error_prefix: 'Error de exportación: ',
+    front_canvas_missing: 'Lienzo frontal no encontrado',
+    back_canvas_missing: 'Lienzo trasero no encontrado',
+    sheet_count: '{n}/9 cartas'
+  };
+}
+
+function dictDE() {
+  return {
+    welcome_title: 'Willkommen bei Card Maker',
+    welcome_text: 'Erstelle Magic-ähnliche Karten. Melde dich an, um in der Cloud zu speichern, oder fahre als Gast fort.',
+    ph_email: 'E-Mail',
+    ph_password: 'Passwort',
+    btn_login: 'Anmelden',
+    btn_signup: 'Registrieren',
+    btn_guest: 'Als Gast fortfahren',
+    welcome_dontshow: 'Nicht mehr anzeigen',
+    user_guest: 'Gast',
+    btn_logout: 'Abmelden',
+
+    front_title: 'Vorderseite',
+    back_title: 'Rückseite',
+    saves_title: 'Speicherungen',
+    export_title: 'Export',
+    preview_title: 'Vorschau',
+    cloud_title: 'Konto & Cloud',
+
+    lbl_title: 'Titel',
+    ph_title: 'Zaubername',
+    lbl_title_font: 'Titelschrift',
+    opt_custom_font: 'Eigen (Upload)',
+    lbl_upload_font: 'TTF/OTF-Schrift hochladen',
+    lbl_title_color: 'Titelfarbe',
+    lbl_title_size: 'Titelgröße',
+    lbl_title_effect: 'Titel-Effekt',
+    lbl_title_shadow: 'Titelschatten',
+    opt_none: 'Keiner',
+    opt_foil_gold: 'Goldfolie',
+    opt_foil_silver: 'Silberfolie',
+    opt_foil_rainbow: 'Regenbogenfolie',
+
+    opt_fx_celestial: 'Celestial (Premium)',
+    opt_fx_infernal: 'Infernal (Premium)',
+    opt_fx_obsidian: 'Obsidian (Premium)',
+    opt_fx_royal: 'Royal (Premium)',
+    opt_fx_starlight: 'Starlight (Premium)',
+
+    lbl_show_mana: 'Mana anzeigen',
+    ph_mana: '{G}{U} oder 2G',
+
+    lbl_class_symbol: 'Klassensymbol',
+    opt_database: 'Datenbank',
+    opt_upload_img: 'Bild hochladen…',
+    optgroup_base: 'Basis',
+    optgroup_expansion: 'Erweiterung',
+    cls_warrior: 'Krieger',
+    cls_druid: 'Druide',
+    cls_monk: 'Mönch',
+    cls_wizard: 'Zauberer',
+    cls_rogue: 'Schurke',
+    cls_barbarian: 'Barbar',
+    cls_paladin: 'Paladin',
+    cls_cleric: 'Kleriker',
+    cls_bard: 'Barde',
+    cls_ranger: 'Waldläufer',
+    cls_sorcerer: 'Hexenmeister',
+    cls_warlock: 'Warlock',
+    cls_artificer: 'Konstrukteur',
+    lbl_symbol_size: 'Symbolgröße',
+    hint_drag_symbol: 'Ziehen Sie das Symbol in der Vorschau, um es zu verschieben.',
+
+    lbl_panel_color: 'Linien/Kästchen-Farbe',
+    lbl_panel_alpha: 'Kästchen-Deckkraft',
+
+    lbl_frame_style: 'Rahmenstil',
+    style_flat: 'Vollfarbe',
+    style_wood: 'Holz',
+    style_stone: 'Stein',
+    style_arcane: 'Arkan',
+    style_nature: 'Natur',
+    lbl_frame_inner: 'Rahmen (Vollfarbe) & Innenfarbe',
+
+    lbl_front_image: 'Bild Vorderseite',
+    lbl_back_image: 'Bild Rückseite (randlos)',
+    hint_back_image: 'Füllt den Innenbereich; gleicher Rahmen wie vorne.',
+
+    lbl_desc_title: 'Beschreibung (unteres Feld)',
+    ph_rules: 'Regeltext… **Schlüsselwörter** fett.',
+    lbl_desc_font: 'Beschreibungsschrift',
+    lbl_upload_desc_font: 'Beschreibungsschrift hochladen (TTF/OTF)',
+    lbl_desc_size: 'Beschreibung Größe',
+    lbl_desc_color: 'Beschreibung Farbe',
+
+    lbl_card_name: 'Kartenname',
+    ph_card: 'z. B. Waldenklingen',
+    lbl_deck_name: 'Deck (Cloud-Ordner, opt.)',
+    ph_deck: 'z. B. Druidenzauber',
+    btn_save_local: 'Lokal speichern',
+    btn_load_local: 'Lokale Bibliothek öffnen',
+    btn_cloud_save: 'In Cloud speichern',
+    btn_cloud_pull: 'Cloud-Bibliothek öffnen',
+    btn_cloud_clear: 'Cloud leeren',
+
+    lbl_mirror_back: 'Rückseite spiegeln (Heimdruck)',
+    hint_mirror_back: 'Wenn aktiv, wird das Rückseiten-PDF gespiegelt für leichteres Ausrichten.',
+    btn_png_front: 'PNG (Front)',
+    btn_png_back: 'PNG (Back)',
+    btn_pdf_single_f: 'Einzel-PDF (Front)',
+    btn_pdf_single_b: 'Einzel-PDF (Back)',
+    btn_pdf_a4_f: 'A4 PDF 3×3 (Fronts)',
+    btn_pdf_a4_b: 'A4 PDF 3×3 (Backs)',
+    btn_pdf_a4_both: 'A4 PDF 3×3 (Front+Back)',
+    hint_print: 'A4 hochkant, minimale Ränder, Maßstab 100 %.',
+
+    premium_frame_msg: 'Premium-Rahmen. Mit Abo verfügbar.',
+    premium_title_msg: 'Premium-Titeleffekt mit Abo verfügbar.',
+
+    sheet_title: 'Bogen (bis zu 9 verschiedene Karten)',
+    sheet_add: 'Diese Karte zum Bogen hinzufügen',
+    sheet_clear: 'Bogen leeren',
+    sheet_remove_last: 'Letzte entfernen',
+    sheet_pdf: 'A4 PDF 3×3 (Bogen, Vorder- & Rückseite)',
+    jsPDF_missing: 'jsPDF nicht verfügbar. Verbindung prüfen oder Seite neu laden.',
+    sheet_full: 'Du hast bereits 9 Karten im Bogen.',
+    sheet_empty: 'Der Bogen ist leer. Füge mindestens 1 Karte hinzu.',
+    sheet_already_empty: 'Der Bogen ist bereits leer.',
+    export_error_prefix: 'Exportfehler: ',
+    front_canvas_missing: 'Vorderes Canvas nicht gefunden',
+    back_canvas_missing: 'Hinteres Canvas nicht gefunden',
+    sheet_count: '{n}/9 Karten'
+  };
+}
 
 /* ===================== REGISTRAZIONE ===================== */
 intl.addLocale('it', dictIT());
@@ -288,16 +537,11 @@ function setLocaleAndNotify(lang) {
 intl.setLocale = setLocaleAndNotify;
 
 /* ===================== SELETTORE LINGUA ===================== */
-// Trova il bottone di logout e inserisce il selettore subito prima
-function findLogoutButton() {
-  const labels = ['Log out', 'Logout', 'Esci', 'Salir', 'Abmelden'];
-  const btns = Array.from(document.querySelectorAll('button, a'));
-  return btns.find(b => labels.some(t => (b.textContent || '').trim().toLowerCase() === t.toLowerCase()));
-}
 function hostForLangSelector(){
-  const logoutBtn = findLogoutButton();
-  if (logoutBtn && logoutBtn.parentElement) return logoutBtn.parentElement;
+  const userHost = document.getElementById('userStatus')?.parentElement
+                || document.getElementById('userStatus');
   return (
+    userHost ||
     document.querySelector('header .row') ||
     document.querySelector('header .toolbar') ||
     document.querySelector('header .topbar') ||
@@ -306,6 +550,7 @@ function hostForLangSelector(){
     document.body
   );
 }
+
 function ensureLanguageSelector(){
   const hdr = hostForLangSelector();
   if (!hdr) return false;
@@ -321,18 +566,12 @@ function ensureLanguageSelector(){
     sel.style.font = 'inherit';
     sel.style.color = 'inherit';
     sel.style.background = 'transparent';
-    sel.innerHTML = `
+    sel.innerHTML = 
       <option value="it">IT</option>
       <option value="en">EN</option>
       <option value="es">ES</option>
-      <option value="de">DE</option>`;
-    // se abbiamo trovato il bottone logout, mettiamo il select prima
-    const logoutBtn = findLogoutButton();
-    if (logoutBtn && logoutBtn.parentElement === hdr) {
-      hdr.insertBefore(sel, logoutBtn);
-    } else {
-      hdr.appendChild(sel);
-    }
+      <option value="de">DE</option>;
+    hdr.appendChild(sel);
   }
   sel.value = intl.getLocale();
   sel.onchange = () => window.appI18n.setLocale(sel.value);
@@ -357,6 +596,7 @@ function installLangSelectorWatcher(){
 /* ===================== APPLY DOM ===================== */
 function applyI18nToDom(){
   try { intl.translateDom(document); } catch {}
+  // Se card.js vuole tradurre le option del select classi, può registrare un bridge:
   try {
     if (window.appI18n && typeof window.appI18n.__translateClassOptions === 'function') {
       window.appI18n.__translateClassOptions();
@@ -365,7 +605,7 @@ function applyI18nToDom(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const cur = intl.getLocale() || 'en'; // default EN, come nello screenshot
+  const cur = intl.getLocale() || 'it';
   intl.setLocale(cur);
   document.documentElement.setAttribute('lang', cur);
 
@@ -385,6 +625,6 @@ window.appI18n = {
     const sel = document.getElementById('lang');
     if (sel) sel.value = loc;
   },
-  // card.js può settare questa funzione per tradurre le option del select classi
+  // opzionale: card.js può assegnare qui una funzione per tradurre le option del select classi
   __translateClassOptions: null
 };
