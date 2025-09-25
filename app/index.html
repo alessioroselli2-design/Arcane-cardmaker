@@ -1,4 +1,4 @@
-<!doctype html>
+p<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
@@ -87,10 +87,10 @@
             <option value="foil-rainbow" data-i18n="opt_foil_rainbow">Foil arcobaleno</option>
             <!-- Premium (ora con value fx-*) -->
             <optgroup label="Premium">
-              <option value="fx-celestial" data-premium="1" data-i18n="opt_foil_celestial">Celestial (premium)</option>
-              <option value="fx-infernal"  data-premium="1" data-i18n="opt_foil_infernal">Infernal (premium)</option>
-              <option value="fx-obsidian"  data-premium="1" data-i18n="opt_foil_obsidian">Obsidian (premium)</option>
-              <option value="fx-royal"     data-premium="1" data-i18n="opt_foil_royal">Royal (premium)</option>
+              <option value="fx-celestial" data-premium="1" data-i18n="opt_fx_celestial">Celestial (premium)</option>
+              <option value="fx-infernal"  data-premium="1" data-i18n="opt_fx_infernal">Infernal (premium)</option>
+              <option value="fx-obsidian"  data-premium="1" data-i18n="opt_fx_obsidian">Obsidian (premium)</option>
+              <option value="fx-royal"     data-premium="1" data-i18n="opt_fx_royal">Royal (premium)</option>
               <option value="fx-starlight" data-premium="1" data-i18n="opt_foil_starlight">Starlight (premium)</option>
             </optgroup>
           </select>
@@ -305,5 +305,20 @@
   <script type="module" src="carta-locale.js"></script>
   <script type="module" src="esportazione.js"></script>
   <script type="module" src="auth.js"></script>
+<script type="module">
+  // Collega la funzione di traduzione delle opzioni classe all'i18n
+  const hook = () => {
+    if (window.appI18n && window.translateClassOptions) {
+      if (!window.appI18n.__translateClassOptions) {
+        window.appI18n.__translateClassOptions = window.translateClassOptions;
+      }
+      // forza un refresh per applicare subito le traduzioni
+      try { window.appI18n.refresh(); } catch {}
+    }
+  };
+  hook();              // ora
+  setTimeout(hook, 0); // subito dopo il paint
+  setTimeout(hook, 300); // dopo eventuali mount di UI
+</script>
 </body>
 </html>
