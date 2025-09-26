@@ -317,29 +317,46 @@
 
   <!-- Wiring selettore lingua statico + bridge traduzione select classi -->
   <script type="module">
-    // lingua: collega il select fisso all'engine i18n (funziona anche se i file sono ancora in init)
-    const langSel = document.getElementById('lang');
-    const getLoc = () => (window.intl?.getLocale && window.intl.getLocale()) || 'it';
-    const setLoc = (v) => {
-      if (window.appI18n?.setLocale) window.appI18n.setLocale(v);
-      else if (window.intl?.setLocale) window.intl.setLocale(v);
+  // Usa SOLO appI18n (non window.intl)
+  function connectLangSelector(){
+    const sel = document.getElementById('lang');
+    if (!sel || !window.appI18n) return;
+
+    // inizializza il valore del select con la lingua corrente salvata
+    try {
+      sel.value = localStorage.getItem('acm_locale') || 'it';
+    } catch { sel.value = 'it'; }
+
+    // cambio lingua
+    sel.onchange = () => {
+      try {
+        window.appI18n.setLocale(sel.value);  // traduce subito tutta l’UI
+      } catch {}
     };
-    if (langSel) {
-      langSel.value = getLoc();
-      langSel.onchange = () => setLoc(langSel.value);
-      window.addEventListener('i18n-changed', () => { try{ langSel.value = getLoc(); }catch{} });
+
+    // quando cambia lingua altrove, tieni il select sincronizzato
+    window.addEventListener('i18n-changed', (e) => {
+      try {
+        const cur = (e && e.detail && e.detail.lang) || localStorage.getItem('acm_locale') || 'it';
+        sel.value = cur;
+      } catch {}
+    });
+
+    // bridge: permette di tradurre anche le option del select delle classi (#clazz)
+    if (window.translateClassOptions) {
+      window.appI18n.__translateClassOptions = window.translateClassOptions;
     }
 
-    // bridge: consente a app-i18n di tradurre le option del select #clazz quando cambia lingua
-    const hook = () => {
-      if (window.appI18n && window.translateClassOptions) {
-        if (!window.appI18n.__translateClassOptions) {
-          window.appI18n.__translateClassOptions = window.translateClassOptions;
-        }
-        try { window.appI18n.refresh(); } catch {}
-      }
-    };
-    hook(); setTimeout(hook, 0); setTimeout(hook, 300);
-  </script>
+    // applica subito le traduzioni alla pagina
+    try { window.appI18n.refresh(); } catch {}
+  }
+
+  // collega quando app-i18n è caricato
+  const tryConnect = () => {
+    if (window.appI18n) { connectLangSelector(); }
+    else { setTimeout(tryConnect, 100); }
+  };
+  tryConnect();
+</script>
 </body>
 </html>
