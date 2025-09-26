@@ -1,4 +1,4 @@
-// /app/app-i18n.js — dizionari UI + selettore lingua robusto
+// /app/app-i18n.js — dizionari UI + integrazione i18n sicura
 import * as intl from './intl.js';
 
 /* ===================== DIZIONARI ===================== */
@@ -526,77 +526,10 @@ intl.addLocale('en', dictEN());
 intl.addLocale('es', dictES());
 intl.addLocale('de', dictDE());
 
-/* ===================== BRIDGE + EVENTI ===================== */
-const __origSetLocale = intl.setLocale;
-function setLocaleAndNotify(lang) {
-  __origSetLocale(lang);
-  try { document.documentElement.setAttribute('lang', lang); } catch {}
-  try { applyI18nToDom(); } catch {}
-  try { window.dispatchEvent(new CustomEvent('i18n-changed', { detail: { lang } })); } catch {}
-}
-intl.setLocale = setLocaleAndNotify;
-
-/* ===================== SELETTORE LINGUA ===================== */
-function hostForLangSelector(){
-  const userHost = document.getElementById('userStatus')?.parentElement
-                || document.getElementById('userStatus');
-  return (
-    userHost ||
-    document.querySelector('header .row') ||
-    document.querySelector('header .toolbar') ||
-    document.querySelector('header .topbar') ||
-    document.querySelector('header') ||
-    document.querySelector('#appHeader') ||
-    document.body
-  );
-}
-
-function ensureLanguageSelector(){
-  const hdr = hostForLangSelector();
-  if (!hdr) return false;
-
-  let sel = document.getElementById('lang');
-  if (!sel){
-    sel = document.createElement('select');
-    sel.id = 'lang';
-    sel.setAttribute('aria-label','Language');
-    sel.style.marginLeft = '10px';
-    sel.style.padding = '4px 6px';
-    sel.style.borderRadius = '8px';
-    sel.style.font = 'inherit';
-    sel.style.color = 'inherit';
-    sel.style.background = 'transparent';
-    sel.innerHTML = 
-      <option value="it">IT</option>
-      <option value="en">EN</option>
-      <option value="es">ES</option>
-      <option value="de">DE</option>;
-    hdr.appendChild(sel);
-  }
-  sel.value = intl.getLocale();
-  sel.onchange = () => window.appI18n.setLocale(sel.value);
-  return true;
-}
-
-let __langObserverStarted = false;
-function installLangSelectorWatcher(){
-  if (__langObserverStarted) return;
-  __langObserverStarted = true;
-
-  const tryNow = ()=>ensureLanguageSelector();
-  if (!tryNow()){
-    setTimeout(tryNow, 0);
-    setTimeout(tryNow, 200);
-    setTimeout(tryNow, 800);
-  }
-  const mo = new MutationObserver(() => { tryNow(); });
-  mo.observe(document.documentElement, { childList:true, subtree:true });
-}
-
 /* ===================== APPLY DOM ===================== */
 function applyI18nToDom(){
   try { intl.translateDom(document); } catch {}
-  // Se card.js vuole tradurre le option del select classi, può registrare un bridge:
+  // Se card.js ha esposto la funzione per tradurre le option del select classi:
   try {
     if (window.appI18n && typeof window.appI18n.__translateClassOptions === 'function') {
       window.appI18n.__translateClassOptions();
@@ -604,13 +537,19 @@ function applyI18nToDom(){
   } catch {}
 }
 
+/* ===================== AVVIO ===================== */
 document.addEventListener('DOMContentLoaded', () => {
   const cur = intl.getLocale() || 'it';
-  intl.setLocale(cur);
-  document.documentElement.setAttribute('lang', cur);
-
-  installLangSelectorWatcher();
+  try { document.documentElement.setAttribute('lang', cur); } catch {}
   applyI18nToDom();
+});
+
+/* ===================== LISTENER CAMBIO LINGUA ===================== */
+// NON sovrascriviamo funzioni importate; usiamo l’hook ufficiale.
+intl.onChange((lang) => {
+  try { document.documentElement.setAttribute('lang', lang); } catch {}
+  try { applyI18nToDom(); } catch {}
+  try { window.dispatchEvent(new CustomEvent('i18n-changed', { detail: { lang } })); } catch {}
 });
 
 /* ===================== API PUBBLICA ===================== */
@@ -619,12 +558,14 @@ window.appI18n = {
   t: intl.t,
   setLocale(loc){
     if (!loc || loc === intl.getLocale()) return;
+    // chiamiamo l'ORIGINALE: questo scatena intl.onChange
     intl.setLocale(loc);
-    document.documentElement.setAttribute('lang', loc);
+    try { document.documentElement.setAttribute('lang', loc); } catch {}
     applyI18nToDom();
+    // sincronizza eventuale select statico #lang
     const sel = document.getElementById('lang');
     if (sel) sel.value = loc;
   },
-  // opzionale: card.js può assegnare qui una funzione per tradurre le option del select classi
+  // card.js può agganciare qui la funzione che traduce le option del select classi
   __translateClassOptions: null
 };
