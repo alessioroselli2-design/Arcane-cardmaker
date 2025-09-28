@@ -1,7 +1,7 @@
-// /app/app-i18n.js — dizionari UI + integrazione i18n sicura
+// /app/app-i18n.js — dizionari UI + bridge i18n “lite” (non tocca #lang)
 import * as intl from './intl.js';
 
-/* ===================== DIZIONARI ===================== */
+/* ============== DIZIONARI ============== */
 function dictIT() {
   return {
     // Welcome / auth
@@ -39,7 +39,7 @@ function dictIT() {
     opt_foil_silver: 'Foil argento',
     opt_foil_rainbow: 'Foil arcobaleno',
 
-    // Effetti titolo premium (etichette)
+    // Premium title effects (fx-*)
     opt_fx_celestial: 'Celestial (premium)',
     opt_fx_infernal: 'Infernal (premium)',
     opt_fx_obsidian: 'Obsidian (premium)',
@@ -50,7 +50,7 @@ function dictIT() {
     lbl_show_mana: 'Mostra mana',
     ph_mana: '{G}{U} o 2G',
 
-    // Simbolo di classe
+    // Class symbol
     lbl_class_symbol: 'Simbolo di classe',
     opt_database: 'Database',
     opt_upload_img: 'Carica immagine…',
@@ -138,7 +138,7 @@ function dictIT() {
     export_error_prefix: 'Errore esportazione: ',
     front_canvas_missing: 'Canvas fronte non trovato',
     back_canvas_missing: 'Canvas retro non trovato',
-    sheet_count: '{n}/9 carte'
+    sheet_count: '{n}/9'
   };
 }
 
@@ -264,7 +264,7 @@ function dictEN() {
     export_error_prefix: 'Export error: ',
     front_canvas_missing: 'Front canvas not found',
     back_canvas_missing: 'Back canvas not found',
-    sheet_count: '{n}/9 cards'
+    sheet_count: '{n}/9'
   };
 }
 
@@ -390,7 +390,7 @@ function dictES() {
     export_error_prefix: 'Error de exportación: ',
     front_canvas_missing: 'Lienzo frontal no encontrado',
     back_canvas_missing: 'Lienzo trasero no encontrado',
-    sheet_count: '{n}/9 cartas'
+    sheet_count: '{n}/9'
   };
 }
 
@@ -516,20 +516,30 @@ function dictDE() {
     export_error_prefix: 'Exportfehler: ',
     front_canvas_missing: 'Vorderes Canvas nicht gefunden',
     back_canvas_missing: 'Hinteres Canvas nicht gefunden',
-    sheet_count: '{n}/9 Karten'
+    sheet_count: '{n}/9'
   };
 }
 
-/* ===================== REGISTRAZIONE ===================== */
+/* ============== REGISTRAZIONE ============== */
 intl.addLocale('it', dictIT());
 intl.addLocale('en', dictEN());
 intl.addLocale('es', dictES());
 intl.addLocale('de', dictDE());
 
-/* ===================== APPLY DOM ===================== */
+/* ============== BRIDGE + EVENTO ============== */
+// Mantiene l’API pubblica e inoltra l’evento con detail.lang
+const __origSetLocale = intl.setLocale;
+function setLocaleAndNotify(lang) {
+  __origSetLocale(lang);
+  try { document.documentElement.setAttribute('lang', lang); } catch {}
+  try { applyI18nToDom(); } catch {}
+  try { window.dispatchEvent(new CustomEvent('i18n-changed', { detail: { lang } })); } catch {}
+}
+intl.setLocale = setLocaleAndNotify;
+
+/* ============== APPLY DOM ============== */
 function applyI18nToDom(){
   try { intl.translateDom(document); } catch {}
-  // Se card.js ha esposto la funzione per tradurre le option del select classi:
   try {
     if (window.appI18n && typeof window.appI18n.__translateClassOptions === 'function') {
       window.appI18n.__translateClassOptions();
@@ -537,35 +547,24 @@ function applyI18nToDom(){
   } catch {}
 }
 
-/* ===================== AVVIO ===================== */
 document.addEventListener('DOMContentLoaded', () => {
   const cur = intl.getLocale() || 'it';
-  try { document.documentElement.setAttribute('lang', cur); } catch {}
+  intl.setLocale(cur);
+  document.documentElement.setAttribute('lang', cur);
   applyI18nToDom();
 });
 
-/* ===================== LISTENER CAMBIO LINGUA ===================== */
-// NON sovrascriviamo funzioni importate; usiamo l’hook ufficiale.
-intl.onChange((lang) => {
-  try { document.documentElement.setAttribute('lang', lang); } catch {}
-  try { applyI18nToDom(); } catch {}
-  try { window.dispatchEvent(new CustomEvent('i18n-changed', { detail: { lang } })); } catch {}
-});
-
-/* ===================== API PUBBLICA ===================== */
+/* ============== API PUBBLICA ============== */
 window.appI18n = {
   refresh: applyI18nToDom,
   t: intl.t,
   setLocale(loc){
     if (!loc || loc === intl.getLocale()) return;
-    // chiamiamo l'ORIGINALE: questo scatena intl.onChange
     intl.setLocale(loc);
-    try { document.documentElement.setAttribute('lang', loc); } catch {}
+    document.documentElement.setAttribute('lang', loc);
     applyI18nToDom();
-    // sincronizza eventuale select statico #lang
-    const sel = document.getElementById('lang');
-    if (sel) sel.value = loc;
+    // NB: il <select id="lang"> è gestito dall’index, qui non lo tocchiamo.
   },
-  // card.js può agganciare qui la funzione che traduce le option del select classi
+  // opzionale: card.js può impostare qui una funzione per tradurre le option del select classi
   __translateClassOptions: null
 };
