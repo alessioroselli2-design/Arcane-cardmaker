@@ -7,13 +7,39 @@
   <meta name="theme-color" content="#111" />
   <base href="/app/">
 
-  <link rel="stylesheet" href="stile.css?v=4" />
+  <!-- CSS + cache-busting -->
+  <link rel="stylesheet" href="stile.css?v=7" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="manifest" href="manifesto.webmanifest?v=4">
+  <link rel="manifest" href="manifesto.webmanifest?v=7">
 </head>
 <body>
+
+  <!-- RESET EMERGENZA: /app/?reset=1 -->
+  <script>
+    (function () {
+      const p = new URLSearchParams(location.search);
+      if (p.get('reset') === '1') {
+        (async () => {
+          try {
+            if ('serviceWorker' in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(r => r.unregister()));
+            }
+            if (window.caches) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(k => caches.delete(k)));
+            }
+            try { localStorage.clear(); sessionStorage.clear(); } catch {}
+          } finally {
+            location.replace(location.pathname + location.hash);
+          }
+        })();
+      }
+    })();
+  </script>
+
   <!-- Welcome / Accesso -->
   <div id="welcome" class="modal-mask" style="display:none">
     <div class="modal-card">
@@ -39,7 +65,7 @@
     <div class="row">
       <span id="userStatus" class="muted" data-i18n="user_guest">Ospite</span>
 
-      <!-- Selettore lingua FISSO (sempre visibile) -->
+      <!-- Selettore lingua FISSO -->
       <select id="lang" aria-label="Language" data-no-i18n="1" style="margin-left:10px">
         <option value="it">IT</option>
         <option value="en">EN</option>
@@ -88,12 +114,10 @@
         <div>
           <label data-i18n="lbl_title_effect">Effetto titolo</label>
           <select id="titleFoil">
-            <!-- Free -->
             <option value="none" selected data-i18n="opt_none">Nessuno</option>
             <option value="foil-gold"    data-i18n="opt_foil_gold">Foil oro</option>
             <option value="foil-silver"  data-i18n="opt_foil_silver">Foil argento</option>
             <option value="foil-rainbow" data-i18n="opt_foil_rainbow">Foil arcobaleno</option>
-            <!-- Premium (fx-*) -->
             <optgroup label="Premium">
               <option value="fx-celestial" data-premium="1" data-i18n="opt_fx_celestial">Celestial (premium)</option>
               <option value="fx-infernal"  data-premium="1" data-i18n="opt_fx_infernal">Infernal (premium)</option>
@@ -296,83 +320,61 @@
     </section>
   </div>
 
-  <!-- SW registrazione -->
+  <!-- Service Worker: disattivabile con ?nosw=1 -->
   <script>
-try{
-  const qs = new URLSearchParams(location.search);
-  const noSW = qs.has('nosw') || localStorage.getItem('acm_nosw') === '1';
+    (function(){
+      try{
+        const qs = new URLSearchParams(location.search);
+        const noSW = qs.has('nosw') || localStorage.getItem('acm_nosw') === '1';
+        if (!('serviceWorker' in navigator)) return;
 
-  if ('serviceWorker' in navigator) {
-    if (noSW) {
-      // DISATTIVA il service worker e svuota le cache
-      navigator.serviceWorker.getRegistrations()
-        .then(list => list.forEach(r => r.unregister()));
-      if (window.caches && caches.keys) {
-        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-      }
-    } else {
-      // REGISTRA normalmente
-      navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' })
-        .catch(()=>{});
-    }
-  }
-}catch(e){}
-</script>
+        if (noSW) {
+          navigator.serviceWorker.getRegistrations()
+            .then(list => list.forEach(r => r.unregister()));
+          if (window.caches && caches.keys) {
+            caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+          }
+        } else {
+          navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).catch(()=>{});
+        }
+      }catch(e){}
+    })();
+  </script>
 
   <!-- Librerie i18n -->
-  <script type="module" src="intl.js?v=4"></script>
-  <script type="module" src="app-i18n.js?v=4"></script>
-  <script type="module" src="premium.js?v=4"></script>
+  <script type="module" src="intl.js?v=7"></script>
+  <script type="module" src="app-i18n.js?v=7"></script>
+  <script type="module" src="premium.js?v=7"></script>
 
   <!-- App -->
-  <script type="module" src="Firebase.js?v=4"></script>
-  <script type="module" src="card.js?v=4"></script>
-  <script type="module" src="carta-locale.js?v=4"></script>
-  <script type="module" src="esportazione.js?v=4"></script>
-  <script type="module" src="auth.js?v=4"></script>
+  <script type="module" src="Firebase.js?v=7"></script>
+  <script type="module" src="card.js?v=7"></script>
+  <script type="module" src="carta-locale.js?v=7"></script>
+  <script type="module" src="esportazione.js?v=7"></script>
+  <script type="module" src="auth.js?v=7"></script>
 
-  <!-- Wiring selettore lingua statico + bridge traduzione select classi -->
+  <!-- Wiring lingua + bridge select classi -->
   <script type="module">
-  // Usa SOLO appI18n (non window.intl)
-  function connectLangSelector(){
-    const sel = document.getElementById('lang');
-    if (!sel || !window.appI18n) return;
+    function connectLangSelector(){
+      const sel = document.getElementById('lang');
+      if (!sel || !window.appI18n) return;
 
-    // inizializza il valore del select con la lingua corrente salvata
-    try {
-      sel.value = localStorage.getItem('acm_locale') || 'it';
-    } catch { sel.value = 'it'; }
+      try { sel.value = localStorage.getItem('acm_locale') || 'it'; } catch { sel.value = 'it'; }
+      sel.onchange = () => { try { window.appI18n.setLocale(sel.value); } catch {} };
 
-    // cambio lingua
-    sel.onchange = () => {
-      try {
-        window.appI18n.setLocale(sel.value);  // traduce subito tutta l’UI
-      } catch {}
-    };
+      window.addEventListener('i18n-changed', (e) => {
+        try {
+          const cur = (e && e.detail && e.detail.lang) || localStorage.getItem('acm_locale') || 'it';
+          sel.value = cur;
+        } catch {}
+      });
 
-    // quando cambia lingua altrove, tieni il select sincronizzato
-    window.addEventListener('i18n-changed', (e) => {
-      try {
-        const cur = (e && e.detail && e.detail.lang) || localStorage.getItem('acm_locale') || 'it';
-        sel.value = cur;
-      } catch {}
-    });
-
-    // bridge: permette di tradurre anche le option del select delle classi (#clazz)
-    if (window.translateClassOptions) {
-      window.appI18n.__translateClassOptions = window.translateClassOptions;
+      if (window.translateClassOptions) {
+        window.appI18n.__translateClassOptions = window.translateClassOptions;
+      }
+      try { window.appI18n.refresh(); } catch {}
     }
-
-    // applica subito le traduzioni alla pagina
-    try { window.appI18n.refresh(); } catch {}
-  }
-
-  // collega quando app-i18n è caricato
-  const tryConnect = () => {
-    if (window.appI18n) { connectLangSelector(); }
-    else { setTimeout(tryConnect, 100); }
-  };
-  tryConnect();
-</script>
+    (function wait(){ if (window.appI18n) connectLangSelector(); else setTimeout(wait,100); })();
+  </script>
 </body>
 </html>
