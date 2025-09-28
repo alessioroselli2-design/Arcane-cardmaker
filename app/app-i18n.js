@@ -39,7 +39,7 @@ function dictIT() {
     opt_foil_silver: 'Foil argento',
     opt_foil_rainbow: 'Foil arcobaleno',
 
-    // Premium title effects (fx-*)
+    // Effetti premium (fx-*)
     opt_fx_celestial: 'Celestial (premium)',
     opt_fx_infernal: 'Infernal (premium)',
     opt_fx_obsidian: 'Obsidian (premium)',
@@ -50,7 +50,7 @@ function dictIT() {
     lbl_show_mana: 'Mostra mana',
     ph_mana: '{G}{U} o 2G',
 
-    // Class symbol
+    // Simbolo di classe
     lbl_class_symbol: 'Simbolo di classe',
     opt_database: 'Database',
     opt_upload_img: 'Carica immagine…',
@@ -527,7 +527,7 @@ intl.addLocale('es', dictES());
 intl.addLocale('de', dictDE());
 
 /* ============== BRIDGE + EVENTO ============== */
-// Mantiene l’API pubblica e inoltra l’evento con detail.lang
+// Avvolge setLocale per aggiornare <html lang>, tradurre il DOM ed emettere i18n-changed
 const __origSetLocale = intl.setLocale;
 function setLocaleAndNotify(lang) {
   __origSetLocale(lang);
@@ -540,6 +540,7 @@ intl.setLocale = setLocaleAndNotify;
 /* ============== APPLY DOM ============== */
 function applyI18nToDom(){
   try { intl.translateDom(document); } catch {}
+  // Bridge opzionale: traduce le option del select classi (#clazz) se card.js lo espone
   try {
     if (window.appI18n && typeof window.appI18n.__translateClassOptions === 'function') {
       window.appI18n.__translateClassOptions();
@@ -547,10 +548,13 @@ function applyI18nToDom(){
   } catch {}
 }
 
+/* ============== AVVIO ============== */
 document.addEventListener('DOMContentLoaded', () => {
-  const cur = intl.getLocale() || 'it';
+  // 1) prova da localStorage, poi fallback al valore interno di intl, poi 'it'
+  let cur = 'it';
+  try { cur = localStorage.getItem('acm_locale') || intl.getLocale() || 'it'; } catch { cur = intl.getLocale() || 'it'; }
   intl.setLocale(cur);
-  document.documentElement.setAttribute('lang', cur);
+  try { document.documentElement.setAttribute('lang', cur); } catch {}
   applyI18nToDom();
 });
 
@@ -560,11 +564,11 @@ window.appI18n = {
   t: intl.t,
   setLocale(loc){
     if (!loc || loc === intl.getLocale()) return;
+    // NB: non tocchiamo il selettore #lang qui; lo gestisce l’index
     intl.setLocale(loc);
-    document.documentElement.setAttribute('lang', loc);
+    try { document.documentElement.setAttribute('lang', loc); } catch {}
     applyI18nToDom();
-    // NB: il <select id="lang"> è gestito dall’index, qui non lo tocchiamo.
   },
-  // opzionale: card.js può impostare qui una funzione per tradurre le option del select classi
+  // card.js può impostare qui un hook per tradurre le option del select classi
   __translateClassOptions: null
 };
