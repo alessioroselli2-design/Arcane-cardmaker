@@ -16,7 +16,7 @@
 </head>
 <body>
 
-  <!-- RESET EMERGENZA: /app/?reset=1 -->
+  <!-- RESET EMERGENZA: apri /app/?reset=1 per svuotare SW/cache/localStorage e ricaricare -->
   <script>
     (function () {
       const p = new URLSearchParams(location.search);
@@ -65,7 +65,7 @@
     <div class="row">
       <span id="userStatus" class="muted" data-i18n="user_guest">Ospite</span>
 
-      <!-- Selettore lingua FISSO -->
+      <!-- Selettore lingua FISSO (non viene tradotto) -->
       <select id="lang" aria-label="Language" data-no-i18n="1" style="margin-left:10px">
         <option value="it">IT</option>
         <option value="en">EN</option>
@@ -199,7 +199,7 @@
             <option value="stone"         data-i18n="style_stone">Pietra</option>
             <option value="arcane"        data-i18n="style_arcane">Arcano</option>
             <option value="nature"        data-i18n="style_nature">Natura</option>
-            <!-- Premium frames arrivano da premium.js -->
+            <!-- Premium frames da premium.js -->
           </select>
         </div>
         <div>
@@ -359,9 +359,18 @@
       const sel = document.getElementById('lang');
       if (!sel || !window.appI18n) return;
 
+      // inizializza con locale salvato
       try { sel.value = localStorage.getItem('acm_locale') || 'it'; } catch { sel.value = 'it'; }
-      sel.onchange = () => { try { window.appI18n.setLocale(sel.value); } catch {} };
 
+      // al cambio lingua: aggiorna + salva
+      sel.onchange = () => {
+        try {
+          window.appI18n.setLocale(sel.value);
+          localStorage.setItem('acm_locale', sel.value);
+        } catch {}
+      };
+
+      // sincronizza se cambia da codice
       window.addEventListener('i18n-changed', (e) => {
         try {
           const cur = (e && e.detail && e.detail.lang) || localStorage.getItem('acm_locale') || 'it';
@@ -369,9 +378,12 @@
         } catch {}
       });
 
+      // consenti di tradurre anche le <option> del select classi
       if (window.translateClassOptions) {
         window.appI18n.__translateClassOptions = window.translateClassOptions;
       }
+
+      // traduci subito
       try { window.appI18n.refresh(); } catch {}
     }
     (function wait(){ if (window.appI18n) connectLangSelector(); else setTimeout(wait,100); })();
